@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Greenfield
 - **Start Date**: 2026-08-11T23:58:42Z
-- **Current Stage**: CONSTRUCTION - UOW-004 Code Generation Plan Review
+- **Current Stage**: CONSTRUCTION - UOW-004 Build and Test Review
 
 ## Workspace State
 - **Existing Code**: No
@@ -64,16 +64,17 @@
 - [x] UOW-004 NFR Requirements - APPROVED
 - [x] UOW-004 NFR Design - APPROVED
 - [x] UOW-004 Infrastructure Design - APPROVED
-- [ ] UOW-004 Code Generation - PLAN REVIEW REQUIRED
+- [x] UOW-004 Code Generation - APPROVED
+- [ ] UOW-004 Build and Test - REVIEW REQUIRED
 
 ### OPERATIONS PHASE
 - [ ] Operations - PLACEHOLDER
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: UOW-004 Code Generation Plan Review
-- **Next Step**: User reviews `aidlc-docs/construction/plans/uow-004-post-detail-and-content-parsing-code-generation-plan.md` and approves code generation.
-- **Status**: UOW-004 Infrastructure Design approved; Code Generation plan created and awaiting approval.
+- **Current Stage**: UOW-004 Build and Test Review
+- **Next Step**: User reviews `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approves proceeding to UOW-005 Functional Design.
+- **Status**: UOW-004 Build and Test complete; review approval required before UOW-005.
 
 ## Migration Notes
 - DCinside-Scraper's feature surface, UOW sequence, runtime boundaries, storage contracts, container pattern, MCP adapter pattern, parser-failure retry unit, and CDK direction are the default baseline.
@@ -317,4 +318,22 @@
 - **Infrastructure Design Approved At**: 2026-08-12T12:22:02Z
 - **Code Generation Plan Created At**: 2026-08-12T12:22:02Z
 - **Code Generation Plan Artifact**: `aidlc-docs/construction/plans/uow-004-post-detail-and-content-parsing-code-generation-plan.md`
-- **Status**: Code Generation plan review required
+- **Code Generation Plan Approved At**: 2026-08-12T12:27:37Z
+- **Code Generated At**: 2026-08-12T12:42:49Z
+- **Code Artifacts**: `src/fmkorea_scraper/parse/`, `src/fmkorea_scraper/models/content.py`, `src/fmkorea_scraper/models/media.py`, `tests/test_parse_service.py`, `tests/test_parse_properties.py`, `tests/strategies/parse.py`, `tests/fixtures/parse/`, `tests/snapshots/schema_versions.json`
+- **Code Documentation Artifacts**: `aidlc-docs/construction/uow-004-post-detail-and-content-parsing/code/public-contracts.md`, `aidlc-docs/construction/uow-004-post-detail-and-content-parsing/code/code-generation-summary.md`
+- **Generation Validation**: `$env:PYTHONPATH='src'; python -m pytest tests -q --tb=short` -> 72 passed; `$env:PYTHONPATH='src'; python -m compileall -q src tests` -> passed
+- **Next Stage After Code Generation Approval**: Build and Test
+- **Code Generation Approved At**: 2026-08-12T12:47:40Z
+- **Build and Test Started At**: 2026-08-12T12:47:40Z
+- **Build Command**: `python -m pip wheel . --no-deps -w dist`
+- **Build Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
+- **Build Artifact Size**: 57249 bytes
+- **Build Artifact SHA256**: `818f358004ade2e35c4642481c59f80f5055c9c39343659ae835f62057de95d7`
+- **Test Command**: `$env:PYTHONPATH='src'; python -m pytest tests -q --tb=short`
+- **Test Result**: 72 passed
+- **Compile Check**: `$env:PYTHONPATH='src'; python -m compileall -q src tests` -> passed
+- **Dependency Check**: `python -m pip check` -> No broken requirements found.
+- **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/build-instructions.md`, `aidlc-docs/construction/build-and-test/unit-test-instructions.md`, `aidlc-docs/construction/build-and-test/integration-test-instructions.md`, `aidlc-docs/construction/build-and-test/performance-test-instructions.md`, `aidlc-docs/construction/build-and-test/security-test-instructions.md`, `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
+- **Next Stage After Build and Test Approval**: UOW-005 Functional Design
+- **Status**: Build and Test review required

@@ -5,6 +5,9 @@
 ## Unit Context
 
 - **Unit**: UOW-004 Post Detail And Content Parsing
+- **Plan Approved At**: 2026-08-12T12:27:37Z
+- **Code Generated At**: 2026-08-12T12:42:49Z
+- **Validation**: `$env:PYTHONPATH='src'; python -m pytest tests -q --tb=short` -> 72 passed
 - **Project Type**: Greenfield Python package with existing UOW-001 to UOW-003 code
 - **Workspace Root**: `D:\HongDev\ELSAPHABA\FMkorea-Scraper`
 - **Code Location**: workspace root의 `src/`, `tests/`, `pyproject.toml`
@@ -103,95 +106,95 @@ No database entities or migration scripts are owned by UOW-004.
 
 ### Step 1. Dependency Check
 
-- [ ] Reuse existing `beautifulsoup4>=4,<5`.
-- [ ] Do not add browser automation, scraping framework, queue, storage, database, or media downloader dependency.
+- [x] Reuse existing `beautifulsoup4>=4,<5`.
+- [x] Do not add browser automation, scraping framework, queue, storage, database, or media downloader dependency.
 
 ### Step 2. Model Extension
 
-- [ ] Add typed optional fields for documented image/video/YouTube/X/attachment metadata.
-- [ ] Preserve existing required fields and validation behavior.
-- [ ] Avoid raw HTML fields.
-- [ ] Keep Polars-friendly scalar/list/dict output shapes.
+- [x] Add typed optional fields for documented image/video/YouTube/X/attachment metadata.
+- [x] Preserve existing required fields and validation behavior.
+- [x] Avoid raw HTML fields.
+- [x] Keep Polars-friendly scalar/list/dict output shapes.
 
 ### Step 3. Parser Package Setup
 
-- [ ] Create `src/fmkorea_scraper/parse/`.
-- [ ] Create import-safe public exports.
-- [ ] Avoid network, file, env, prompt, storage, queue, or HTTP client creation at import time.
+- [x] Create `src/fmkorea_scraper/parse/`.
+- [x] Create import-safe public exports.
+- [x] Avoid network, file, env, prompt, storage, queue, or HTTP client creation at import time.
 
 ### Step 4. Parser Models And Warnings
 
-- [ ] Implement `ParserOptions`.
-- [ ] Implement `DetailParseContext`.
-- [ ] Implement `ParseWarning`.
-- [ ] Implement `ParseWarningCollector`.
-- [ ] Implement redaction helpers that reject raw HTML, cookies, proxy data, and full text payloads.
+- [x] Implement `ParserOptions`.
+- [x] Implement `DetailParseContext`.
+- [x] Implement `ParseWarning`.
+- [x] Implement `ParseWarningCollector`.
+- [x] Implement redaction helpers that reject raw HTML, cookies, proxy data, and full text payloads.
 
 ### Step 5. Metadata Parser
 
-- [ ] Parse `#bd_capture` scoped detail metadata.
-- [ ] Parse title, author, date, counters, category, canonical URL, board ID, and document ID.
-- [ ] Apply UOW-003 candidate fallback only to missing fields.
-- [ ] Raise post-level parser failure when document identity, URL, or title is missing.
+- [x] Parse `#bd_capture` scoped detail metadata.
+- [x] Parse title, author, date, counters, category, canonical URL, board ID, and document ID.
+- [x] Apply UOW-003 candidate fallback only to missing fields.
+- [x] Raise post-level parser failure when document identity, URL, or title is missing.
 
 ### Step 6. Media And Attachment Parser
 
-- [ ] Implement URL normalization with `urllib.parse`.
-- [ ] Parse `.rd_file a[data-href]` attachments and lookup by `file_srl`.
-- [ ] Parse image blocks with highslide/original URL priority.
-- [ ] Parse one logical FMKorea video block per video wrapper/source set.
-- [ ] Parse YouTube URLs and existing embed URLs.
-- [ ] Parse X/Twitter status and existing embed URLs.
-- [ ] Implement per-post media dedupe.
+- [x] Implement URL normalization with `urllib.parse`.
+- [x] Parse `.rd_file a[data-href]` attachments and lookup by `file_srl`.
+- [x] Parse image blocks with highslide/original URL priority.
+- [x] Parse one logical FMKorea video block per video wrapper/source set.
+- [x] Parse YouTube URLs and existing embed URLs.
+- [x] Parse X/Twitter status and existing embed URLs.
+- [x] Implement per-post media dedupe.
 
 ### Step 7. Content Parser
 
-- [ ] Locate scoped `.xe_content` container.
-- [ ] Traverse child DOM in order.
-- [ ] Emit text, media, link, attachment, and unknown embed blocks.
-- [ ] Assign unique block order.
-- [ ] Build `content.text` from meaningful text/link blocks only.
-- [ ] Record recoverable block warnings without failing the post.
+- [x] Locate scoped `.xe_content` container.
+- [x] Traverse child DOM in order.
+- [x] Emit text, media, link, attachment, and unknown embed blocks.
+- [x] Assign unique block order.
+- [x] Build `content.text` from meaningful text/link blocks only.
+- [x] Record recoverable block warnings without failing the post.
 
 ### Step 8. Comment Parser
 
-- [ ] Parse `.fdb_lst_ul > li`.
-- [ ] Extract numeric comment IDs and raw DOM IDs.
-- [ ] Assign `source_order`.
-- [ ] Parse author, date, content, up/down reactions, and score.
-- [ ] Detect BEST comments as `is_best=true` and `badges=["BEST"]`.
-- [ ] Preserve flat comment list.
-- [ ] Isolate individual comment parse failures as safe warnings.
+- [x] Parse `.fdb_lst_ul > li`.
+- [x] Extract numeric comment IDs and raw DOM IDs.
+- [x] Assign `source_order`.
+- [x] Parse author, date, content, up/down reactions, and score.
+- [x] Detect BEST comments as `is_best=true` and `badges=["BEST"]`.
+- [x] Preserve flat comment list.
+- [x] Isolate individual comment parse failures as safe warnings.
 
 ### Step 9. Detail Service
 
-- [ ] Implement `PostDetailService`.
-- [ ] Use injected UOW-002 HTTP client/port only.
-- [ ] Implement `parse(candidate_or_request) -> PostResult`.
-- [ ] Implement `parse_html(html, candidate_or_request) -> PostResult`.
-- [ ] Fetch additional comment pages sequentially only when discovered and bounded.
-- [ ] Propagate UOW-002 CAPTCHA/block/unavailable classifications.
+- [x] Implement `PostDetailService`.
+- [x] Use injected UOW-002 HTTP client/port only.
+- [x] Implement `parse(candidate_or_request) -> PostResult`.
+- [x] Implement `parse_html(html, candidate_or_request) -> PostResult`.
+- [x] Fetch additional comment pages sequentially only when discovered and bounded.
+- [x] Propagate UOW-002 CAPTCHA/block/unavailable classifications.
 
 ### Step 10. Testing
 
-- [ ] Add detail metadata fixture tests.
-- [ ] Add text/image content fixture tests.
-- [ ] Add FMKorea video fixture tests.
-- [ ] Add YouTube fixture tests.
-- [ ] Add X/Twitter fixture tests.
-- [ ] Add attachment fixture tests.
-- [ ] Add normal comment/reply fixture tests.
-- [ ] Add BEST comment fixture tests.
-- [ ] Add malformed optional block/comment warning tests.
-- [ ] Add required field failure tests.
-- [ ] Add service tests with fake UOW-002 HTTP port.
-- [ ] Add PBT tests for URL normalization, block order uniqueness, media dedupe idempotence, comment ID extraction, reaction score, required-field validation, and warning redaction.
+- [x] Add detail metadata fixture tests.
+- [x] Add text/image content fixture tests.
+- [x] Add FMKorea video fixture tests.
+- [x] Add YouTube fixture tests.
+- [x] Add X/Twitter fixture tests.
+- [x] Add attachment fixture tests.
+- [x] Add normal comment/reply fixture tests.
+- [x] Add BEST comment fixture tests.
+- [x] Add malformed optional block/comment warning tests.
+- [x] Add required field failure tests.
+- [x] Add service tests with fake UOW-002 HTTP port.
+- [x] Add PBT tests for URL normalization, block order uniqueness, media dedupe idempotence, comment ID extraction, reaction score, required-field validation, and warning redaction.
 
 ### Step 11. Documentation
 
-- [ ] Generate public contract documentation.
-- [ ] Generate code generation summary.
-- [ ] Record no deployment artifacts for this unit.
+- [x] Generate public contract documentation.
+- [x] Generate code generation summary.
+- [x] Record no deployment artifacts for this unit.
 
 ## Story Traceability
 
@@ -205,9 +208,10 @@ No database entities or migration scripts are owned by UOW-004.
 
 ## Completion Criteria
 
-- [ ] UOW-004 source files exist under `src/fmkorea_scraper/parse/`.
-- [ ] Existing UOW-001-compatible models are extended without breaking prior tests.
-- [ ] Tests for UOW-004 metadata, content, media, comments, service behavior, and PBT policies exist under `tests/`.
-- [ ] Documentation summary exists under `aidlc-docs/construction/uow-004-post-detail-and-content-parsing/code/`.
-- [ ] No runtime infrastructure artifact is created for UOW-004.
-- [ ] `$env:PYTHONPATH='src'; python -m pytest tests` passes.
+- [x] UOW-004 source files exist under `src/fmkorea_scraper/parse/`.
+- [x] Existing UOW-001-compatible models are extended without breaking prior tests.
+- [x] Tests for UOW-004 metadata, content, media, comments, service behavior, and PBT policies exist under `tests/`.
+- [x] Documentation summary exists under `aidlc-docs/construction/uow-004-post-detail-and-content-parsing/code/`.
+- [x] No runtime infrastructure artifact is created for UOW-004.
+- [x] `$env:PYTHONPATH='src'; python -m pytest tests` passes.
+

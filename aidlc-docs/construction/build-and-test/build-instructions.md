@@ -1,4 +1,4 @@
-# Build Instructions - UOW-003 Search And Link Collection
+# Build Instructions - UOW-004 Post Detail And Content Parsing
 
 ## Prerequisites
 
@@ -9,7 +9,7 @@
 - **Test dependencies**: `pytest>=8,<9`, `hypothesis>=6,<7`
 - **Environment variables**: none required for default tests
 
-UOW-003 must remain import-safe. Building or importing the package must not make network requests, read runtime files, prompt terminal input, write outputs, create queues, or create HTTP clients.
+UOW-004 must remain import-safe. Building or importing the parser package must not make network requests, read runtime files, prompt terminal input, write outputs, create queues, create storage clients, or create HTTP clients.
 
 ## Build Steps
 
@@ -52,8 +52,8 @@ Successfully built fmkorea-scraper
 - **Command**: `python -m pip wheel . --no-deps -w dist`
 - **Status**: PASS
 - **Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
-- **Size**: 45192 bytes
-- **SHA256**: `d301f5c4b5dea6e9255968026a0658851221ed9c1a32301630aa59a6905d7a29`
+- **Size**: 57249 bytes
+- **SHA256**: `818f358004ade2e35c4642481c59f80f5055c9c39343659ae835f62057de95d7`
 - **Dependency Check**: PASS
 
 ## Troubleshooting

@@ -621,3 +621,30 @@
 **Context**: Construction UOW-004 Code Generation Part 1 planning gate.
 
 ---
+## UOW-004 Code Generation Plan Approval
+**Timestamp**: 2026-08-12T12:27:37Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-004 Code Generation plan approval and started executing the approved parser generation plan."
+**Approval Recorded**: UOW-004 Code Generation plan approved.
+**Context**: Construction UOW-004 Code Generation Part 2 implementation start.
+
+---
+## UOW-004 Code Generation
+**Timestamp**: 2026-08-12T12:42:49Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Generated the UOW-004 post detail parser package, extended optional media/attachment model fields, added parser fixtures and tests, updated schema snapshots and code documentation, ran `$env:PYTHONPATH='src'; python -m pytest tests -q --tb=short` with 72 passed, and moved UOW-004 Code Generation to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/uow-004-post-detail-and-content-parsing/code/` and approve to proceed to UOW-004 Build and Test."
+**Context**: Construction UOW-004 Code Generation completion, approval gate before Build and Test.
+
+---
+## UOW-004 Code Generation Approval And Build/Test
+**Timestamp**: 2026-08-12T12:47:40Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-004 Code Generation approval, built the package wheel, ran the full test suite, compile check, and dependency check, updated Build and Test documentation, and moved UOW-004 to Build and Test review."
+**Approval Recorded**: UOW-004 Code Generation approved at 2026-08-12T12:47:40Z.
+**Build Result**: `python -m pip wheel . --no-deps -w dist` -> PASS, `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`, 57249 bytes, SHA256 `818f358004ade2e35c4642481c59f80f5055c9c39343659ae835f62057de95d7`.
+**Test Result**: `$env:PYTHONPATH='src'; python -m pytest tests -q --tb=short` -> 72 passed; `$env:PYTHONPATH='src'; python -m compileall -q src tests` -> passed; `python -m pip check` -> No broken requirements found.
+**Approval Prompt**: "Please review `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approve proceeding to UOW-005 Functional Design."
+**Context**: Construction UOW-004 Build and Test completion, approval gate before UOW-005 Functional Design.
+
+---

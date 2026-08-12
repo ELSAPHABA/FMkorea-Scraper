@@ -1,12 +1,12 @@
-# Performance Test Instructions - UOW-003 Search And Link Collection
+# Performance Test Instructions - UOW-004 Post Detail And Content Parsing
 
 ## Status
 
-Load and stress testing are N/A for UOW-003.
+Load and stress testing are N/A for UOW-004.
 
 ## Reason
 
-UOW-003 is an importable link collection library. It does not own:
+UOW-004 is an importable detail parsing library. It does not own:
 
 - worker count
 - queue lifecycle
@@ -22,11 +22,12 @@ Those concerns belong to UOW-002, UOW-005, UOW-006, UOW-007, and UOW-008.
 
 Default tests cover bounded and deterministic behavior:
 
-- integrated search page clamp at 1000
-- page traversal stop conditions
-- run-local in-memory dedupe
-- range-filter early stop behavior
-- sequential deep-search board expansion
+- optional `max_content_blocks`
+- optional `max_comments`
+- optional `max_comment_pages`
+- per-post media dedupe
+- duplicate comment suppression
+- sequential extra comment page fetch
 
 ## Future Performance Tests
 
@@ -34,8 +35,9 @@ Add load/stress tests when UOW-005 JobRunner and worker queues exist.
 
 Suggested future targets:
 
-- candidate queue throughput
+- post detail parse throughput
 - detail worker fan-out
+- extra comment page fetch latency
 - checkpoint write cadence
 - storage write latency
 - live smoke request pacing

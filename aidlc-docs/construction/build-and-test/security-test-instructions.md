@@ -1,15 +1,15 @@
-# Security Test Instructions - UOW-003 Search And Link Collection
+# Security Test Instructions - UOW-004 Post Detail And Content Parsing
 
 ## Current Security Checks
 
-UOW-003 security behavior is verified through unit, fixture, and property tests.
+UOW-004 security behavior is verified through unit, fixture, and property tests.
 
 Covered:
 
-- unsupported direct URL host rejection
-- safe URL labels omit raw query strings and raw keywords
-- row/item parser failures are recorded as safe `CollectorFailure` values
-- collector service uses injected HTTP only
+- parser service uses injected HTTP only
+- parser warnings redact raw HTML-like content and sensitive marker values
+- no raw HTML fields are added to persisted models
+- malformed optional blocks/comments do not leak full source payloads
 - no browser automation dependency
 - no queue, storage, database, or runtime infrastructure dependency
 
@@ -33,7 +33,7 @@ Manual or automated checks should verify importing these modules has no runtime 
 
 ```powershell
 $env:PYTHONPATH='src'
-python -c "import fmkorea_scraper.collect"
+python -c "import fmkorea_scraper.parse"
 ```
 
 Expected behavior:

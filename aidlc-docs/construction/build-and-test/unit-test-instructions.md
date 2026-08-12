@@ -1,4 +1,4 @@
-# Unit Test Execution - UOW-003 Search And Link Collection
+# Unit Test Execution - UOW-004 Post Detail And Content Parsing
 
 ## Run Unit Tests
 
@@ -12,43 +12,38 @@ python -m pytest tests
 Expected result:
 
 ```text
-62 passed
+72 passed
 ```
 
-### 2. Execute UOW-003 Tests Only
+### 2. Execute UOW-004 Tests Only
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m pytest tests\test_collect_urls.py tests\test_collect_parsers.py tests\test_collect_service.py tests\test_collect_properties.py
+python -m pytest tests\test_parse_service.py tests\test_parse_properties.py
 ```
 
 Expected result:
 
 ```text
-17 passed
+10 passed
 ```
 
-## Covered UOW-003 Test Areas
+## Covered UOW-004 Test Areas
 
-- direct post URL normalization
-- board list/search URL builder query handling
-- integrated search URL builder page clamp and safe label behavior
-- BeautifulSoup board page parser fixture extraction
-- BeautifulSoup integrated search parser fixture extraction
-- malformed row/item failure isolation
-- fake HTTP collector service flow
-- range filter document bound behavior
-- candidate and board dedupe idempotence
-- property-based URL/policy invariants
+- scoped detail metadata parsing
+- ordered content block extraction
+- image, FMKorea video, YouTube, X/Twitter, link, attachment, and unknown embed behavior
+- attachment query metadata parsing
+- media summary and per-post dedupe
+- comment parsing with BEST status, badges, reactions, and score
+- bounded extra comment page fetch through injected HTTP
+- duplicate comment ID suppression
+- required metadata failure
+- safe parser warning redaction
+- property-based parser invariants
 
 ## Live Network Tests
 
 Default unit tests do not access FMKorea.
-
-Live smoke remains optional and must be explicitly enabled with:
-
-```powershell
-$env:FMKOREA_LIVE_SMOKE_ENABLED='true'
-```
 
 No live smoke test was executed in this Build and Test stage.
