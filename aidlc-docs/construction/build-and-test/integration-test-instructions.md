@@ -1,48 +1,51 @@
-# Integration Test Instructions - UOW-002 HTTP Runtime Policy
+# Integration Test Instructions - UOW-003 Search And Link Collection
 
-## Scope
+## Purpose
 
-UOW-002 has a concrete HTTP runtime, but no search parser, post parser, storage adapter, worker runtime, CLI, container, database, or MCP server implementation yet.
+Validate that UOW-003 works with existing UOW-001 models and the UOW-002 HTTP boundary without owning network, queue, checkpoint, or storage infrastructure.
 
-Therefore, integration coverage is limited to fake transport HTTP behavior inside the package.
+## Current Integration Coverage
 
-## Covered Interaction Checks
+### UOW-001 Model Integration
 
-The current test suite verifies:
+- `DirectPostSource`
+- `BoardListSource`
+- `BoardSearchSource`
+- `IntegratedSearchSource`
+- `DeepSearchSource`
+- `NoKeywordRangeSource`
+- `RealtimeKeywordSource`
+- `RealtimeAllSource`
+- `RangeFilter`
+- `PostCandidate`
+- `SearchPage`
+- `IntegratedSearchPage`
 
-- `HttpClient` can run through `httpx.MockTransport`
-- retry attempts pass through the shared limiter
-- proxy config resolves explicit options before `.env`
-- `DotenvProxyLoader` reads allowlisted `FMKOREA_PROXY_*` keys without mutating process env
-- User-Agent rotation clears in-memory cookies
-- cancellation closes the underlying async client
-- public package imports stay side-effect free
+### UOW-002 HTTP Boundary Integration
 
-## Current Result
+UOW-003 collector tests use a fake HTTP object with:
 
-- **Integration runtime tests**: PASS through fake transport tests
-- **Live network tests**: not executed by default
-- **Contract interaction checks**: PASS through `tests/test_api_ports.py`
-
-## Optional Live Smoke
-
-Live smoke remains opt-in only:
-
-```powershell
-$env:FMKOREA_LIVE_SMOKE_ENABLED='true'
-python -m pytest -m live_smoke
+```python
+async def get(url: str) -> str
 ```
 
-No live smoke test is currently required for UOW-002 Build and Test.
+The production path accepts UOW-002 `HttpClient.get()` results because `LinkCollectorService` reads the `.text` attribute from response objects.
 
-## Future Integration Tests
+## Run Integration-Relevant Tests
 
-Later UOWs should add integration tests when these concrete adapters exist:
+```powershell
+$env:PYTHONPATH='src'
+python -m pytest tests\test_collect_service.py tests\test_api_ports.py
+```
 
-- HTTP client plus FMKorea URL builder
-- board/search parser plus post candidate collector
-- post/comment parser plus `PostResult`
-- local/S3 output storage
-- checkpoint persistence
-- CLI and wizard flow
-- container and MCP entrypoints
+## Deferred Integration Tests
+
+The following require later units:
+
+- UOW-004 post detail parsing from `PostCandidate`
+- UOW-005 queue insertion and checkpoint lifecycle
+- UOW-006 JSONL/Garage/PostgreSQL storage interaction
+- UOW-007 CLI command wiring
+- UOW-008 container/MCP adapter integration
+
+No external service is required for current integration tests.

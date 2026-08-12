@@ -1,34 +1,57 @@
-# Security Test Instructions - UOW-002 HTTP Runtime Policy
+# Security Test Instructions - UOW-003 Search And Link Collection
 
-## Scope
+## Current Security Checks
 
-UOW-002 security validation focuses on HTTP runtime secret safety and import side-effect safety. It has no deployed service, authentication layer, browser surface, object storage adapter, or database adapter.
+UOW-003 security behavior is verified through unit, fixture, and property tests.
 
-## Covered Security Checks
+Covered:
 
-The current tests cover:
+- unsupported direct URL host rejection
+- safe URL labels omit raw query strings and raw keywords
+- row/item parser failures are recorded as safe `CollectorFailure` values
+- collector service uses injected HTTP only
+- no browser automation dependency
+- no queue, storage, database, or runtime infrastructure dependency
 
-- `.env` proxy loading uses `FMKOREA_PROXY_*` allowlist fields
-- `.env` loading does not mutate `os.environ`
-- explicit proxy values override `.env`
-- proxy password does not appear in safe labels
-- safe events drop query strings
-- safe events omit headers, body, cookies, and passwords
-- CAPTCHA responses are not retried
-- cancellation closes the async client
-- package import remains safe
+## Dependency Check
 
-## Run Security-Relevant Tests
+Command:
 
 ```powershell
-$env:PYTHONPATH='src'
-python -m pytest tests/test_http_runtime.py tests/test_http_properties.py tests/test_api_ports.py
 python -m pip check
 ```
 
-## Current Result
+Current result:
 
-- **Status**: PASS
-- **Dependency Check**: PASS, no broken requirements
-- **Vulnerability scanner**: N/A for this unit; dependency/security scanning belongs to CI/container stages
-- **Secret handling**: PASS through redaction, proxy, and import side-effect tests
+```text
+No broken requirements found.
+```
+
+## Import Safety
+
+Manual or automated checks should verify importing these modules has no runtime side effects:
+
+```powershell
+$env:PYTHONPATH='src'
+python -c "import fmkorea_scraper.collect"
+```
+
+Expected behavior:
+
+- no network request
+- no `.env` read
+- no `user-agents.txt` read
+- no terminal prompt
+- no file write
+- no queue creation
+- no HTTP client creation
+
+## Deferred Security Tests
+
+Later units should add checks for:
+
+- CAPTCHA/block checkpoint stop behavior
+- storage secret redaction
+- container env injection
+- MCP input validation
+- AWS CDK no hardcoded secrets

@@ -409,3 +409,138 @@
 **Context**: Construction UOW-002 Build and Test execution and review gate before UOW-003 Functional Design.
 
 ---
+
+## UOW-002 Build and Test Approval
+**Timestamp**: 2026-08-12T04:56:00Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-002 Build and Test approval and proceeded to UOW-003 Functional Design planning."
+**Context**: UOW-002 Build and Test approved, transition to UOW-003 Functional Design Part 1.
+
+---
+
+## UOW-003 Functional Design Planning
+**Timestamp**: 2026-08-12T04:56:00Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Created `aidlc-docs/construction/plans/uow-003-search-and-link-collection-functional-design-plan.md` with collector output, direct URL normalization, board list/search URL builder, board row parsing, integrated search, range filtering, no-keyword range, deep search, realtime cycle, and dedupe questions. Option A follows the baseline scraper inheritance direction while using FMKorea-specific APIs."
+**Context**: Construction UOW-003 Functional Design Part 1 planning, waiting for answers.
+
+---
+
+## UOW-003 Functional Design Answer Validation And Generation
+**Timestamp**: 2026-08-12T05:00:23Z
+**User Input**: "질문지의 답변들을 확정하였습니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Validated UOW-003 Functional Design answers, confirmed Q1-Q10 were A with no ambiguity or conflicts, generated `domain-entities.md`, `business-rules.md`, and `business-logic-model.md`, and moved UOW-003 Functional Design to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/uow-003-search-and-link-collection/functional-design/` and approve to proceed to UOW-003 NFR Requirements."
+**Context**: Construction UOW-003 Functional Design Part 2 artifact generation, approval gate before NFR Requirements.
+
+---
+
+## UOW-003 Functional Design Approval
+**Timestamp**: 2026-08-12T05:04:44Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-003 Functional Design approval and proceeded to UOW-003 NFR Requirements planning."
+**Context**: UOW-003 Functional Design approved, transition to NFR Requirements Part 1.
+
+---
+
+## UOW-003 NFR Requirements Planning
+**Timestamp**: 2026-08-12T05:04:44Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Created `aidlc-docs/construction/plans/uow-003-search-and-link-collection-nfr-requirements-plan.md` with traversal guardrail, parser fixture, parser failure, dedupe memory, range accuracy, observability, PBT, live smoke, and dependency policy questions."
+**Context**: Construction UOW-003 NFR Requirements Part 1 planning, waiting for answers.
+
+---
+
+## UOW-003 NFR Requirements Answer Validation And Generation
+**Timestamp**: 2026-08-12T05:13:22Z
+**User Input**: "질문지의 답변들을 확정하였습니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Validated UOW-003 NFR Requirements answers, confirmed Q1-Q9 were A with no ambiguity or conflicts, generated `nfr-requirements.md` and `tech-stack-decisions.md`, and moved UOW-003 NFR Requirements to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/uow-003-search-and-link-collection/nfr-requirements/` and approve to proceed to UOW-003 NFR Design."
+**Context**: Construction UOW-003 NFR Requirements Part 2 artifact generation, approval gate before NFR Design.
+
+---
+## UOW-003 NFR Requirements Approval And NFR Design Plan
+**Timestamp**: 2026-08-12T05:19:18Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-003 NFR Requirements approval, created the UOW-003 NFR Design questionnaire, and moved the project state to UOW-003 NFR Design Questions."
+**Approval Recorded**: UOW-003 NFR Requirements approved.
+**Next Gate**: User completes `aidlc-docs/construction/plans/uow-003-search-and-link-collection-nfr-design-plan.md`.
+**Context**: Construction UOW-003 transition from NFR Requirements Review to NFR Design question collection.
+
+---
+## UOW-003 NFR Design Answer Validation And Generation
+**Timestamp**: 2026-08-12T05:26:09Z
+**User Input**: "질문지의 답변들을 확정하였습니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Validated UOW-003 NFR Design answers, confirmed Q1-Q10 were A with no ambiguity or conflicts, generated `nfr-design-patterns.md` and `logical-components.md`, and moved UOW-003 NFR Design to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/uow-003-search-and-link-collection/nfr-design/` and approve to proceed to UOW-003 Infrastructure Design."
+**Context**: Construction UOW-003 NFR Design Part 2 artifact generation, approval gate before Infrastructure Design.
+
+---
+## UOW-003 NFR Design Approval And Infrastructure Design Plan
+**Timestamp**: 2026-08-12T05:29:34Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-003 NFR Design approval, created the UOW-003 Infrastructure Design questionnaire, and moved the project state to UOW-003 Infrastructure Design Questions."
+**Approval Recorded**: UOW-003 NFR Design approved.
+**Next Gate**: User completes `aidlc-docs/construction/plans/uow-003-search-and-link-collection-infrastructure-design-plan.md`.
+**Context**: Construction UOW-003 transition from NFR Design Review to Infrastructure Design question collection.
+
+---
+## UOW-003 Infrastructure Design Answer Validation And Generation
+**Timestamp**: 2026-08-12T05:38:14Z
+**User Input**: "질문지의 답변들을 모두 A로 확정하고 다음 단계를 진행해 주세요."
+**AI Response**: "Filled UOW-003 Infrastructure Design answers with A, validated no ambiguity or conflicts, generated `infrastructure-design.md` and `deployment-architecture.md`, and moved UOW-003 Infrastructure Design to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/uow-003-search-and-link-collection/infrastructure-design/` and approve to proceed to UOW-003 Code Generation."
+**Context**: Construction UOW-003 Infrastructure Design artifact generation, approval gate before Code Generation.
+
+---
+## UOW-003 Infrastructure Design Approval And Code Generation Plan
+**Timestamp**: 2026-08-12T05:40:39Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-003 Infrastructure Design approval, created the UOW-003 Code Generation plan, and moved the project state to UOW-003 Code Generation Plan Review."
+**Approval Recorded**: UOW-003 Infrastructure Design approved.
+**Approval Prompt**: "Please review `aidlc-docs/construction/plans/uow-003-search-and-link-collection-code-generation-plan.md` and approve code generation."
+**Context**: Construction UOW-003 Code Generation Part 1 planning gate.
+
+---
+## UOW-003 Code Generation Plan Approval
+**Timestamp**: 2026-08-12T05:40:39Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-003 Code Generation plan approval and started executing the approved generation plan."
+**Approval Recorded**: UOW-003 Code Generation plan approved.
+**Context**: Construction UOW-003 Code Generation Part 2 implementation start.
+
+---
+## UOW-003 Code Generation
+**Timestamp**: 2026-08-12T05:40:39Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Generated UOW-003 Search And Link Collection code, tests, and code documentation; validation passed with 62 tests."
+**Generated Application Artifacts**: `pyproject.toml`, `src/fmkorea_scraper/collect/`, `tests/test_collect_*.py`, `tests/fixtures/collect/`, `tests/strategies/collect.py`
+**Generated Documentation Artifacts**: `aidlc-docs/construction/uow-003-search-and-link-collection/code/public-contracts.md`, `aidlc-docs/construction/uow-003-search-and-link-collection/code/code-generation-summary.md`
+**Validation**: `$env:PYTHONPATH='src'; python -m pytest tests` -> 62 passed
+**Approval Prompt**: "Please review generated UOW-003 code and approve proceeding to Build and Test."
+**Context**: Construction UOW-003 Code Generation completion, approval gate before Build and Test.
+
+---
+## UOW-003 Code Generation Approval And Build/Test
+**Timestamp**: 2026-08-12T06:10:55Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-003 Code Generation approval, built the package wheel, ran the full test suite and dependency check, updated Build and Test documentation, and moved UOW-003 to Build and Test review."
+**Approval Recorded**: UOW-003 Code Generation approved at 2026-08-12T06:09:41Z.
+**Build Status**: PASS
+**Test Status**: PASS
+**Build Command**: `python -m pip wheel . --no-deps -w dist`
+**Build Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
+**Build Artifact SHA256**: `d301f5c4b5dea6e9255968026a0658851221ed9c1a32301630aa59a6905d7a29`
+**Test Command**: `$env:PYTHONPATH='src'; python -m pytest tests` -> 62 passed
+**Dependency Check**: `python -m pip check` -> PASS
+**Generated Artifacts**:
+- `aidlc-docs/construction/build-and-test/build-instructions.md`
+- `aidlc-docs/construction/build-and-test/unit-test-instructions.md`
+- `aidlc-docs/construction/build-and-test/integration-test-instructions.md`
+- `aidlc-docs/construction/build-and-test/performance-test-instructions.md`
+- `aidlc-docs/construction/build-and-test/security-test-instructions.md`
+- `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
+**Approval Prompt**: "Please review `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approve proceeding to UOW-004 Functional Design."
+**Context**: Construction UOW-003 Build and Test completion, approval gate before UOW-004 Functional Design.
+
+---

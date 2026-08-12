@@ -1,33 +1,41 @@
-# Performance Test Instructions - UOW-002 HTTP Runtime Policy
+# Performance Test Instructions - UOW-003 Search And Link Collection
 
-## Scope
+## Status
 
-UOW-002 defines HTTP runtime policy only. It has no search traversal, parser, storage writer, worker queue, media download persistence, or live scraping loop to load test.
+Load and stress testing are N/A for UOW-003.
 
-## Current Performance Requirement
+## Reason
 
-The active requirement is qualitative:
+UOW-003 is an importable link collection library. It does not own:
 
-- retry/backoff must be bounded
-- rate limiting must be deterministic under fake time
-- User-Agent rotation must be O(1) per request attempt
-- safe event building must drop secrets without serializing response bodies
+- worker count
+- queue lifecycle
+- checkpoint persistence
+- storage writes
+- container runtime
+- scheduler loops
+- network rate policy
 
-No fixed throughput or latency SLA is set for UOW-002.
+Those concerns belong to UOW-002, UOW-005, UOW-006, UOW-007, and UOW-008.
 
-## Current Result
+## Current Performance Guardrails
 
-- **Load test**: N/A
-- **Stress test**: N/A
-- **Policy invariant tests**: PASS through unit and property-based tests
+Default tests cover bounded and deterministic behavior:
+
+- integrated search page clamp at 1000
+- page traversal stop conditions
+- run-local in-memory dedupe
+- range-filter early stop behavior
+- sequential deep-search board expansion
 
 ## Future Performance Tests
 
-Add focused benchmarks after parser/runtime units exist:
+Add load/stress tests when UOW-005 JobRunner and worker queues exist.
 
-- link collection throughput with fake HTML fixtures
-- comment-heavy post fetch and parse cost
-- media metadata extraction without downloads
-- JSONL append throughput
-- worker queue link consumption
-- real rate-limit behavior under configurable request intervals
+Suggested future targets:
+
+- candidate queue throughput
+- detail worker fan-out
+- checkpoint write cadence
+- storage write latency
+- live smoke request pacing

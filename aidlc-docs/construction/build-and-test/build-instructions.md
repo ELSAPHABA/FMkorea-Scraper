@@ -1,15 +1,15 @@
-# Build Instructions - UOW-002 HTTP Runtime Policy
+# Build Instructions - UOW-003 Search And Link Collection
 
 ## Prerequisites
 
 - **Python**: 3.11 or newer
 - **Build backend**: hatchling via PEP 517
 - **Package manager**: pip
-- **Runtime dependencies**: `pydantic>=2,<3`, `httpx>=0.28,<1`, `python-dotenv>=1,<2`
+- **Runtime dependencies**: `pydantic>=2,<3`, `httpx>=0.28,<1`, `python-dotenv>=1,<2`, `beautifulsoup4>=4,<5`
 - **Test dependencies**: `pytest>=8,<9`, `hypothesis>=6,<7`
 - **Environment variables**: none required for default tests
 
-UOW-002 must remain import-safe. Building or importing the package must not read `.env`, `user-agents.txt`, proxy values, cookie files, or perform network requests.
+UOW-003 must remain import-safe. Building or importing the package must not make network requests, read runtime files, prompt terminal input, write outputs, create queues, or create HTTP clients.
 
 ## Build Steps
 
@@ -52,8 +52,8 @@ Successfully built fmkorea-scraper
 - **Command**: `python -m pip wheel . --no-deps -w dist`
 - **Status**: PASS
 - **Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
-- **Size**: 36048 bytes
-- **SHA256**: `19030995f6ca3f43f1af314f7593a9020010af918183c332fbdb70476f69d778`
+- **Size**: 45192 bytes
+- **SHA256**: `d301f5c4b5dea6e9255968026a0658851221ed9c1a32301630aa59a6905d7a29`
 - **Dependency Check**: PASS
 
 ## Troubleshooting

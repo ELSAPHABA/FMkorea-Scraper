@@ -1,55 +1,54 @@
-# Unit Test Execution - UOW-002 HTTP Runtime Policy
-
-## Scope
-
-UOW-002 tests validate HTTP runtime policy plus the existing UOW-001 model contracts.
-
-Covered HTTP runtime behavior:
-
-- `.env` proxy allowlist loading
-- explicit proxy priority over `.env`
-- User-Agent file loading and rotation
-- in-memory cookie clear on User-Agent rotation
-- retry and limiter interaction
-- CAPTCHA no-retry behavior
-- cancellation cleanup
-- safe HTTP event redaction
-- property-based header, proxy, classifier, and secret-redaction invariants
+# Unit Test Execution - UOW-003 Search And Link Collection
 
 ## Run Unit Tests
+
+### 1. Execute All Tests
 
 ```powershell
 $env:PYTHONPATH='src'
 python -m pytest tests
 ```
 
-## Expected Result
-
-- **Total tests**: 45
-- **Expected failures**: 0
-- **Expected status**: PASS
-
-## Current Result
+Expected result:
 
 ```text
-45 passed in 4.88s
+62 passed
 ```
 
-## Test Groups
+### 2. Execute UOW-003 Tests Only
 
-- `tests/test_http_runtime.py`: example-based HTTP runtime tests
-- `tests/test_http_properties.py`: HTTP runtime property-based tests
-- `tests/strategies/http_runtime.py`: HTTP runtime Hypothesis strategies
-- `tests/test_models.py`: model validation tests
-- `tests/test_api_ports.py`: public API placeholder and protocol tests
-- `tests/test_schema.py`: schema registry and snapshot tests
-- `tests/test_properties.py`: model property-based tests
+```powershell
+$env:PYTHONPATH='src'
+python -m pytest tests\test_collect_urls.py tests\test_collect_parsers.py tests\test_collect_service.py tests\test_collect_properties.py
+```
 
-## Failure Handling
+Expected result:
 
-If tests fail:
+```text
+17 passed
+```
 
-1. Read the first failing assertion or exception.
-2. Fix the shared runtime policy component instead of patching only one caller.
-3. Rerun `$env:PYTHONPATH='src'; python -m pytest tests`.
-4. If dependency resolution breaks, run `python -m pip check`.
+## Covered UOW-003 Test Areas
+
+- direct post URL normalization
+- board list/search URL builder query handling
+- integrated search URL builder page clamp and safe label behavior
+- BeautifulSoup board page parser fixture extraction
+- BeautifulSoup integrated search parser fixture extraction
+- malformed row/item failure isolation
+- fake HTTP collector service flow
+- range filter document bound behavior
+- candidate and board dedupe idempotence
+- property-based URL/policy invariants
+
+## Live Network Tests
+
+Default unit tests do not access FMKorea.
+
+Live smoke remains optional and must be explicitly enabled with:
+
+```powershell
+$env:FMKOREA_LIVE_SMOKE_ENABLED='true'
+```
+
+No live smoke test was executed in this Build and Test stage.

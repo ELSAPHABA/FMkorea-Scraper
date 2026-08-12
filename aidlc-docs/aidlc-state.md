@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Greenfield
 - **Start Date**: 2026-08-11T23:58:42Z
-- **Current Stage**: CONSTRUCTION - UOW-002 Build and Test Review
+- **Current Stage**: CONSTRUCTION - UOW-003 Build and Test Review
 
 ## Workspace State
 - **Existing Code**: No
@@ -53,16 +53,22 @@
 - [x] UOW-002 NFR Design - APPROVED
 - [x] UOW-002 Infrastructure Design - APPROVED
 - [x] UOW-002 Code Generation - APPROVED
-- [ ] UOW-002 Build and Test - REVIEW REQUIRED
+- [x] UOW-002 Build and Test - APPROVED
+- [x] UOW-003 Functional Design - APPROVED
+- [x] UOW-003 NFR Requirements - APPROVED
+- [x] UOW-003 NFR Design - APPROVED
+- [x] UOW-003 Infrastructure Design - APPROVED
+- [x] UOW-003 Code Generation - APPROVED
+- [ ] UOW-003 Build and Test - REVIEW REQUIRED
 
 ### OPERATIONS PHASE
 - [ ] Operations - PLACEHOLDER
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: UOW-002 Build and Test Review
-- **Next Step**: User reviews `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approves proceeding to UOW-003 Functional Design.
-- **Status**: UOW-002 Build and Test completed and awaiting review approval.
+- **Current Stage**: UOW-003 Build and Test Review
+- **Next Step**: User reviews `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approves proceeding to UOW-004 Functional Design.
+- **Status**: UOW-003 Build and Test complete and awaiting review approval.
 
 ## Migration Notes
 - DCinside-Scraper's feature surface, UOW sequence, runtime boundaries, storage contracts, container pattern, MCP adapter pattern, parser-failure retry unit, and CDK direction are the default baseline.
@@ -216,4 +222,56 @@
 - **Dependency Check**: `python -m pip check` -> PASS
 - **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/`
 - **Next Stage After Build and Test Approval**: UOW-003 Functional Design
+- **Build and Test Approved At**: 2026-08-12T04:56:00Z
+- **Status**: Complete
+
+## UOW-003 Search And Link Collection Status
+- **Functional Design Plan Created At**: 2026-08-12T04:56:00Z
+- **Plan Artifact**: `aidlc-docs/construction/plans/uow-003-search-and-link-collection-functional-design-plan.md`
+- **Functional Design Answers Confirmed At**: 2026-08-12T05:00:23Z
+- **Functional Design Answer Analysis**: Q1-Q10 were A. No ambiguity or conflicts found.
+- **Functional Design Generated At**: 2026-08-12T05:00:23Z
+- **Artifacts**: `domain-entities.md`, `business-rules.md`, `business-logic-model.md`
+- **Next Stage After Approval**: UOW-003 NFR Requirements
+- **Functional Design Approved At**: 2026-08-12T05:04:44Z
+- **NFR Requirements Plan Created At**: 2026-08-12T05:04:44Z
+- **NFR Requirements Plan Artifact**: `aidlc-docs/construction/plans/uow-003-search-and-link-collection-nfr-requirements-plan.md`
+- **NFR Requirements Answers Confirmed At**: 2026-08-12T05:13:22Z
+- **NFR Requirements Answer Analysis**: Q1-Q9 were A. No ambiguity or conflicts found. BeautifulSoup is allowed as the function-spec parser dependency; no extra URL/scraping framework dependency is added.
+- **NFR Requirements Generated At**: 2026-08-12T05:13:22Z
+- **NFR Requirements Artifacts**: `nfr-requirements.md`, `tech-stack-decisions.md`
+- **Next Stage After NFR Requirements Approval**: UOW-003 NFR Design
+- **NFR Requirements Approved At**: 2026-08-12T05:19:18Z
+- **NFR Design Plan Created At**: 2026-08-12T05:19:18Z
+- **NFR Design Plan Artifact**: `aidlc-docs/construction/plans/uow-003-search-and-link-collection-nfr-design-plan.md`
+- **NFR Design Answers Confirmed At**: 2026-08-12T05:26:09Z
+- **NFR Design Answer Analysis**: Q1-Q10 were A. No ambiguity or conflicts found.
+- **NFR Design Generated At**: 2026-08-12T05:26:09Z
+- **NFR Design Artifacts**: `nfr-design-patterns.md`, `logical-components.md`
+- **Next Stage After NFR Design Approval**: UOW-003 Infrastructure Design
+- **NFR Design Approved At**: 2026-08-12T05:29:34Z
+- **Infrastructure Design Plan Created At**: 2026-08-12T05:29:34Z
+- **Infrastructure Design Plan Artifact**: `aidlc-docs/construction/plans/uow-003-search-and-link-collection-infrastructure-design-plan.md`
+- **Infrastructure Design Answers Confirmed At**: 2026-08-12T05:38:14Z
+- **Infrastructure Design Answer Analysis**: Q1-Q8 were A. No ambiguity or conflicts found. Shared infrastructure artifact not required for UOW-003.
+- **Infrastructure Design Generated At**: 2026-08-12T05:38:14Z
+- **Infrastructure Design Artifacts**: `infrastructure-design.md`, `deployment-architecture.md`
+- **Next Stage After Infrastructure Design Approval**: UOW-003 Code Generation
+- **Infrastructure Design Approved At**: 2026-08-12T05:40:39Z
+- **Code Generation Plan Created At**: 2026-08-12T05:40:39Z
+- **Code Generation Plan Artifact**: `aidlc-docs/construction/plans/uow-003-search-and-link-collection-code-generation-plan.md`
+- **Code Generation Plan Approved At**: 2026-08-12T05:40:39Z
+- **Code Generated At**: 2026-08-12T05:40:39Z
+- **Code Artifacts**: `pyproject.toml`, `src/fmkorea_scraper/collect/`, `tests/test_collect_*.py`, `tests/fixtures/collect/`, `tests/strategies/collect.py`, `aidlc-docs/construction/uow-003-search-and-link-collection/code/`
+- **Generation Validation**: `$env:PYTHONPATH='src'; python -m pytest tests` -> 62 passed
+- **Next Stage After Code Generation Approval**: Build and Test
+- **Code Generation Approved At**: 2026-08-12T06:09:41Z
+- **Build and Test Executed At**: 2026-08-12T06:10:55Z
+- **Build Command**: `python -m pip wheel . --no-deps -w dist` -> PASS
+- **Build Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
+- **Build Artifact SHA256**: `d301f5c4b5dea6e9255968026a0658851221ed9c1a32301630aa59a6905d7a29`
+- **Test Command**: `$env:PYTHONPATH='src'; python -m pytest tests` -> 62 passed
+- **Dependency Check**: `python -m pip check` -> PASS
+- **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/`
+- **Next Stage After Build and Test Approval**: UOW-004 Functional Design
 - **Status**: Build and Test review required
