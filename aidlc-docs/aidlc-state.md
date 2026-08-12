@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Greenfield
 - **Start Date**: 2026-08-11T23:58:42Z
-- **Current Stage**: CONSTRUCTION - UOW-003 Build and Test Review
+- **Current Stage**: CONSTRUCTION - UOW-004 Code Generation Plan Review
 
 ## Workspace State
 - **Existing Code**: No
@@ -59,16 +59,21 @@
 - [x] UOW-003 NFR Design - APPROVED
 - [x] UOW-003 Infrastructure Design - APPROVED
 - [x] UOW-003 Code Generation - APPROVED
-- [ ] UOW-003 Build and Test - REVIEW REQUIRED
+- [x] UOW-003 Build and Test - APPROVED
+- [x] UOW-004 Functional Design - APPROVED
+- [x] UOW-004 NFR Requirements - APPROVED
+- [x] UOW-004 NFR Design - APPROVED
+- [x] UOW-004 Infrastructure Design - APPROVED
+- [ ] UOW-004 Code Generation - PLAN REVIEW REQUIRED
 
 ### OPERATIONS PHASE
 - [ ] Operations - PLACEHOLDER
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: UOW-003 Build and Test Review
-- **Next Step**: User reviews `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approves proceeding to UOW-004 Functional Design.
-- **Status**: UOW-003 Build and Test complete and awaiting review approval.
+- **Current Stage**: UOW-004 Code Generation Plan Review
+- **Next Step**: User reviews `aidlc-docs/construction/plans/uow-004-post-detail-and-content-parsing-code-generation-plan.md` and approves code generation.
+- **Status**: UOW-004 Infrastructure Design approved; Code Generation plan created and awaiting approval.
 
 ## Migration Notes
 - DCinside-Scraper's feature surface, UOW sequence, runtime boundaries, storage contracts, container pattern, MCP adapter pattern, parser-failure retry unit, and CDK direction are the default baseline.
@@ -274,4 +279,42 @@
 - **Dependency Check**: `python -m pip check` -> PASS
 - **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/`
 - **Next Stage After Build and Test Approval**: UOW-004 Functional Design
-- **Status**: Build and Test review required
+- **Build and Test Approved At**: 2026-08-12T11:31:28Z
+- **Status**: Complete
+
+## UOW-004 Post Detail And Content Parsing Status
+- **Functional Design Plan Created At**: 2026-08-12T11:31:28Z
+- **Plan Artifact**: `aidlc-docs/construction/plans/uow-004-post-detail-and-content-parsing-functional-design-plan.md`
+- **Functional Design Answers Confirmed At**: 2026-08-12T11:37:50Z
+- **Functional Design Answer Analysis**: Q1-Q12 were A. No ambiguity or conflicts found. Optional backward-compatible model extensions are allowed for documented media/attachment fields.
+- **Functional Design Generated At**: 2026-08-12T11:37:50Z
+- **Artifacts**: `domain-entities.md`, `business-rules.md`, `business-logic-model.md`
+- **Next Stage After Approval**: UOW-004 NFR Requirements
+- **Functional Design Approved At**: 2026-08-12T11:44:38Z
+- **NFR Requirements Plan Created At**: 2026-08-12T11:44:38Z
+- **NFR Requirements Plan Artifact**: `aidlc-docs/construction/plans/uow-004-post-detail-and-content-parsing-nfr-requirements-plan.md`
+- **NFR Requirements Answers Confirmed At**: 2026-08-12T11:49:51Z
+- **NFR Requirements Answer Analysis**: Q1-Q12 were A. No ambiguity or conflicts found. Existing BeautifulSoup and standard library helpers are sufficient; no browser/scraping/storage dependency is added.
+- **NFR Requirements Generated At**: 2026-08-12T11:49:51Z
+- **NFR Requirements Artifacts**: `nfr-requirements.md`, `tech-stack-decisions.md`
+- **Next Stage After NFR Requirements Approval**: UOW-004 NFR Design
+- **NFR Requirements Approved At**: 2026-08-12T11:56:54Z
+- **NFR Design Plan Created At**: 2026-08-12T11:56:54Z
+- **NFR Design Plan Artifact**: `aidlc-docs/construction/plans/uow-004-post-detail-and-content-parsing-nfr-design-plan.md`
+- **NFR Design Answers Confirmed At**: 2026-08-12T12:05:13Z
+- **NFR Design Answer Analysis**: Q1-Q10 were A. No ambiguity or conflicts found.
+- **NFR Design Generated At**: 2026-08-12T12:05:13Z
+- **NFR Design Artifacts**: `nfr-design-patterns.md`, `logical-components.md`
+- **Next Stage After NFR Design Approval**: UOW-004 Infrastructure Design
+- **NFR Design Approved At**: 2026-08-12T12:09:47Z
+- **Infrastructure Design Plan Created At**: 2026-08-12T12:09:47Z
+- **Infrastructure Design Plan Artifact**: `aidlc-docs/construction/plans/uow-004-post-detail-and-content-parsing-infrastructure-design-plan.md`
+- **Infrastructure Design Answers Confirmed At**: 2026-08-12T12:18:33Z
+- **Infrastructure Design Answer Analysis**: Q1-Q8 were A. No ambiguity or conflicts found. Shared infrastructure artifact not required for UOW-004.
+- **Infrastructure Design Generated At**: 2026-08-12T12:18:33Z
+- **Infrastructure Design Artifacts**: `infrastructure-design.md`, `deployment-architecture.md`
+- **Next Stage After Infrastructure Design Approval**: UOW-004 Code Generation
+- **Infrastructure Design Approved At**: 2026-08-12T12:22:02Z
+- **Code Generation Plan Created At**: 2026-08-12T12:22:02Z
+- **Code Generation Plan Artifact**: `aidlc-docs/construction/plans/uow-004-post-detail-and-content-parsing-code-generation-plan.md`
+- **Status**: Code Generation plan review required

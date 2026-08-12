@@ -544,3 +544,80 @@
 **Context**: Construction UOW-003 Build and Test completion, approval gate before UOW-004 Functional Design.
 
 ---
+## UOW-003 Build/Test Approval And UOW-004 Functional Design Plan
+**Timestamp**: 2026-08-12T11:31:28Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-003 Build and Test approval, created the UOW-004 Functional Design questionnaire, and moved the project state to UOW-004 Functional Design Questions."
+**Approval Recorded**: UOW-003 Build and Test approved.
+**Next Gate**: User completes `aidlc-docs/construction/plans/uow-004-post-detail-and-content-parsing-functional-design-plan.md`.
+**Context**: Construction transition from UOW-003 Build and Test Review to UOW-004 Functional Design question collection.
+
+---
+## UOW-004 Functional Design Answer Validation And Generation
+**Timestamp**: 2026-08-12T11:37:50Z
+**User Input**: "질문지의 답변들을 확정하였습니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Validated UOW-004 Functional Design answers, confirmed Q1-Q12 were A with no ambiguity or conflicts, generated `business-logic-model.md`, `business-rules.md`, and `domain-entities.md`, and moved UOW-004 Functional Design to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/uow-004-post-detail-and-content-parsing/functional-design/` and approve to proceed to UOW-004 NFR Requirements."
+**Context**: Construction UOW-004 Functional Design Part 2 artifact generation, approval gate before NFR Requirements.
+
+---
+## UOW-004 Functional Design Approval And NFR Requirements Plan
+**Timestamp**: 2026-08-12T11:44:38Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-004 Functional Design approval, created the UOW-004 NFR Requirements questionnaire, and moved the project state to UOW-004 NFR Requirements Questions."
+**Approval Recorded**: UOW-004 Functional Design approved.
+**Next Gate**: User completes `aidlc-docs/construction/plans/uow-004-post-detail-and-content-parsing-nfr-requirements-plan.md`.
+**Context**: Construction transition from UOW-004 Functional Design Review to UOW-004 NFR Requirements question collection.
+
+---
+## UOW-004 NFR Requirements Answer Validation And Generation
+**Timestamp**: 2026-08-12T11:49:51Z
+**User Input**: "질문지의 답변들을 확정하였습니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Validated UOW-004 NFR Requirements answers, confirmed Q1-Q12 were A with no ambiguity or conflicts, generated `nfr-requirements.md` and `tech-stack-decisions.md`, and moved UOW-004 NFR Requirements to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/uow-004-post-detail-and-content-parsing/nfr-requirements/` and approve to proceed to UOW-004 NFR Design."
+**Context**: Construction UOW-004 NFR Requirements Part 2 artifact generation, approval gate before NFR Design.
+
+---
+## UOW-004 NFR Requirements Approval And NFR Design Plan
+**Timestamp**: 2026-08-12T11:56:54Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-004 NFR Requirements approval, created the UOW-004 NFR Design questionnaire, and moved the project state to UOW-004 NFR Design Questions."
+**Approval Recorded**: UOW-004 NFR Requirements approved.
+**Next Gate**: User completes `aidlc-docs/construction/plans/uow-004-post-detail-and-content-parsing-nfr-design-plan.md`.
+**Context**: Construction transition from UOW-004 NFR Requirements Review to UOW-004 NFR Design question collection.
+
+---
+## UOW-004 NFR Design Answer Validation And Generation
+**Timestamp**: 2026-08-12T12:05:13Z
+**User Input**: "질문지의 답변들을 모두 A로 확정하고 다음 단계를 진행해 주세요."
+**AI Response**: "Filled UOW-004 NFR Design answers with A, confirmed Q1-Q10 were A with no ambiguity or conflicts, generated `nfr-design-patterns.md` and `logical-components.md`, and moved UOW-004 NFR Design to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/uow-004-post-detail-and-content-parsing/nfr-design/` and approve to proceed to UOW-004 Infrastructure Design."
+**Context**: Construction UOW-004 NFR Design Part 2 artifact generation, approval gate before Infrastructure Design.
+
+---
+## UOW-004 NFR Design Approval And Infrastructure Design Plan
+**Timestamp**: 2026-08-12T12:09:47Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-004 NFR Design approval, created the UOW-004 Infrastructure Design questionnaire, and moved the project state to UOW-004 Infrastructure Design Questions."
+**Approval Recorded**: UOW-004 NFR Design approved.
+**Next Gate**: User completes `aidlc-docs/construction/plans/uow-004-post-detail-and-content-parsing-infrastructure-design-plan.md`.
+**Context**: Construction transition from UOW-004 NFR Design Review to UOW-004 Infrastructure Design question collection.
+
+---
+## UOW-004 Infrastructure Design Answer Validation And Generation
+**Timestamp**: 2026-08-12T12:18:33Z
+**User Input**: "질문지의 답변들을 모두 A로 확정하고 다음 단계를 진행해 주세요."
+**AI Response**: "Filled UOW-004 Infrastructure Design answers with A, confirmed Q1-Q8 were A with no ambiguity or conflicts, generated `infrastructure-design.md` and `deployment-architecture.md`, and moved UOW-004 Infrastructure Design to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/uow-004-post-detail-and-content-parsing/infrastructure-design/` and approve to proceed to UOW-004 Code Generation."
+**Context**: Construction UOW-004 Infrastructure Design Part 2 artifact generation, approval gate before Code Generation.
+
+---
+## UOW-004 Infrastructure Design Approval And Code Generation Plan
+**Timestamp**: 2026-08-12T12:22:02Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-004 Infrastructure Design approval, created the UOW-004 Code Generation plan, and moved the project state to UOW-004 Code Generation Plan Review."
+**Approval Recorded**: UOW-004 Infrastructure Design approved.
+**Approval Prompt**: "Please review `aidlc-docs/construction/plans/uow-004-post-detail-and-content-parsing-code-generation-plan.md` and approve code generation."
+**Context**: Construction UOW-004 Code Generation Part 1 planning gate.
+
+---
