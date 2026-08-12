@@ -16,11 +16,13 @@ from fmkorea_scraper.models.comment import Comment
 from fmkorea_scraper.models.job import JobConfig
 from fmkorea_scraper.models.post import PostResult
 from fmkorea_scraper.http import HttpClient, HttpRuntimeConfig, ProxyConfig, RetryPolicy, UserAgentConfig
+from fmkorea_scraper.collect import LinkCollectorService
 
 __all__ = [
     "Checkpoint",
     "Comment",
     "JobConfig",
+    "LinkCollectorService",
     "PostResult",
     "HttpClient",
     "HttpRuntimeConfig",
