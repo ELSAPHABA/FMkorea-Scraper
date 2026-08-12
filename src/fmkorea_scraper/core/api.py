@@ -43,13 +43,13 @@ async def fetch_comments(request: CommentRequest, http_client: Any | None = None
 
 async def run_job(config: JobConfig, *, runner: Any | None = None) -> JobReport:
     if runner is not None:
-        return await runner.run(config)
+        return _report_from_result(await runner.run(config))
     raise UnsupportedSourceError("run_job is implemented in UOW-005", details={"stage": "job"})
 
 
 async def resume_job(request: ResumeRequest, *, runner: Any | None = None) -> JobReport:
     if runner is not None:
-        return await runner.resume(request)
+        return _report_from_result(await runner.resume(request))
     raise UnsupportedSourceError("resume_job is implemented in UOW-005", details={"stage": "job"})
 
 
@@ -57,3 +57,12 @@ async def retry_parser_failures(request: RetryRequest, *, retry_service: Any | N
     if retry_service is not None:
         return await retry_service.run(request)
     raise UnsupportedSourceError("retry_parser_failures is implemented in UOW-009", details={"stage": "retry"})
+
+
+def _report_from_result(result: Any) -> JobReport:
+    if isinstance(result, JobReport):
+        return result
+    report = getattr(result, "report", None)
+    if isinstance(report, JobReport):
+        return report
+    return result

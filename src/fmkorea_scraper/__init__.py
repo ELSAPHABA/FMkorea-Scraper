@@ -18,11 +18,15 @@ from fmkorea_scraper.models.post import PostResult
 from fmkorea_scraper.http import HttpClient, HttpRuntimeConfig, ProxyConfig, RetryPolicy, UserAgentConfig
 from fmkorea_scraper.collect import LinkCollectorService
 from fmkorea_scraper.outputs import StorageFactory
+from fmkorea_scraper.runner import JobRunDependencies, JobRunResult, JobRunner
 
 __all__ = [
     "Checkpoint",
     "Comment",
     "JobConfig",
+    "JobRunDependencies",
+    "JobRunResult",
+    "JobRunner",
     "LinkCollectorService",
     "PostResult",
     "HttpClient",
