@@ -1,15 +1,15 @@
-# Build Instructions
+# Build Instructions - UOW-002 HTTP Runtime Policy
 
 ## Prerequisites
 
 - **Python**: 3.11 or newer
 - **Build backend**: hatchling via PEP 517
 - **Package manager**: pip
-- **Runtime dependency**: `pydantic>=2,<3`
+- **Runtime dependencies**: `pydantic>=2,<3`, `httpx>=0.28,<1`, `python-dotenv>=1,<2`
 - **Test dependencies**: `pytest>=8,<9`, `hypothesis>=6,<7`
-- **Environment variables**: none required for UOW-001
+- **Environment variables**: none required for default tests
 
-UOW-001 must remain import-safe. Building or importing the package must not read `.env`, `user-agents.txt`, proxy values, cookie files, or perform network requests to the target site.
+UOW-002 must remain import-safe. Building or importing the package must not read `.env`, `user-agents.txt`, proxy values, cookie files, or perform network requests.
 
 ## Build Steps
 
@@ -21,13 +21,19 @@ python -m pip install -e ".[test]"
 
 If editable install is not desired, tests can be run with `PYTHONPATH=src` after dependencies are available.
 
-### 2. Build Wheel
+### 2. Check Installed Requirements
+
+```powershell
+python -m pip check
+```
+
+### 3. Build Wheel
 
 ```powershell
 python -m pip wheel . --no-deps -w dist
 ```
 
-### 3. Verify Build Success
+### 4. Verify Build Success
 
 Expected artifact:
 
@@ -46,8 +52,9 @@ Successfully built fmkorea-scraper
 - **Command**: `python -m pip wheel . --no-deps -w dist`
 - **Status**: PASS
 - **Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
-- **Size**: 29974 bytes
-- **SHA256**: `6f9b3ff98fee1be38d0d24cdc0be8ee542f2203fbc06a11ddb77c77fd4a228be`
+- **Size**: 36048 bytes
+- **SHA256**: `19030995f6ca3f43f1af314f7593a9020010af918183c332fbdb70476f69d778`
+- **Dependency Check**: PASS
 
 ## Troubleshooting
 

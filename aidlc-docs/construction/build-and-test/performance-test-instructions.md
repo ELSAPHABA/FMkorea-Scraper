@@ -1,30 +1,33 @@
-# Performance Test Instructions
+# Performance Test Instructions - UOW-002 HTTP Runtime Policy
 
 ## Scope
 
-UOW-001 defines model contracts only. There is no network, parser, storage, worker, or media download runtime to load test.
+UOW-002 defines HTTP runtime policy only. It has no search traversal, parser, storage writer, worker queue, media download persistence, or live scraping loop to load test.
 
 ## Current Performance Requirement
 
 The active requirement is qualitative:
 
-- model validation and JSON serialization must not become the primary bottleneck for normal post payloads
-- unbounded metadata recursion and oversized metadata must be rejected
+- retry/backoff must be bounded
+- rate limiting must be deterministic under fake time
+- User-Agent rotation must be O(1) per request attempt
+- safe event building must drop secrets without serializing response bodies
 
-No fixed millisecond SLA is set for UOW-001. Exact measurement belongs to parser/job integration after real post and comment fixtures are available.
+No fixed throughput or latency SLA is set for UOW-002.
 
 ## Current Result
 
 - **Load test**: N/A
 - **Stress test**: N/A
-- **Model invariant tests**: PASS through unit and property-based tests
+- **Policy invariant tests**: PASS through unit and property-based tests
 
 ## Future Performance Tests
 
 Add focused benchmarks after parser/runtime units exist:
 
-- `PostResult` validation with real large post fixtures
-- comment-heavy post serialization
+- link collection throughput with fake HTML fixtures
+- comment-heavy post fetch and parse cost
+- media metadata extraction without downloads
 - JSONL append throughput
 - worker queue link consumption
-- media metadata extraction without downloads
+- real rate-limit behavior under configurable request intervals

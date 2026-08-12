@@ -1,31 +1,34 @@
-# Security Test Instructions
+# Security Test Instructions - UOW-002 HTTP Runtime Policy
 
 ## Scope
 
-UOW-001 security validation is limited to model/input safety and safe error output. It has no deployed service, authentication layer, browser surface, object storage adapter, or database adapter.
+UOW-002 security validation focuses on HTTP runtime secret safety and import side-effect safety. It has no deployed service, authentication layer, browser surface, object storage adapter, or database adapter.
 
 ## Covered Security Checks
 
 The current tests cover:
 
-- unknown public fields are rejected
-- invalid job/source combinations are rejected
-- invalid realtime stop conditions are rejected
-- invalid ranges are rejected
-- invalid checkpoint stop states are rejected
-- error details redact secret-like data
-- package import does not read credential files or create side effects
-- metadata is constrained by JSON compatibility, depth, and serialized size validators
+- `.env` proxy loading uses `FMKOREA_PROXY_*` allowlist fields
+- `.env` loading does not mutate `os.environ`
+- explicit proxy values override `.env`
+- proxy password does not appear in safe labels
+- safe events drop query strings
+- safe events omit headers, body, cookies, and passwords
+- CAPTCHA responses are not retried
+- cancellation closes the async client
+- package import remains safe
 
 ## Run Security-Relevant Tests
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m pytest tests/test_models.py tests/test_properties.py
+python -m pytest tests/test_http_runtime.py tests/test_http_properties.py tests/test_api_ports.py
+python -m pip check
 ```
 
 ## Current Result
 
 - **Status**: PASS
+- **Dependency Check**: PASS, no broken requirements
 - **Vulnerability scanner**: N/A for this unit; dependency/security scanning belongs to CI/container stages
-- **Secret handling**: PASS through redaction and import side-effect tests
+- **Secret handling**: PASS through redaction, proxy, and import side-effect tests

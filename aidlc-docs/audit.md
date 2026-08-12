@@ -258,3 +258,154 @@
 **Context**: UOW-001 Build and Test execution and review gate before UOW-002 Functional Design.
 
 ---
+
+## UOW-001 Build and Test Approval
+**Timestamp**: 2026-08-12T03:43:24Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-001 Build and Test approval and proceeded to UOW-002 Functional Design planning."
+**Context**: UOW-001 Build and Test approved, transition to UOW-002 Functional Design Part 1.
+
+---
+
+## UOW-002 Functional Design Planning
+**Timestamp**: 2026-08-12T03:43:24Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Created `aidlc-docs/construction/plans/uow-002-http-runtime-policy-functional-design-plan.md` with HTTP lifecycle, rate limiting, retry/backoff, response classification, User-Agent, proxy, cookie, logging, media download, and test strategy questions."
+**Context**: Construction UOW-002 Functional Design Part 1 planning, waiting for answers.
+
+---
+
+## UOW-002 Functional Design Answer Validation And Generation
+**Timestamp**: 2026-08-12T03:50:05Z
+**User Input**: "질문지의 답변들을 확정하였습니다. 다음 단계를 진행해 주세요. 그리고 앞으로 질문지의 선택지 A가 최대한 디시인사이드 스크래퍼를 계승하는 내용으로 해 주세요."
+**AI Response**: "Validated UOW-002 Functional Design answers, confirmed Q1-Q10 were A with no ambiguity or conflicts, recorded the future questionnaire rule that A should preserve the DCinside-Scraper baseline where possible, generated `domain-entities.md`, `business-rules.md`, and `business-logic-model.md`, and moved UOW-002 Functional Design to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/uow-002-http-runtime-policy/functional-design/` and approve to proceed to UOW-002 NFR Requirements."
+**Context**: Construction UOW-002 Functional Design Part 2 artifact generation, approval gate before NFR Requirements.
+
+---
+
+## UOW-002 Functional Design Approval
+**Timestamp**: 2026-08-12T03:55:06Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-002 Functional Design approval and proceeded to UOW-002 NFR Requirements planning."
+**Context**: UOW-002 Functional Design approved, transition to NFR Requirements Part 1.
+
+---
+
+## UOW-002 NFR Requirements Planning
+**Timestamp**: 2026-08-12T03:55:06Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Created `aidlc-docs/construction/plans/uow-002-http-runtime-policy-nfr-requirements-plan.md` with HTTP dependency, timeout, retry/backoff, rate limiter, connection pool, response body, secret handling, observability, PBT, and deterministic test environment questions. Option A follows the DCinside-Scraper baseline inheritance direction."
+**Context**: Construction UOW-002 NFR Requirements Part 1 planning, waiting for answers.
+
+---
+
+## UOW-002 NFR Requirements Answer Validation And Generation
+**Timestamp**: 2026-08-12T03:58:55Z
+**User Input**: "질문지의 답변들을 확정하였습니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Validated UOW-002 NFR Requirements answers, confirmed Q1-Q10 were A with no ambiguity or conflicts, generated `nfr-requirements.md` and `tech-stack-decisions.md`, and moved UOW-002 NFR Requirements to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/uow-002-http-runtime-policy/nfr-requirements/` and approve to proceed to UOW-002 NFR Design."
+**Context**: Construction UOW-002 NFR Requirements Part 2 artifact generation, approval gate before NFR Design.
+
+---
+
+## UOW-002 NFR Requirements Approval
+**Timestamp**: 2026-08-12T04:02:41Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-002 NFR Requirements approval and proceeded to UOW-002 NFR Design planning."
+**Context**: UOW-002 NFR Requirements approved, transition to NFR Design Part 1.
+
+---
+
+## UOW-002 NFR Design Planning
+**Timestamp**: 2026-08-12T04:02:41Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Created `aidlc-docs/construction/plans/uow-002-http-runtime-policy-nfr-design-plan.md` with component layout, HttpClient construction, rate limiter time source, retry/backoff, response classifier, secret masking, safe logging, connection limits, test harness, and circuit breaker scope questions. Option A follows the DCinside-Scraper baseline inheritance direction."
+**Context**: Construction UOW-002 NFR Design Part 1 planning, waiting for answers.
+
+---
+
+## UOW-002 NFR Design Answer Validation And Generation
+**Timestamp**: 2026-08-12T04:15:06Z
+**User Input**: "질문지의 답변들을 확정하였습니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Validated UOW-002 NFR Design answers, confirmed Q1-Q10 were A with no ambiguity or conflicts, generated `nfr-design-patterns.md` and `logical-components.md`, and moved UOW-002 NFR Design to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/uow-002-http-runtime-policy/nfr-design/` and approve to proceed to UOW-002 Infrastructure Design."
+**Context**: Construction UOW-002 NFR Design Part 2 artifact generation, approval gate before Infrastructure Design.
+
+---
+
+## UOW-002 NFR Design Approval
+**Timestamp**: 2026-08-12T04:22:09Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-002 NFR Design approval and proceeded to UOW-002 Infrastructure Design planning."
+**Context**: UOW-002 NFR Design approved, transition to Infrastructure Design Part 1.
+
+---
+
+## UOW-002 Infrastructure Design Planning
+**Timestamp**: 2026-08-12T04:22:09Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Created `aidlc-docs/construction/plans/uow-002-http-runtime-policy-infrastructure-design-plan.md` with deployment, compute, runtime file location, proxy/networking, secret storage, monitoring, live smoke, and shared infrastructure questions. Option A follows the baseline scraper inheritance direction."
+**Context**: Construction UOW-002 Infrastructure Design Part 1 planning, waiting for answers.
+
+---
+
+## UOW-002 Infrastructure Design Answer Validation And Generation
+**Timestamp**: 2026-08-12T04:27:47Z
+**User Input**: "질문지의 답변들을 확정하였습니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Validated UOW-002 Infrastructure Design answers, confirmed Q1-Q8 were A with no ambiguity or conflicts, generated `infrastructure-design.md` and `deployment-architecture.md`, and moved UOW-002 Infrastructure Design to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/uow-002-http-runtime-policy/infrastructure-design/` and approve to proceed to UOW-002 Code Generation."
+**Context**: Construction UOW-002 Infrastructure Design Part 2 artifact generation, approval gate before Code Generation.
+
+---
+
+## UOW-002 Infrastructure Design Approval
+**Timestamp**: 2026-08-12T04:30:48Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-002 Infrastructure Design approval and proceeded to UOW-002 Code Generation planning."
+**Context**: UOW-002 Infrastructure Design approved, transition to Code Generation planning.
+
+---
+
+## UOW-002 Code Generation Planning
+**Timestamp**: 2026-08-12T04:30:48Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Created `aidlc-docs/construction/plans/uow-002-http-runtime-policy-code-generation-plan.md` with dependency, HTTP runtime package, providers, request policy components, HttpClient, tests, and documentation steps."
+**Approval Prompt**: "Please review `aidlc-docs/construction/plans/uow-002-http-runtime-policy-code-generation-plan.md` and approve code generation."
+**Context**: Construction UOW-002 Code Generation planning, waiting for plan approval.
+
+---
+
+## UOW-002 Code Generation Plan Approval
+**Timestamp**: 2026-08-12T04:41:40Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-002 Code Generation plan approval and generated the HTTP runtime implementation."
+**Context**: UOW-002 Code Generation plan approved.
+
+---
+
+## UOW-002 Code Generation
+**Timestamp**: 2026-08-12T04:45:32Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Generated `fmkorea_scraper.http` runtime, HTTP policy tests, Hypothesis strategies, public contract docs, and code generation summary. Validation command `$env:PYTHONPATH='src'; python -m pytest tests` passed with 45 tests."
+**Approval Prompt**: "Please review UOW-002 generated code and approve proceeding to Build and Test."
+**Context**: Construction UOW-002 Code Generation complete, review gate before Build and Test.
+
+---
+
+## UOW-002 Code Generation Approval
+**Timestamp**: 2026-08-12T04:47:21Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-002 Code Generation approval and proceeded to Build and Test."
+**Context**: UOW-002 Code Generation approved.
+
+---
+
+## UOW-002 Build and Test
+**Timestamp**: 2026-08-12T04:48:18Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Built `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`, ran the full test suite with 45 passing tests, ran `python -m pip check` successfully, updated Build and Test documents, and moved UOW-002 Build and Test to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approve proceeding to UOW-003 Functional Design."
+**Context**: Construction UOW-002 Build and Test execution and review gate before UOW-003 Functional Design.
+
+---

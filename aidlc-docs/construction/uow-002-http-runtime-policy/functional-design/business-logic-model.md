@@ -1,0 +1,223 @@
+# Business Logic Model - UOW-002 HTTP Runtime Policy
+
+## Purpose
+
+UOW-002 provides one reusable HTTP runtime policy for every later scraper unit. It follows the baseline scraper structure: centralize network behavior in `HttpClient`, keep parsers pure, keep adapters responsible for terminal/container file flows, and let Job orchestration decide checkpoint behavior.
+
+This unit owns:
+
+- job-scoped async HTTP client lifecycle
+- request delay/rate limiting
+- retry and backoff policy
+- User-Agent rotation
+- proxy config conversion
+- optional static cookie header
+- response classification
+- safe HTTP log event shaping
+
+This unit does not own:
+
+- FMKorea URL/query generation
+- HTML parsing selectors
+- Job queue orchestration
+- checkpoint persistence
+- JSONL/media storage
+- `.env` creation or terminal prompts
+- container entrypoint env file generation
+- MCP adapter behavior
+
+## Design Decisions
+
+| Area | Decision |
+|---|---|
+| Client lifecycle | one `HttpClient` per Job execution |
+| Rate limiting | one shared Job-scoped async limiter for all external request types |
+| Retry target | network error, timeout, 429, 5xx only |
+| Backoff | exponential backoff with bounded max and small jitter |
+| Response output | classified `HttpResponse` value object |
+| CAPTCHA/block | classify only; no bypass and no checkpoint write in HTTP layer |
+| User-Agent | sequential rotation every configured outbound attempts, default 10 |
+| Proxy | pure provider from explicit options/env mapping to httpx config |
+| Cookie | explicit static cookie header only, no cookie jar |
+| Logging | safe method/host/path/status/kind/attempt/elapsed only |
+| Tests | `httpx.MockTransport` and fake clock, no live network by default |
+
+## Client Setup Flow
+
+1. Job runner or service receives validated UOW-001 `JobConfig`.
+2. Runtime layer reads passive `RuntimeConfig` values provided by adapter.
+3. `UserAgentProvider` is created from supplied UA file path or default fallback.
+4. `ProxyProvider` receives explicit proxy values or env mapping from adapter and produces `ProxyConfig | None`.
+5. `CookieProvider` is created only if an explicit cookie file path is supplied.
+6. `RateLimiter` is created from `request_interval_seconds`.
+7. `RetryPolicy` is created from configured retry count and defaults.
+8. `HttpClient` opens one `httpx.AsyncClient`.
+9. All later requests use this same `HttpClient`.
+10. Job shutdown closes the client.
+
+## Request Execution Flow
+
+For `get`, `post`, and `download`:
+
+1. Build internal `HttpRequest`.
+2. Derive safe log labels from method, host, path, and request kind.
+3. Wait on Job-scoped `RateLimiter`.
+4. Ask `UserAgentProvider` for the current User-Agent.
+5. Attach static cookie header if enabled.
+6. Send request through `httpx.AsyncClient`.
+7. Classify the raw response or transport failure.
+8. If retryable and attempts remain, calculate backoff and retry.
+9. Return classified `HttpResponse`.
+10. Emit safe log event for each attempt.
+
+## Retry Decision Flow
+
+```text
+request attempt
+  |
+  v
+transport exception?
+  | yes -> kind=network_error -> retry if attempts remain
+  | no
+  v
+status == 429?
+  | yes -> kind=rate_limited -> retry if attempts remain
+  | no
+  v
+status >= 500?
+  | yes -> kind=server_error -> retry if attempts remain
+  | no
+  v
+captcha/block/login/not_found?
+  | yes -> classify and return, no retry
+  | no
+  v
+kind=ok -> return
+```
+
+## Response Classification Logic
+
+Classification is intentionally conservative.
+
+Initial mapping:
+
+- `2xx`: `ok`, unless body/final URL indicates CAPTCHA or block
+- `404`: `not_found`
+- `401` or login-required page marker: `login_required`
+- `403`: `blocked`, unless later evidence classifies differently
+- `429`: `rate_limited`
+- `5xx`: `server_error`
+- transport exception or timeout without response: `network_error`
+
+CAPTCHA/block body markers are site-specific and may be refined during UOW-003/UOW-004 fixture work. UOW-002 owns the classifier hook and general output shape.
+
+## User-Agent Rotation Logic
+
+The provider maintains:
+
+- a list of valid UA strings
+- `rotate_every`
+- total outbound attempt count
+- current index
+
+Pseudo-flow:
+
+```text
+before request attempt:
+  count += 1
+  if count > 1 and (count - 1) % rotate_every == 0:
+      current_index = (current_index + 1) % len(user_agents)
+  return user_agents[current_index]
+```
+
+Retry attempts call the same flow.
+
+## Proxy Logic
+
+Adapter layers are responsible for collecting proxy input.
+
+UOW-002 receives:
+
+- explicit proxy values, or
+- env mapping values, or
+- disabled flag
+
+Decision:
+
+```text
+proxy_enabled false -> no proxy
+explicit host/url present -> explicit proxy config
+env mapping has host/url -> env proxy config
+otherwise -> no proxy
+```
+
+The resulting config is converted to the format accepted by `httpx.AsyncClient`.
+
+## Cookie Logic
+
+Cookie behavior is deliberately static.
+
+Flow:
+
+1. If no cookie file path is provided, cookie provider is disabled.
+2. If provided, adapter/core runtime reads the file as a static cookie header.
+3. Requests include `Cookie: <value>`.
+4. Response `Set-Cookie` is ignored.
+5. No cookie jar is maintained.
+
+This reduces tracking and accidental session mutation risk.
+
+## Error And Stop Handling
+
+HTTP layer:
+
+- classifies responses
+- raises or returns typed network-level failures where appropriate
+- does not save checkpoints
+- does not decide whether a Job is stopped
+
+Job/service layer:
+
+- sees `ResponseKind.CAPTCHA` or `ResponseKind.BLOCKED`
+- maps to stop reason
+- saves checkpoint
+- writes safe failure/report details
+
+## Testable Properties
+
+Property and example tests should cover:
+
+- User-Agent sequence rotates every N outbound attempts
+- retry attempts count toward UA rotation
+- rate limiter sleeps before each request after the first as configured
+- retry happens for 429/5xx/network/timeout only
+- CAPTCHA/block/404/login-required are not retried
+- proxy password is masked in string/log/error paths
+- cookie file value is attached only when explicitly enabled
+- `Set-Cookie` is not persisted
+- `HttpResponse.kind` is always set
+- import has no file, network, or terminal side effects
+
+## UOW Integration Points
+
+| Downstream UOW | Uses From UOW-002 |
+|---|---|
+| UOW-003 Search And Link Collection | `HttpClient.get`, classified page responses, safe network errors |
+| UOW-004 Post Detail And Content Parsing | detail/comment/media request methods and response classification |
+| UOW-005 Job Runner And Checkpoint | CAPTCHA/block response kinds and network failure categories |
+| UOW-007 CLI Adapter | User-Agent/proxy/cookie option values passed into providers |
+| UOW-008 Container/MCP/Test Harness | env-provided proxy/cookie/runtime config and fake/live smoke harness |
+
+## UOW Exclusions
+
+UOW-002 does not implement:
+
+- board or integrated search URLs
+- BeautifulSoup selectors
+- parser-stage failure records
+- checkpoint save/load
+- JSONL output
+- media file save paths
+- terminal wizard
+- Docker entrypoint
+- MCP server
