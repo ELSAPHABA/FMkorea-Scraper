@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Greenfield
 - **Start Date**: 2026-08-11T23:58:42Z
-- **Current Stage**: CONSTRUCTION - UOW-001 Code Generation Review
+- **Current Stage**: CONSTRUCTION - UOW-001 Build and Test Review
 
 ## Workspace State
 - **Existing Code**: No
@@ -45,17 +45,17 @@
 - [x] UOW-001 NFR Requirements - APPROVED
 - [x] UOW-001 NFR Design - APPROVED
 - [x] UOW-001 Infrastructure Design - APPROVED
-- [ ] UOW-001 Code Generation - REVIEW REQUIRED
-- [ ] Build and Test
+- [x] UOW-001 Code Generation - APPROVED
+- [ ] UOW-001 Build and Test - REVIEW REQUIRED
 
 ### OPERATIONS PHASE
 - [ ] Operations - PLACEHOLDER
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: UOW-001 Code Generation Review
-- **Next Step**: User reviews generated source, tests, and `aidlc-docs/construction/uow-001-core-models-and-config/code/`, then approves Build and Test.
-- **Status**: UOW-001 application code generated and awaiting review approval.
+- **Current Stage**: UOW-001 Build and Test Review
+- **Next Step**: User reviews `aidlc-docs/construction/build-and-test/build-and-test-summary.md`, then approves proceeding to UOW-002 Functional Design.
+- **Status**: UOW-001 build and test completed and awaiting review approval.
 
 ## Migration Notes
 - DCinside-Scraper's feature surface, UOW sequence, runtime boundaries, storage contracts, container pattern, MCP adapter pattern, parser-failure retry unit, and CDK direction are the default baseline.
@@ -150,4 +150,11 @@
 - **Code Artifacts**: `pyproject.toml`, `src/fmkorea_scraper/`, `tests/`, `aidlc-docs/construction/uow-001-core-models-and-config/code/`
 - **Generation Validation**: `$env:PYTHONPATH='src'; python -m pytest tests` -> 33 passed
 - **Next Stage After Code Generation Approval**: Build and Test
-- **Status**: Code Generation review required
+- **Code Generation Approved At**: 2026-08-12T03:35:07Z
+- **Build and Test Executed At**: 2026-08-12T03:35:07Z
+- **Build Command**: `python -m pip wheel . --no-deps -w dist` -> PASS
+- **Build Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
+- **Test Command**: `$env:PYTHONPATH='src'; python -m pytest tests` -> 33 passed
+- **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/`
+- **Next Stage After Build and Test Approval**: UOW-002 Functional Design
+- **Status**: Build and Test review required
