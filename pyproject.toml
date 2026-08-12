@@ -39,6 +39,8 @@ pythonpath = ["src"]
 markers = [
   "benchmark_smoke: optional model validation/serialization timing smoke tests",
   "live_smoke: optional live HTTP smoke tests",
+  "polars_smoke: optional Polars JSONL readability smoke tests",
+  "s3_smoke: optional S3-compatible object storage smoke tests",
 ]
 
 [tool.hatch.build.targets.wheel]

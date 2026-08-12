@@ -17,6 +17,7 @@ from fmkorea_scraper.models.job import JobConfig
 from fmkorea_scraper.models.post import PostResult
 from fmkorea_scraper.http import HttpClient, HttpRuntimeConfig, ProxyConfig, RetryPolicy, UserAgentConfig
 from fmkorea_scraper.collect import LinkCollectorService
+from fmkorea_scraper.outputs import StorageFactory
 
 __all__ = [
     "Checkpoint",
@@ -28,6 +29,7 @@ __all__ = [
     "HttpRuntimeConfig",
     "ProxyConfig",
     "RetryPolicy",
+    "StorageFactory",
     "UserAgentConfig",
     "fetch_comments",
     "fetch_post",
