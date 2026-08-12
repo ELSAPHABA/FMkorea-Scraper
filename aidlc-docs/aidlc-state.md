@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Greenfield
 - **Start Date**: 2026-08-11T23:58:42Z
-- **Current Stage**: CONSTRUCTION - UOW-001 Infrastructure Design Review
+- **Current Stage**: CONSTRUCTION - UOW-001 Code Generation Review
 
 ## Workspace State
 - **Existing Code**: No
@@ -44,8 +44,8 @@
 - [x] UOW-001 Functional Design - APPROVED
 - [x] UOW-001 NFR Requirements - APPROVED
 - [x] UOW-001 NFR Design - APPROVED
-- [ ] UOW-001 Infrastructure Design - REVIEW REQUIRED
-- [ ] Code Generation
+- [x] UOW-001 Infrastructure Design - APPROVED
+- [ ] UOW-001 Code Generation - REVIEW REQUIRED
 - [ ] Build and Test
 
 ### OPERATIONS PHASE
@@ -53,9 +53,9 @@
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: UOW-001 Infrastructure Design Review
-- **Next Step**: User reviews `aidlc-docs/construction/uow-001-core-models-and-config/infrastructure-design/` and approves to proceed to UOW-001 Code Generation.
-- **Status**: UOW-001 Infrastructure Design artifacts generated and awaiting approval.
+- **Current Stage**: UOW-001 Code Generation Review
+- **Next Step**: User reviews generated source, tests, and `aidlc-docs/construction/uow-001-core-models-and-config/code/`, then approves Build and Test.
+- **Status**: UOW-001 application code generated and awaiting review approval.
 
 ## Migration Notes
 - DCinside-Scraper's feature surface, UOW sequence, runtime boundaries, storage contracts, container pattern, MCP adapter pattern, parser-failure retry unit, and CDK direction are the default baseline.
@@ -142,4 +142,12 @@
 - **Infrastructure Design Generated At**: 2026-08-12T02:54:32Z
 - **Infrastructure Design Artifacts**: `infrastructure-design.md`, `deployment-architecture.md`
 - **Next Stage After Infrastructure Design Approval**: UOW-001 Code Generation
-- **Status**: Infrastructure Design review required
+- **Infrastructure Design Approved At**: 2026-08-12T02:58:33Z
+- **Code Generation Plan Created At**: 2026-08-12T02:58:33Z
+- **Code Generation Plan Artifact**: `aidlc-docs/construction/plans/uow-001-core-models-and-config-code-generation-plan.md`
+- **Code Generation Plan Approved At**: 2026-08-12T03:05:26Z
+- **Code Generated At**: 2026-08-12T03:20:40Z
+- **Code Artifacts**: `pyproject.toml`, `src/fmkorea_scraper/`, `tests/`, `aidlc-docs/construction/uow-001-core-models-and-config/code/`
+- **Generation Validation**: `$env:PYTHONPATH='src'; python -m pytest tests` -> 33 passed
+- **Next Stage After Code Generation Approval**: Build and Test
+- **Status**: Code Generation review required

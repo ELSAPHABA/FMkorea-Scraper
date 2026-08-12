@@ -214,3 +214,29 @@
 **Context**: Construction UOW-001 Infrastructure Design Part 2 artifact generation, approval gate before Code Generation.
 
 ---
+
+## UOW-001 Infrastructure Design Approval
+**Timestamp**: 2026-08-12T02:58:33Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded UOW-001 Infrastructure Design approval and proceeded to UOW-001 Code Generation planning."
+**Context**: UOW-001 Infrastructure Design approved, transition to Code Generation Part 1.
+
+---
+
+## UOW-001 Code Generation Planning
+**Timestamp**: 2026-08-12T02:58:33Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Created `aidlc-docs/construction/plans/uow-001-core-models-and-config-code-generation-plan.md` with a 14-step generation sequence for package metadata, Pydantic models, validation helpers, errors, schema helpers, ports, tests, strategies, snapshots, and code documentation."
+**Approval Prompt**: "Please review `aidlc-docs/construction/plans/uow-001-core-models-and-config-code-generation-plan.md` and approve to generate UOW-001 application code."
+**Context**: Construction UOW-001 Code Generation Part 1 planning, waiting for plan approval.
+
+---
+
+## UOW-001 Code Generation Plan Approval And Generation
+**Timestamp**: 2026-08-12T03:20:40Z
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: "Recorded Code Generation plan approval, generated the UOW-001 package metadata, core Pydantic models, validation/error/schema helpers, port protocols, API placeholders, tests, schema snapshots, and code documentation. Ran `$env:PYTHONPATH='src'; python -m pytest tests` with 33 passed. Moved UOW-001 Code Generation to review required."
+**Approval Prompt**: "Please review generated source, tests, and `aidlc-docs/construction/uow-001-core-models-and-config/code/`. Approve to proceed to Build and Test."
+**Context**: Construction UOW-001 Code Generation Part 2 artifact generation, approval gate before Build and Test.
+
+---
