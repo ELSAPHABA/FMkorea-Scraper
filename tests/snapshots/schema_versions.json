@@ -1,0 +1,24 @@
+{
+  "schemas": [
+    {
+      "name": "checkpoint",
+      "schema_hash": "3760ee715efdc5268c4357d950ad65006a6d0c71ee4b3fbe7283cedd1d17f7a6",
+      "version": "fmkorea.checkpoint.v1"
+    },
+    {
+      "name": "failure",
+      "schema_hash": "3595a7a8fecbb77bd87dfeee7b08eb6cd279f7c2b3b84a6be18baa654bbd49ab",
+      "version": "fmkorea.failure.v1"
+    },
+    {
+      "name": "job_report",
+      "schema_hash": "8576a24c30dd1063d3a62262719e351bb6d0a997e83cfe355751e2112170eac0",
+      "version": "fmkorea.job_report.v1"
+    },
+    {
+      "name": "post",
+      "schema_hash": "465557e1762836370cb6ae7321972c61bf1a8b872442cf57426fc71170e7d0b8",
+      "version": "fmkorea.post.v1"
+    }
+  ]
+}
