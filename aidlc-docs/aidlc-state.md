@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Greenfield
 - **Start Date**: 2026-08-11T23:58:42Z
-- **Current Stage**: INCEPTION - Application Design Review
+- **Current Stage**: CONSTRUCTION - UOW-001 Infrastructure Design Review
 
 ## Workspace State
 - **Existing Code**: No
@@ -37,14 +37,14 @@
 - [x] Requirements Analysis - APPROVED
 - [x] User Stories - APPROVED
 - [x] Workflow Planning - APPROVED
-- [ ] Application Design - REVIEW REQUIRED
-- [ ] Units Generation
+- [x] Application Design - APPROVED
+- [x] Units Generation - APPROVED
 
 ### CONSTRUCTION PHASE
-- [ ] Functional Design
-- [ ] NFR Requirements
-- [ ] NFR Design
-- [ ] Infrastructure Design
+- [x] UOW-001 Functional Design - APPROVED
+- [x] UOW-001 NFR Requirements - APPROVED
+- [x] UOW-001 NFR Design - APPROVED
+- [ ] UOW-001 Infrastructure Design - REVIEW REQUIRED
 - [ ] Code Generation
 - [ ] Build and Test
 
@@ -52,10 +52,10 @@
 - [ ] Operations - PLACEHOLDER
 
 ## Current Status
-- **Lifecycle Phase**: INCEPTION
-- **Current Stage**: Application Design Review
-- **Next Step**: User reviews `aidlc-docs/inception/application-design/`.
-- **Status**: Application Design artifacts generated and awaiting approval.
+- **Lifecycle Phase**: CONSTRUCTION
+- **Current Stage**: UOW-001 Infrastructure Design Review
+- **Next Step**: User reviews `aidlc-docs/construction/uow-001-core-models-and-config/infrastructure-design/` and approves to proceed to UOW-001 Code Generation.
+- **Status**: UOW-001 Infrastructure Design artifacts generated and awaiting approval.
 
 ## Migration Notes
 - DCinside-Scraper's feature surface, UOW sequence, runtime boundaries, storage contracts, container pattern, MCP adapter pattern, parser-failure retry unit, and CDK direction are the default baseline.
@@ -94,5 +94,52 @@
 - **Answers Confirmed At**: 2026-08-12T01:25:48Z
 - **Generated At**: 2026-08-12T01:25:48Z
 - **Artifacts**: `components.md`, `component-methods.md`, `services.md`, `component-dependency.md`, `application-design.md`
+- **Approved At**: 2026-08-12T01:35:47Z
 - **Next Stage After Approval**: Units Generation
-- **Status**: Review required
+- **Status**: Approved
+
+## Units Generation Status
+- **Plan Created At**: 2026-08-12T01:35:47Z
+- **Plan Artifact**: `aidlc-docs/inception/plans/unit-of-work-plan.md`
+- **Answers Confirmed At**: 2026-08-12T01:57:43Z
+- **Answer Analysis**: No ambiguity or conflicts; follow-up questions not required.
+- **Plan Approved At**: 2026-08-12T01:59:26Z
+- **Generated At**: 2026-08-12T01:59:26Z
+- **Artifacts**: `unit-of-work.md`, `unit-of-work-dependency.md`, `unit-of-work-story-map.md`
+- **Next Stage After Approval**: CONSTRUCTION - UOW-001 Functional Design
+- **Approved At**: 2026-08-12T02:10:12Z
+- **Status**: Approved
+
+## UOW-001 Core Models And Config Status
+- **Functional Design Plan Created At**: 2026-08-12T02:10:12Z
+- **Plan Artifact**: `aidlc-docs/construction/plans/uow-001-core-models-and-config-functional-design-plan.md`
+- **Answers Confirmed At**: 2026-08-12T02:25:15Z
+- **Answer Analysis**: Q1 defaulted to recommended A because the answer was blank but the user confirmed all answers; Q2-Q9 were A. No ambiguity or conflicts found.
+- **Functional Design Generated At**: 2026-08-12T02:25:15Z
+- **Artifacts**: `domain-entities.md`, `business-rules.md`, `business-logic-model.md`
+- **Next Stage After Approval**: UOW-001 NFR Requirements
+- **Functional Design Approved At**: 2026-08-12T02:31:25Z
+- **NFR Requirements Plan Created At**: 2026-08-12T02:31:25Z
+- **NFR Requirements Plan Artifact**: `aidlc-docs/construction/plans/uow-001-core-models-and-config-nfr-requirements-plan.md`
+- **NFR Requirements Answers Confirmed At**: 2026-08-12T02:34:57Z
+- **NFR Requirements Answer Analysis**: Q1-Q8 were A. No ambiguity or conflicts found.
+- **NFR Requirements Generated At**: 2026-08-12T02:34:57Z
+- **NFR Requirements Artifacts**: `nfr-requirements.md`, `tech-stack-decisions.md`
+- **Next Stage After NFR Requirements Approval**: UOW-001 NFR Design
+- **NFR Requirements Approved At**: 2026-08-12T02:43:53Z
+- **NFR Design Plan Created At**: 2026-08-12T02:43:53Z
+- **NFR Design Plan Artifact**: `aidlc-docs/construction/plans/uow-001-core-models-and-config-nfr-design-plan.md`
+- **NFR Design Answers Confirmed At**: 2026-08-12T02:47:15Z
+- **NFR Design Answer Analysis**: Q1-Q7 were A. No ambiguity or conflicts found.
+- **NFR Design Generated At**: 2026-08-12T02:47:15Z
+- **NFR Design Artifacts**: `nfr-design-patterns.md`, `logical-components.md`
+- **Next Stage After NFR Design Approval**: UOW-001 Infrastructure Design
+- **NFR Design Approved At**: 2026-08-12T02:50:10Z
+- **Infrastructure Design Plan Created At**: 2026-08-12T02:50:10Z
+- **Infrastructure Design Plan Artifact**: `aidlc-docs/construction/plans/uow-001-core-models-and-config-infrastructure-design-plan.md`
+- **Infrastructure Design Answers Confirmed At**: 2026-08-12T02:54:32Z
+- **Infrastructure Design Answer Analysis**: Q1-Q7 were A. No ambiguity or conflicts found. Shared infrastructure artifact not required for UOW-001.
+- **Infrastructure Design Generated At**: 2026-08-12T02:54:32Z
+- **Infrastructure Design Artifacts**: `infrastructure-design.md`, `deployment-architecture.md`
+- **Next Stage After Infrastructure Design Approval**: UOW-001 Code Generation
+- **Status**: Infrastructure Design review required
