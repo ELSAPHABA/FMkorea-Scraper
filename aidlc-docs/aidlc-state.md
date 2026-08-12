@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Greenfield
 - **Start Date**: 2026-08-11T23:58:42Z
-- **Current Stage**: CONSTRUCTION - UOW-004 Build and Test Review
+- **Current Stage**: CONSTRUCTION - UOW-006 Build and Test Review
 
 ## Workspace State
 - **Existing Code**: No
@@ -65,16 +65,22 @@
 - [x] UOW-004 NFR Design - APPROVED
 - [x] UOW-004 Infrastructure Design - APPROVED
 - [x] UOW-004 Code Generation - APPROVED
-- [ ] UOW-004 Build and Test - REVIEW REQUIRED
+- [x] UOW-004 Build and Test - APPROVED
+- [x] UOW-006 Functional Design - APPROVED
+- [x] UOW-006 NFR Requirements - APPROVED
+- [x] UOW-006 NFR Design - APPROVED
+- [x] UOW-006 Infrastructure Design - APPROVED
+- [x] UOW-006 Code Generation - APPROVED
+- [ ] UOW-006 Build and Test - REVIEW REQUIRED
 
 ### OPERATIONS PHASE
 - [ ] Operations - PLACEHOLDER
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: UOW-004 Build and Test Review
+- **Current Stage**: UOW-006 Build and Test Review
 - **Next Step**: User reviews `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approves proceeding to UOW-005 Functional Design.
-- **Status**: UOW-004 Build and Test complete; review approval required before UOW-005.
+- **Status**: UOW-006 Build and Test complete; review approval required before UOW-005.
 
 ## Migration Notes
 - DCinside-Scraper's feature surface, UOW sequence, runtime boundaries, storage contracts, container pattern, MCP adapter pattern, parser-failure retry unit, and CDK direction are the default baseline.
@@ -332,6 +338,63 @@
 - **Build Artifact SHA256**: `818f358004ade2e35c4642481c59f80f5055c9c39343659ae835f62057de95d7`
 - **Test Command**: `$env:PYTHONPATH='src'; python -m pytest tests -q --tb=short`
 - **Test Result**: 72 passed
+- **Compile Check**: `$env:PYTHONPATH='src'; python -m compileall -q src tests` -> passed
+- **Dependency Check**: `python -m pip check` -> No broken requirements found.
+- **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/build-instructions.md`, `aidlc-docs/construction/build-and-test/unit-test-instructions.md`, `aidlc-docs/construction/build-and-test/integration-test-instructions.md`, `aidlc-docs/construction/build-and-test/performance-test-instructions.md`, `aidlc-docs/construction/build-and-test/security-test-instructions.md`, `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
+- **Next Stage After Build and Test Approval**: UOW-006 Functional Design
+- **Build and Test Approved At**: 2026-08-12T13:01:16Z
+- **Status**: Complete
+
+## UOW-006 Output And Storage Status
+- **Functional Design Plan Created At**: 2026-08-12T13:01:16Z
+- **Plan Artifact**: `aidlc-docs/construction/plans/uow-006-output-and-storage-functional-design-plan.md`
+- **Dependency Note**: UOW-006 is executed before UOW-005 because JobRunner checkpoint advancement depends on concrete output/storage ports.
+- **Functional Design Answers Confirmed At**: 2026-08-12T13:14:35Z
+- **Functional Design Answer Analysis**: Q1-Q12 were A. No ambiguity or conflicts found. Local/S3 output, local checkpoint, failure/report storage, media byte storage, and Polars smoke readiness are in scope; PostgreSQL checkpoint remains deferred to UOW-008.
+- **Functional Design Generated At**: 2026-08-12T13:14:35Z
+- **Artifacts**: `domain-entities.md`, `business-rules.md`, `business-logic-model.md`
+- **Next Stage After Approval**: UOW-006 NFR Requirements
+- **Functional Design Approved At**: 2026-08-12T13:17:04Z
+- **NFR Requirements Plan Created At**: 2026-08-12T13:17:04Z
+- **NFR Requirements Plan Artifact**: `aidlc-docs/construction/plans/uow-006-output-and-storage-nfr-requirements-plan.md`
+- **NFR Requirements Answers Confirmed At**: 2026-08-12T13:24:29Z
+- **NFR Requirements Answer Analysis**: Q1-Q12 were A. No ambiguity or conflicts found. Local output remains core-only; S3-compatible output uses optional `s3` extra and file-backed spool; Polars smoke uses optional `analysis` extra; PostgreSQL checkpoint remains deferred to UOW-008.
+- **NFR Requirements Generated At**: 2026-08-12T13:24:29Z
+- **NFR Requirements Artifacts**: `nfr-requirements.md`, `tech-stack-decisions.md`
+- **Next Stage After NFR Requirements Approval**: UOW-006 NFR Design
+- **NFR Requirements Approved At**: 2026-08-12T13:28:12Z
+- **NFR Design Plan Created At**: 2026-08-12T13:28:12Z
+- **NFR Design Plan Artifact**: `aidlc-docs/construction/plans/uow-006-output-and-storage-nfr-design-plan.md`
+- **NFR Design Answers Confirmed At**: 2026-08-12T13:32:07Z
+- **NFR Design Answer Analysis**: Q1-Q12 were A. No ambiguity or conflicts found. Output package layout, JSONL writer, path sanitization, run layout, failure redaction, atomic JSON writes, lazy S3 loading, S3 spool, local checkpoint document, optional Polars smoke, test organization, and FMKOREA-prefixed S3 smoke guard are confirmed.
+- **NFR Design Generated At**: 2026-08-12T13:32:07Z
+- **NFR Design Artifacts**: `nfr-design-patterns.md`, `logical-components.md`
+- **Next Stage After NFR Design Approval**: UOW-006 Infrastructure Design
+- **NFR Design Approved At**: 2026-08-12T13:36:53Z
+- **Infrastructure Design Plan Created At**: 2026-08-12T13:36:53Z
+- **Infrastructure Design Plan Artifact**: `aidlc-docs/construction/plans/uow-006-output-and-storage-infrastructure-design-plan.md`
+- **Infrastructure Design Answers Confirmed At**: 2026-08-12T13:44:29Z
+- **Infrastructure Design Answer Analysis**: Q1-Q10 were A. No ambiguity or conflicts found. UOW-006 remains an importable output/storage library; local filesystem and S3-compatible object layout are in scope; Garage provisioning, PostgreSQL checkpoint, SQS/DLQ, container entrypoints, MCP hosting, and AWS CDK are deferred.
+- **Infrastructure Design Generated At**: 2026-08-12T13:44:29Z
+- **Infrastructure Design Artifacts**: `infrastructure-design.md`, `deployment-architecture.md`
+- **Next Stage After Infrastructure Design Approval**: UOW-006 Code Generation
+- **Infrastructure Design Approved At**: 2026-08-12T13:49:36Z
+- **Code Generation Plan Created At**: 2026-08-12T13:49:36Z
+- **Code Generation Plan Artifact**: `aidlc-docs/construction/plans/uow-006-output-and-storage-code-generation-plan.md`
+- **Code Generation Plan Approved At**: 2026-08-12T14:02:34Z
+- **Code Generated At**: 2026-08-12T14:02:34Z
+- **Code Artifacts**: `src/fmkorea_scraper/outputs/`, `src/fmkorea_scraper/__init__.py`, `pyproject.toml`, `tests/test_outputs_storage.py`, `tests/test_outputs_properties.py`, `tests/test_outputs_polars_smoke.py`, `tests/test_outputs_s3_smoke.py`, `tests/strategies/outputs.py`
+- **Code Documentation Artifacts**: `aidlc-docs/construction/uow-006-output-and-storage/code/public-contracts.md`, `aidlc-docs/construction/uow-006-output-and-storage/code/code-generation-summary.md`
+- **Generation Validation**: `$env:PYTHONPATH='src'; python -m pytest tests -q --tb=short` -> 83 passed, 2 skipped; `$env:PYTHONPATH='src'; python -m compileall -q src tests` -> passed
+- **Next Stage After Code Generation Approval**: Build and Test
+- **Code Generation Approved At**: 2026-08-12T16:49:27Z
+- **Build and Test Started At**: 2026-08-12T16:49:27Z
+- **Build Command**: `python -m pip wheel . --no-deps -w dist`
+- **Build Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
+- **Build Artifact Size**: 67741 bytes
+- **Build Artifact SHA256**: `5a46db015b219eeac272673f13d6a673037ff65fb8cfb9f7ff7e4121b532c2e6`
+- **Test Command**: `$env:PYTHONPATH='src'; python -m pytest tests -q --tb=short`
+- **Test Result**: 83 passed, 2 skipped
 - **Compile Check**: `$env:PYTHONPATH='src'; python -m compileall -q src tests` -> passed
 - **Dependency Check**: `python -m pip check` -> No broken requirements found.
 - **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/build-instructions.md`, `aidlc-docs/construction/build-and-test/unit-test-instructions.md`, `aidlc-docs/construction/build-and-test/integration-test-instructions.md`, `aidlc-docs/construction/build-and-test/performance-test-instructions.md`, `aidlc-docs/construction/build-and-test/security-test-instructions.md`, `aidlc-docs/construction/build-and-test/build-and-test-summary.md`

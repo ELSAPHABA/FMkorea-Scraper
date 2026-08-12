@@ -1,4 +1,4 @@
-# Build Instructions - UOW-004 Post Detail And Content Parsing
+# Build Instructions - UOW-006 Output And Storage
 
 ## Prerequisites
 
@@ -6,10 +6,11 @@
 - **Build backend**: hatchling via PEP 517
 - **Package manager**: pip
 - **Runtime dependencies**: `pydantic>=2,<3`, `httpx>=0.28,<1`, `python-dotenv>=1,<2`, `beautifulsoup4>=4,<5`
+- **Optional dependencies**: `boto3>=1.34,<2` for S3-compatible smoke, `polars>=1,<2` for analysis smoke
 - **Test dependencies**: `pytest>=8,<9`, `hypothesis>=6,<7`
 - **Environment variables**: none required for default tests
 
-UOW-004 must remain import-safe. Building or importing the parser package must not make network requests, read runtime files, prompt terminal input, write outputs, create queues, create storage clients, or create HTTP clients.
+UOW-006 must remain import-safe. Building or importing the output package must not read environment variables, connect to S3, create buckets, write output files, prompt terminal input, create queues, or create database connections.
 
 ## Build Steps
 
@@ -19,7 +20,11 @@ UOW-004 must remain import-safe. Building or importing the parser package must n
 python -m pip install -e ".[test]"
 ```
 
-If editable install is not desired, tests can be run with `PYTHONPATH=src` after dependencies are available.
+Optional smoke dependencies:
+
+```powershell
+python -m pip install -e ".[test,s3,analysis]"
+```
 
 ### 2. Check Installed Requirements
 
@@ -52,8 +57,8 @@ Successfully built fmkorea-scraper
 - **Command**: `python -m pip wheel . --no-deps -w dist`
 - **Status**: PASS
 - **Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
-- **Size**: 57249 bytes
-- **SHA256**: `818f358004ade2e35c4642481c59f80f5055c9c39343659ae835f62057de95d7`
+- **Size**: 67741 bytes
+- **SHA256**: `5a46db015b219eeac272673f13d6a673037ff65fb8cfb9f7ff7e4121b532c2e6`
 - **Dependency Check**: PASS
 
 ## Troubleshooting

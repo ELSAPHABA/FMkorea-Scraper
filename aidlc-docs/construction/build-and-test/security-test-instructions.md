@@ -1,17 +1,19 @@
-# Security Test Instructions - UOW-004 Post Detail And Content Parsing
+# Security Test Instructions - UOW-006 Output And Storage
 
 ## Current Security Checks
 
-UOW-004 security behavior is verified through unit, fixture, and property tests.
+UOW-006 security behavior is verified through unit and property tests.
 
 Covered:
 
-- parser service uses injected HTTP only
-- parser warnings redact raw HTML-like content and sensitive marker values
-- no raw HTML fields are added to persisted models
-- malformed optional blocks/comments do not leak full source payloads
-- no browser automation dependency
-- no queue, storage, database, or runtime infrastructure dependency
+- generated local paths are contained under the configured base output path
+- path traversal attempts are rejected
+- failure details drop credential, cookie, proxy, token, header, raw HTML, raw body, and content-like fields
+- S3 credentials are not stored in `StoredObjectRef`
+- S3 dependency is lazy-loaded only when S3 mode is constructed
+- package import does not write files or connect to external services
+- PostgreSQL checkpoint mode is rejected in this unit instead of silently half-supporting it
+- JSONL writer escapes line-separator characters that can split one logical record into multiple physical lines
 
 ## Dependency Check
 
@@ -33,25 +35,26 @@ Manual or automated checks should verify importing these modules has no runtime 
 
 ```powershell
 $env:PYTHONPATH='src'
-python -c "import fmkorea_scraper.parse"
+python -c "import fmkorea_scraper.outputs"
 ```
 
 Expected behavior:
 
-- no network request
+- no environment read
 - no `.env` read
-- no `user-agents.txt` read
 - no terminal prompt
 - no file write
+- no S3 connection
+- no bucket creation
 - no queue creation
-- no HTTP client creation
+- no database connection
 
 ## Deferred Security Tests
 
 Later units should add checks for:
 
-- CAPTCHA/block checkpoint stop behavior
-- storage secret redaction
-- container env injection
+- checkpoint advancement only after durable output write
+- container env secret injection
+- PostgreSQL credential redaction
 - MCP input validation
 - AWS CDK no hardcoded secrets
