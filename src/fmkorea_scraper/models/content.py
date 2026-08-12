@@ -22,6 +22,11 @@ class ImageBlock(MetadataModel):
     url: str = Field(min_length=1, max_length=4096)
     original_url: str | None = Field(default=None, max_length=4096)
     alt: str | None = Field(default=None, max_length=1000)
+    file_srl: str | None = Field(default=None, max_length=100)
+    width: int | None = Field(default=None, ge=0)
+    height: int | None = Field(default=None, ge=0)
+    download_url: str | None = Field(default=None, max_length=4096)
+    download: dict[str, str] | None = None
     file_path: str | None = None
     object_key: str | None = None
 
@@ -33,6 +38,13 @@ class FmkVideoBlock(MetadataModel):
     poster_url: str | None = Field(default=None, max_length=4096)
     description: str | None = None
     duration: str | None = Field(default=None, max_length=100)
+    file_srl: str | None = Field(default=None, max_length=100)
+    download_url: str | None = Field(default=None, max_length=4096)
+    name: str | None = Field(default=None, max_length=1000)
+    upload_date: str | None = Field(default=None, max_length=100)
+    width: int | None = Field(default=None, ge=0)
+    height: int | None = Field(default=None, ge=0)
+    download: dict[str, str] | None = None
     file_path: str | None = None
     object_key: str | None = None
 
@@ -44,6 +56,7 @@ class YouTubeBlock(MetadataModel):
     video_id: str | None = Field(default=None, max_length=200)
     embed_url: str | None = Field(default=None, max_length=4096)
     title: str | None = Field(default=None, max_length=1000)
+    start_seconds: int | None = Field(default=None, ge=0)
 
 
 class XBlock(MetadataModel):
@@ -52,6 +65,8 @@ class XBlock(MetadataModel):
     url: str = Field(min_length=1, max_length=4096)
     username: str | None = Field(default=None, max_length=200)
     status_id: str | None = Field(default=None, max_length=200)
+    tweet_id: str | None = Field(default=None, max_length=200)
+    embed_url: str | None = Field(default=None, max_length=4096)
     text: str | None = None
 
 
