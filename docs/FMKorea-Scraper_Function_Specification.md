@@ -64,8 +64,11 @@
   - 댓글 번호
   - 부모 댓글 번호
   - depth
+  - 원본 DOM id
+  - 원본 페이지 내 순서
   - BEST 댓글 여부
-  - 글쓴이, 작성일, 내용, 추천/비추천 수
+  - BEST 등 댓글 배지
+  - 글쓴이, 작성일, 내용, 추천/비추천/추천-비추천 점수
 
 #### 2.1.2. 수집 방식
 - 목록/검색 단계
@@ -333,8 +336,15 @@
 - 댓글 번호
   - `li[id^="comment_"]`에서 숫자 추출
   - BEST 댓글의 id는 `comment_<comment_srl>_`처럼 끝에 `_`가 붙을 수 있으므로 숫자만 파싱한다.
+  - 원본 DOM id는 `source_dom_id`에 별도 저장한다.
+- 원본 순서
+  - 현재 댓글 페이지/DOM에서 등장한 순서를 `source_order`로 저장한다.
+  - Polars 분석 시에는 배열 순서에 의존하지 않고 `date`, `comment_srl`, `source_order` 기준으로 명시 정렬한다.
 - BEST 댓글 여부
   - `li.comment_best` 또는 내부 `.icon-hit` 텍스트 `BEST`
+  - BEST 댓글도 일반 댓글과 동일하게 `comments` 배열에 저장하고 별도 `best_comments` 배열을 만들지 않는다.
+  - `is_best=true`로 저장한다.
+  - 원문 표시 보존을 위해 `badges=["BEST"]`로 저장한다.
 - 작성자
   - `.meta .member_plate`
   - `data-comment_srl`은 댓글 번호 후보로 사용 가능
@@ -345,6 +355,12 @@
 - 내용
   - 댓글 본문 영역의 텍스트
   - 작성자/날짜/추천/비추천/주소복사/댓글로 가기 UI 텍스트는 제외
+- 추천/비추천
+  - 기준 컨테이너: `li[id^="comment_"] > div.fdb_nav.img_tx span.vote`
+  - 추천 수: `a[title="추천"] .voted_count`
+  - 비추천 수: `a[title="비추천"] .blamed_count`
+  - 값이 빈 문자열이면 `0`으로 정규화한다.
+  - `reactions.up_count`, `reactions.down_count`, `reactions.score=up_count-down_count`로 저장한다.
 - 덧글
   - 댓글 항목 클래스 또는 DOM depth로 구분 가능한 경우 `depth=1`, `parent_comment_id=<상위 댓글 번호>`로 저장한다.
   - 명확한 부모를 찾지 못하면 `depth=null`, `parent_comment_id=null`로 저장하고 원본 class를 `raw_class`에 남긴다.
@@ -501,9 +517,12 @@
   "comments": [
     {
       "comment_srl": 10197230200,
+      "source_dom_id": "comment_10197230200_",
       "parent_comment_srl": null,
       "depth": 0,
+      "source_order": 0,
       "is_best": true,
+      "badges": ["BEST"],
       "author": {
         "nickname": "V5_Faker",
         "member_srl": "1324753328",
@@ -514,7 +533,12 @@
       "content": "댓글 내용",
       "reactions": {
         "up_count": 375,
-        "down_count": 0
+        "down_count": 0,
+        "score": 375
+      },
+      "permalink": "https://www.fmkorea.com/10196696065/10197230200#comment_10197230200",
+      "metadata": {
+        "classes": ["fdb_itm", "clear", "comment_best", "comment-2"]
       }
     }
   ],
@@ -744,6 +768,8 @@ FMKorea-Scraper/
   - Polars 공통 스키마 정규화 시 게시글과 댓글을 별도 테이블로 분리
   - 일반 댓글은 `depth=0`, `parent_comment_id=null`
   - 덧글은 `depth=1`, `parent_comment_id=<상위 댓글 ID>`
+  - BEST 댓글 여부와 추천/비추천 수는 `is_best`, `badges`, `reaction_up`, `reaction_down`, `reaction_score` 컬럼으로 보존
+  - 댓글 정렬은 원본 배열 순서가 아니라 `created_at`, `comment_id`, `source_order` 중 사용 가능한 값을 기준으로 수행
 - 정규화 출력 형식
   - `posts.jsonl`
   - `comments.jsonl`
