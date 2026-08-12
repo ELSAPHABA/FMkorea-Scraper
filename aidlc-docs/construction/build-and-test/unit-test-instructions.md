@@ -1,4 +1,4 @@
-# Unit Test Execution - UOW-006 Output And Storage
+# Unit Test Execution - UOW-005 Job Runner And Checkpoint
 
 ## Run Unit Tests
 
@@ -12,45 +12,49 @@ python -m pytest tests
 Expected current result:
 
 ```text
-83 passed, 2 skipped
+97 passed, 2 skipped
 ```
 
-### 2. Execute UOW-006 Tests Only
+### 2. Execute UOW-005 Tests Only
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m pytest tests\test_outputs_storage.py tests\test_outputs_properties.py
+python -m pytest tests\test_runner_service.py tests\test_runner_workers.py tests\test_runner_checkpointing.py tests\test_runner_policies.py tests\test_runner_properties.py
 ```
 
-## Covered UOW-006 Test Areas
+## Covered UOW-005 Test Areas
 
-- local output layout and path sanitization
-- local post JSONL append
-- local failure JSONL write/read
-- failure detail redaction
-- local report JSON write
-- local media byte write and metadata-only pass-through
-- local `Checkpoint.json` save/load/load-latest
-- local path traversal rejection
-- S3-compatible object key generation
-- fake S3 JSONL same-key spool upload
-- storage factory mode selection
-- PostgreSQL checkpoint mode rejection in this unit
-- JSONL line-separator escaping
-- property-based output key, JSONL, and redaction invariants
+- normal JobRunner completion
+- final report writing
+- output store and failure store finalization
+- completed-key skip before detail fetch
+- resume from checkpoint with a new run result
+- `core.api.run_job` explicit runner delegation
+- CAPTCHA fail-closed stopped Job handling
+- stopped checkpoint reason persistence
+- media download semaphore limit
+- checkpoint load failure mapping
+- checkpoint save failure mapping
+- completed-key token stability
+- 10-success checkpoint cadence
+- stop reason mapping
+- parser failure retryability
+- property-based completed-key dedupe
+- property-based cadence behavior
+- property-based report counter consistency
 
 ## Optional Smoke Tests
 
-Default unit tests do not require Garage/S3 or Polars.
+UOW-005 has no live smoke test by default.
 
-Polars smoke is skipped when Polars is not installed:
+Live Job smoke is deferred to the future CLI/container adapter because it requires concrete runtime option mapping and real storage wiring.
+
+Existing optional lower-level smoke tests remain available:
 
 ```powershell
 $env:PYTHONPATH='src'
 python -m pytest tests\test_outputs_polars_smoke.py
 ```
-
-S3-compatible smoke is skipped unless explicitly enabled:
 
 ```powershell
 $env:FMKOREA_S3_SMOKE_ENABLED='true'

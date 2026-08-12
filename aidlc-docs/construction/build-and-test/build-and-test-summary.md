@@ -1,4 +1,4 @@
-# Build and Test Summary - UOW-006 Output And Storage
+# Build and Test Summary - UOW-005 Job Runner And Checkpoint
 
 ## Build Status
 
@@ -6,48 +6,48 @@
 - **Build Status**: PASS
 - **Build Command**: `python -m pip wheel . --no-deps -w dist`
 - **Build Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
-- **Artifact Size**: 67741 bytes
-- **Artifact SHA256**: `5a46db015b219eeac272673f13d6a673037ff65fb8cfb9f7ff7e4121b532c2e6`
+- **Artifact Size**: 77301 bytes
+- **Artifact SHA256**: `5e886f522f8ec517f7886ed3e13ad3364bfab5e01588e2e3067a5fec201ece19`
 
 ## Test Execution Summary
 
 ### Unit And Contract Tests
 
 - **Command**: `$env:PYTHONPATH='src'; python -m pytest tests -q --tb=short`
-- **Total Tests**: 85
-- **Passed**: 83
+- **Total Tests**: 99
+- **Passed**: 97
 - **Skipped**: 2
 - **Failed**: 0
 - **Status**: PASS
-- **Result**: `83 passed, 2 skipped in 9.25s`
+- **Result**: `97 passed, 2 skipped in 29.10s`
 
-### Output And Storage Tests
+### JobRunner Tests
 
-- **Covered**: local JSONL writes, failure JSONL read/write, safe failure redaction, report writes, local media writes, metadata-only media, local checkpoint save/load/load-latest, path traversal rejection, storage factory mode selection, fake S3 object keys, and S3 JSONL spool same-key upload
+- **Covered**: normal Job completion, report writing, store finalization, completed-key skip, resume with new run id, API bridge unwrap, CAPTCHA fail-closed stop, media semaphore limit, checkpoint failure mapping, stop reason mapping, 10-success checkpoint cadence, and policy PBT
 - **Status**: PASS
 
 ### Property-Based Tests
 
 - **Tool**: Hypothesis
-- **Covered Properties**: path segment sanitization, S3 object key determinism, failure redaction idempotence, JSONL one-record-per-line behavior
+- **Covered Properties**: completed-key determinism, completed-key map idempotence, report counter consistency, checkpoint cadence interval behavior
 - **Status**: PASS
 
 ### Integration Tests
 
-- **Runtime Integration Tests**: limited to UOW-001 model/port compatibility, UOW-004 `PostResult` shape preservation, and fake S3-compatible client behavior
+- **Runtime Integration Tests**: limited to UOW-001 model/port compatibility, UOW-003 collector fake boundary, UOW-004 detail parser fake boundary, UOW-006 storage fake boundary, and explicit `core.api.run_job` delegation
 - **External Service Tests**: not executed by default
 - **Status**: PASS
 
 ### Performance Tests
 
 - **Status**: N/A for load/stress testing
-- **Reason**: UOW-006 has no worker queue, scheduler, retry loop, container runtime, or external object-store provisioning
-- **Current Substitute**: file-backed S3 spool, atomic JSON writers, local path/key PBT, and fake S3 tests
+- **Reason**: UOW-005 has no standalone runtime, distributed queue, container service, or cloud deployment
+- **Current Substitute**: worker count tests, media semaphore tests, checkpoint cadence policy tests, and fake dependency runner tests
 
 ### Security Tests
 
 - **Status**: PASS
-- **Covered**: path containment, failure redaction, import safety boundaries, no S3 credential serialization, lazy S3 dependency, PostgreSQL checkpoint rejection in this unit
+- **Covered**: import safety, explicit dependency boundary, fail-closed CAPTCHA/block behavior, safe failure details, output-before-checkpoint advancement, no live dependency in default tests
 - **Dependency Check**: `python -m pip check` -> `No broken requirements found.`
 - **External Vulnerability Scanner**: N/A for this unit
 

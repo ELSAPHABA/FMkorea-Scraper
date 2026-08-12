@@ -1,4 +1,4 @@
-# Build Instructions - UOW-006 Output And Storage
+# Build Instructions - UOW-005 Job Runner And Checkpoint
 
 ## Prerequisites
 
@@ -6,11 +6,11 @@
 - **Build backend**: hatchling via PEP 517
 - **Package manager**: pip
 - **Runtime dependencies**: `pydantic>=2,<3`, `httpx>=0.28,<1`, `python-dotenv>=1,<2`, `beautifulsoup4>=4,<5`
-- **Optional dependencies**: `boto3>=1.34,<2` for S3-compatible smoke, `polars>=1,<2` for analysis smoke
+- **Optional dependencies**: `boto3>=1.34,<2` for S3-compatible storage smoke, `polars>=1,<2` for analysis smoke
 - **Test dependencies**: `pytest>=8,<9`, `hypothesis>=6,<7`
 - **Environment variables**: none required for default tests
 
-UOW-006 must remain import-safe. Building or importing the output package must not read environment variables, connect to S3, create buckets, write output files, prompt terminal input, create queues, or create database connections.
+UOW-005 must remain import-safe. Building or importing the runner package must not read environment variables, connect to FMKorea, create HTTP clients, open storage backends, prompt terminal input, create external queues, or create database connections.
 
 ## Build Steps
 
@@ -57,8 +57,8 @@ Successfully built fmkorea-scraper
 - **Command**: `python -m pip wheel . --no-deps -w dist`
 - **Status**: PASS
 - **Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
-- **Size**: 67741 bytes
-- **SHA256**: `5a46db015b219eeac272673f13d6a673037ff65fb8cfb9f7ff7e4121b532c2e6`
+- **Size**: 77301 bytes
+- **SHA256**: `5e886f522f8ec517f7886ed3e13ad3364bfab5e01588e2e3067a5fec201ece19`
 - **Dependency Check**: PASS
 
 ## Troubleshooting

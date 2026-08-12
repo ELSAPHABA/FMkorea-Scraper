@@ -1,60 +1,57 @@
-# Integration Test Instructions - UOW-006 Output And Storage
+# Integration Test Instructions - UOW-005 Job Runner And Checkpoint
 
 ## Purpose
 
-Validate that UOW-006 stores UOW-001/UOW-004 model outputs through the UOW-001 storage ports without owning JobRunner orchestration or external infrastructure.
+Validate that UOW-005 coordinates UOW-001 models and UOW-002/UOW-003/UOW-004/UOW-006 ports through explicit dependencies without owning CLI, container, MCP, external queue, or storage infrastructure.
 
 ## Current Integration Coverage
 
 ### UOW-001 Model And Port Integration
 
-- `PostResult`
+- `JobConfig`
+- `WorkerConfig`
+- `PostCandidate`
+- `PostKey`
+- `Checkpoint`
 - `FailureRecord`
 - `JobReport`
 - `StoredObjectRef`
-- `MediaItem`
-- `Checkpoint`
-- `StorageConfig`
-- `S3StorageConfig`
+- `HttpPort`
 - `OutputStorePort`
 - `FailureStorePort`
 - `MediaStorePort`
 - `CheckpointStorePort`
+- `ClockPort`
 
-### UOW-004 Parser Output Compatibility
+### UOW-003 Collector Boundary
 
-`LocalOutputStore.append_post()` and `S3ObjectStore.append_post()` accept completed `PostResult` objects, preserving nested fields:
+`JobRunner` consumes an injected collector with `collect(source)` and receives `PostCandidate` values only.
 
-- `content`
-- `attachments`
-- `media`
-- `comments`
-- `metadata`
+### UOW-004 Detail Parser Boundary
 
-### S3-Compatible Boundary
+`JobRunner` calls an injected detail service with `parse(candidate)` and expects a `PostResult`.
 
-UOW-006 fake S3 tests validate object key and spool behavior without requiring Garage:
+### UOW-006 Storage Boundary
 
-- `put_object(Bucket=..., Key=..., Body=...)`
-- same object key after each JSONL append
-- local spool file as implementation detail
+`JobRunner` uses injected output, failure, media, and checkpoint stores. Tests verify output-before-checkpoint ordering and final report writing through fake stores.
 
 ## Run Integration-Relevant Tests
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m pytest tests\test_outputs_storage.py tests\test_api_ports.py
+python -m pytest tests\test_runner_service.py tests\test_runner_workers.py tests\test_runner_checkpointing.py tests\test_api_ports.py
 ```
 
 ## Deferred Integration Tests
 
 The following require later units:
 
-- UOW-005 queue and checkpoint advancement lifecycle
-- UOW-007 CLI storage option wiring
+- UOW-007 CLI option and wizard wiring
 - UOW-008 container env injection
-- UOW-008 PostgreSQL checkpoint adapter
 - UOW-008 MCP adapter integration
-- UOW-010 AWS CDK storage/checkpoint resources
+- UOW-008 PostgreSQL checkpoint adapter
+- UOW-009 parser-stage retry reprocessor
+- UOW-010 AWS CDK storage/checkpoint/queue resources
+- future SQS/DLQ platform worker integration
 
 No external service is required for current default integration tests.

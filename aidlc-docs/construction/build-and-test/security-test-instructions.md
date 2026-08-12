@@ -1,19 +1,21 @@
-# Security Test Instructions - UOW-006 Output And Storage
+# Security Test Instructions - UOW-005 Job Runner And Checkpoint
 
 ## Current Security Checks
 
-UOW-006 security behavior is verified through unit and property tests.
+UOW-005 security behavior is verified through unit and property tests.
 
 Covered:
 
-- generated local paths are contained under the configured base output path
-- path traversal attempts are rejected
-- failure details drop credential, cookie, proxy, token, header, raw HTML, raw body, and content-like fields
-- S3 credentials are not stored in `StoredObjectRef`
-- S3 dependency is lazy-loaded only when S3 mode is constructed
-- package import does not write files or connect to external services
-- PostgreSQL checkpoint mode is rejected in this unit instead of silently half-supporting it
-- JSONL writer escapes line-separator characters that can split one logical record into multiple physical lines
+- runner package import has no runtime side effects
+- runner receives `JobConfig` and explicit dependencies only
+- runner does not read environment variables, `.env`, user-agent files, cookie files, proxy profiles, or storage credentials
+- CAPTCHA and blocked responses fail closed
+- completed keys advance only after output append success
+- failure records use safe allow-list context
+- report output uses aggregate counts and stored object refs only
+- checkpoint persistence goes through injected checkpoint port
+- media byte download uses injected `HttpPort` only when `MediaMode.DOWNLOAD`
+- default tests do not require live FMKorea, browser automation, Garage/S3, PostgreSQL, SQS/DLQ, Docker, MCP, or CDK
 
 ## Dependency Check
 
@@ -35,7 +37,7 @@ Manual or automated checks should verify importing these modules has no runtime 
 
 ```powershell
 $env:PYTHONPATH='src'
-python -c "import fmkorea_scraper.outputs"
+python -c "import fmkorea_scraper.runner"
 ```
 
 Expected behavior:
@@ -44,17 +46,18 @@ Expected behavior:
 - no `.env` read
 - no terminal prompt
 - no file write
+- no FMKorea request
 - no S3 connection
-- no bucket creation
-- no queue creation
+- no queue service connection
 - no database connection
 
 ## Deferred Security Tests
 
 Later units should add checks for:
 
-- checkpoint advancement only after durable output write
+- CLI input validation and secret masking
 - container env secret injection
 - PostgreSQL credential redaction
 - MCP input validation
+- SQS/DLQ payload redaction
 - AWS CDK no hardcoded secrets

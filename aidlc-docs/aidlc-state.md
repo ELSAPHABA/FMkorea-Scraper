@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Greenfield
 - **Start Date**: 2026-08-11T23:58:42Z
-- **Current Stage**: CONSTRUCTION - UOW-006 Build and Test Review
+- **Current Stage**: CONSTRUCTION - UOW-005 Build and Test Review
 
 ## Workspace State
 - **Existing Code**: No
@@ -71,16 +71,22 @@
 - [x] UOW-006 NFR Design - APPROVED
 - [x] UOW-006 Infrastructure Design - APPROVED
 - [x] UOW-006 Code Generation - APPROVED
-- [ ] UOW-006 Build and Test - REVIEW REQUIRED
+- [x] UOW-006 Build and Test - APPROVED
+- [x] UOW-005 Functional Design - APPROVED
+- [x] UOW-005 NFR Requirements - APPROVED
+- [x] UOW-005 NFR Design - APPROVED
+- [x] UOW-005 Infrastructure Design - APPROVED
+- [x] UOW-005 Code Generation - APPROVED
+- [ ] UOW-005 Build and Test - REVIEW REQUIRED
 
 ### OPERATIONS PHASE
 - [ ] Operations - PLACEHOLDER
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: UOW-006 Build and Test Review
-- **Next Step**: User reviews `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approves proceeding to UOW-005 Functional Design.
-- **Status**: UOW-006 Build and Test complete; review approval required before UOW-005.
+- **Current Stage**: UOW-005 Build and Test Review
+- **Next Step**: User reviews `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approves proceeding to UOW-007 Functional Design.
+- **Status**: UOW-005 Build and Test completed; review approval required before UOW-007 Functional Design.
 
 ## Migration Notes
 - DCinside-Scraper's feature surface, UOW sequence, runtime boundaries, storage contracts, container pattern, MCP adapter pattern, parser-failure retry unit, and CDK direction are the default baseline.
@@ -399,4 +405,61 @@
 - **Dependency Check**: `python -m pip check` -> No broken requirements found.
 - **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/build-instructions.md`, `aidlc-docs/construction/build-and-test/unit-test-instructions.md`, `aidlc-docs/construction/build-and-test/integration-test-instructions.md`, `aidlc-docs/construction/build-and-test/performance-test-instructions.md`, `aidlc-docs/construction/build-and-test/security-test-instructions.md`, `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
 - **Next Stage After Build and Test Approval**: UOW-005 Functional Design
+- **Build and Test Approved At**: 2026-08-12T16:59:31Z
+- **Status**: Complete
+
+## UOW-005 Job Runner And Checkpoint Status
+- **Functional Design Plan Created At**: 2026-08-12T16:59:31Z
+- **Plan Artifact**: `aidlc-docs/construction/plans/uow-005-job-runner-and-checkpoint-functional-design-plan.md`
+- **Dependency Note**: UOW-005 starts after UOW-006 so checkpoint advancement can depend on concrete output/storage ports.
+- **Functional Design Answers Confirmed At**: 2026-08-12T17:03:58Z
+- **Functional Design Answer Analysis**: Q1-Q12 were A. No ambiguity or conflicts found. JobRunner remains a core orchestration layer with post-candidate queue units, storage-before-checkpoint ordering, 10-success checkpoint cadence, resume with completed-key dedupe, fail-closed CAPTCHA/block handling, media download orchestration, and final safe report generation.
+- **Functional Design Generated At**: 2026-08-12T17:03:58Z
+- **Artifacts**: `domain-entities.md`, `business-rules.md`, `business-logic-model.md`
+- **Next Stage After Approval**: UOW-005 NFR Requirements
+- **Functional Design Approved At**: 2026-08-12T17:07:27Z
+- **NFR Requirements Plan Created At**: 2026-08-12T17:07:27Z
+- **NFR Requirements Plan Artifact**: `aidlc-docs/construction/plans/uow-005-job-runner-and-checkpoint-nfr-requirements-plan.md`
+- **NFR Requirements Answers Confirmed At**: 2026-08-12T17:12:54Z
+- **NFR Requirements Answer Analysis**: Q1-Q12 were A. No ambiguity or conflicts found. UOW-005 uses standard asyncio only, bounded queue backpressure, best-effort finalization, output-before-checkpoint durability, 10-success checkpoint cadence, resume dedupe, fail-closed CAPTCHA/block handling, safe allow-list payloads, media download semaphore, fake-clock realtime tests, fake dependency default tests, and pure-policy PBT.
+- **NFR Requirements Generated At**: 2026-08-12T17:12:54Z
+- **NFR Requirements Artifacts**: `nfr-requirements.md`, `tech-stack-decisions.md`
+- **Next Stage After NFR Requirements Approval**: UOW-005 NFR Design
+- **NFR Requirements Approved At**: 2026-08-12T17:17:24Z
+- **NFR Design Plan Created At**: 2026-08-12T17:17:24Z
+- **NFR Design Plan Artifact**: `aidlc-docs/construction/plans/uow-005-job-runner-and-checkpoint-nfr-design-plan.md`
+- **NFR Design Answers Confirmed At**: 2026-08-12T17:21:25Z
+- **NFR Design Answer Analysis**: Q1-Q12 were A. No ambiguity or conflicts found. Runner package layout, asyncio task lifecycle, PostCandidate queue with sentinels, completed-key policy, checkpoint coordinator, resume/new-run behavior, stop mapping, media semaphore, safe failure/report builders, deterministic clock, fake dependency tests, and public API boundary are confirmed.
+- **NFR Design Generated At**: 2026-08-12T17:21:25Z
+- **NFR Design Artifacts**: `nfr-design-patterns.md`, `logical-components.md`
+- **Next Stage After NFR Design Approval**: UOW-005 Infrastructure Design
+- **NFR Design Approved At**: 2026-08-12T17:27:23Z
+- **Infrastructure Design Plan Created At**: 2026-08-12T17:27:23Z
+- **Infrastructure Design Plan Artifact**: `aidlc-docs/construction/plans/uow-005-job-runner-and-checkpoint-infrastructure-design-plan.md`
+- **Infrastructure Design Answers Confirmed At**: 2026-08-12T17:30:12Z
+- **Infrastructure Design Answer Analysis**: Q1-Q10 were A. No ambiguity or conflicts found. UOW-005 remains an importable JobRunner library with no standalone deployment; compute, storage, networking, queueing, runtime config, checkpoint backend, observability, live smoke, and shared infrastructure are delegated to injected dependencies or later adapter/platform units.
+- **Infrastructure Design Generated At**: 2026-08-12T17:30:12Z
+- **Infrastructure Design Artifacts**: `infrastructure-design.md`, `deployment-architecture.md`
+- **Next Stage After Infrastructure Design Approval**: UOW-005 Code Generation
+- **Infrastructure Design Approved At**: 2026-08-12T17:33:25Z
+- **Code Generation Plan Created At**: 2026-08-12T17:33:25Z
+- **Code Generation Plan Artifact**: `aidlc-docs/construction/plans/uow-005-job-runner-and-checkpoint-code-generation-plan.md`
+- **Code Generation Plan Approved At**: 2026-08-12T17:47:59Z
+- **Code Generated At**: 2026-08-12T17:47:59Z
+- **Code Artifacts**: `src/fmkorea_scraper/runner/`, `src/fmkorea_scraper/core/api.py`, `src/fmkorea_scraper/__init__.py`, `tests/test_runner_*.py`, `tests/strategies/runner.py`
+- **Code Documentation Artifacts**: `aidlc-docs/construction/uow-005-job-runner-and-checkpoint/code/public-contracts.md`, `aidlc-docs/construction/uow-005-job-runner-and-checkpoint/code/code-generation-summary.md`
+- **Generation Validation**: `$env:PYTHONPATH='src'; python -m pytest tests -q --tb=short` -> 97 passed, 2 skipped; `$env:PYTHONPATH='src'; python -m compileall -q src tests` -> passed
+- **Next Stage After Code Generation Approval**: Build and Test
+- **Code Generation Approved At**: 2026-08-12T17:51:48Z
+- **Build and Test Started At**: 2026-08-12T17:51:48Z
+- **Build Command**: `python -m pip wheel . --no-deps -w dist`
+- **Build Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
+- **Build Artifact Size**: 77301 bytes
+- **Build Artifact SHA256**: `5e886f522f8ec517f7886ed3e13ad3364bfab5e01588e2e3067a5fec201ece19`
+- **Test Command**: `$env:PYTHONPATH='src'; python -m pytest tests -q --tb=short`
+- **Test Result**: 97 passed, 2 skipped
+- **Compile Check**: `$env:PYTHONPATH='src'; python -m compileall -q src tests` -> passed
+- **Dependency Check**: `python -m pip check` -> No broken requirements found.
+- **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/build-instructions.md`, `aidlc-docs/construction/build-and-test/unit-test-instructions.md`, `aidlc-docs/construction/build-and-test/integration-test-instructions.md`, `aidlc-docs/construction/build-and-test/performance-test-instructions.md`, `aidlc-docs/construction/build-and-test/security-test-instructions.md`, `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
+- **Next Stage After Build and Test Approval**: UOW-007 Functional Design
 - **Status**: Build and Test review required

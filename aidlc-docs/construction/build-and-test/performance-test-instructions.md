@@ -1,43 +1,44 @@
-# Performance Test Instructions - UOW-006 Output And Storage
+# Performance Test Instructions - UOW-005 Job Runner And Checkpoint
 
 ## Status
 
-Load and stress testing are N/A for UOW-006.
+Load and stress testing are not required for UOW-005.
 
 ## Reason
 
-UOW-006 is an importable output/storage library. It does not own:
+UOW-005 is an importable in-process JobRunner library. It does not own:
 
-- worker count
-- queue lifecycle
-- retry scheduling
-- checkpoint advancement cadence
-- container runtime
-- scheduler loops
-- cloud object-store provisioning
+- process replica count
+- container sizing
+- external Job queue leases
+- SQS/DLQ throughput
+- live scraper smoke execution
+- cloud scheduler loops
+- Garage/S3/PostgreSQL provisioning
 
-Those concerns belong to UOW-005, UOW-007, UOW-008, and later infrastructure work.
+Those concerns belong to UOW-007, UOW-008, UOW-010, and later platform work.
 
 ## Current Performance Guardrails
 
 Default tests cover bounded and deterministic behavior:
 
-- one JSON object per physical JSONL line
-- file-backed S3 JSONL spool instead of full in-memory buffers
-- atomic JSON writes for small report/checkpoint documents
-- path/key generation without network access
-- fake S3 write behavior without external latency
-- local checkpoint `load_latest()` correctness for current file-backed scope
+- `post_worker_count` controls worker task count
+- `queue_max_size` creates bounded in-process queue backpressure
+- `media_worker_count` caps concurrent media downloads with a semaphore
+- completed-key skip avoids repeated detail fetches
+- checkpoint cadence is every 10 successful output writes
+- runner does not retain all parsed `PostResult` values after output write
+- property tests cover cadence and counter consistency
 
 ## Future Performance Tests
 
-Add load/stress tests when UOW-005 JobRunner and worker queues exist.
+Add load/stress tests when CLI/container runtime exists.
 
 Suggested future targets:
 
-- post output append throughput
-- S3 spool upload latency
-- checkpoint save cadence under worker fan-out
-- media byte write throughput
-- Garage/S3-compatible object-store smoke latency
-- failure JSONL readback cost for parser-failure retry
+- post worker throughput under fake HTTP/parser/store
+- checkpoint save cadence under high candidate counts
+- media download concurrency behavior under realistic file sizes
+- S3-compatible output latency with Garage
+- resume dedupe cost with large completed-key sets
+- parser failure record readback cost for UOW-009 retry selection
