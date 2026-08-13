@@ -7,6 +7,7 @@ import pytest
 
 from fmkorea_scraper.core.errors import ParseFailureError
 from fmkorea_scraper.models.content import FmkVideoBlock, ImageBlock, XBlock, YouTubeBlock
+from fmkorea_scraper.models.enums import CommentMode
 from fmkorea_scraper.models.job import PostCandidate
 from fmkorea_scraper.parse import ParserOptions, PostDetailService
 
@@ -65,6 +66,20 @@ def test_parse_uses_injected_http() -> None:
 
     assert post.title == "sample title"
     assert http.requested == ["https://www.fmkorea.com/best/10195585295"]
+
+
+def test_parse_respects_comment_mode_none() -> None:
+    post = PostDetailService(options=ParserOptions(comment_mode=CommentMode.NONE)).parse_html(text("detail_full.html"), candidate())
+
+    assert post.comments == []
+
+
+def test_parse_skips_server_log_text() -> None:
+    html = text("detail_full.html").replace("<p>hello world</p>", "<p>hello world</p><p>serverLog: f32</p>")
+    post = PostDetailService().parse_html(html, candidate())
+
+    assert "hello world" in post.content.text
+    assert "serverLog:" not in post.content.text
 
 
 def test_parse_fetches_bounded_extra_comment_pages_and_dedupes_comments() -> None:

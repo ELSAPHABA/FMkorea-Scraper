@@ -10,7 +10,7 @@ from bs4 import Tag
 
 from fmkorea_scraper.models.content import FmkVideoBlock, ImageBlock, XBlock, YouTubeBlock
 from fmkorea_scraper.models.comment import Comment
-from fmkorea_scraper.models.enums import ContentBlockType
+from fmkorea_scraper.models.enums import CommentMode, ContentBlockType
 from fmkorea_scraper.models.job import PostCandidate, PostRequest
 from fmkorea_scraper.models.media import MediaItem
 from fmkorea_scraper.models.post import PostResult
@@ -55,7 +55,7 @@ class PostDetailService:
         url = self._source_url(candidate_or_request)
         html = _response_text(await self.http.get(url))
         post = self.parse_html(html, candidate_or_request)
-        if self.options.max_comment_pages is None:
+        if self.options.comment_mode == CommentMode.NONE or self.options.max_comment_pages is None:
             return post
 
         context = self._context(candidate_or_request)
@@ -67,7 +67,8 @@ class PostDetailService:
         metadata = dict(post.metadata)
         if warnings:
             metadata["parse_warnings"] = [*metadata.get("parse_warnings", []), *warnings]
-        return post.model_copy(update={"comments": self._dedupe_comments([*post.comments, *comments]), "metadata": metadata})
+        merged = self._filter_comments(self._dedupe_comments([*post.comments, *comments]))
+        return post.model_copy(update={"comments": merged, "metadata": metadata})
 
     def parse_html(self, html: str, candidate_or_request: PostCandidate | PostRequest) -> PostResult:
         context = self._context(candidate_or_request)
@@ -77,7 +78,7 @@ class PostDetailService:
         metadata = self.metadata_parser.parse(soup, context, warnings)
         attachments = self.attachment_parser.parse(soup, base_url=context.base_url)
         content = self.content_parser.parse(soup, attachments, warnings, options=self.options)
-        comments, _ = self.comment_parser.parse(soup, warnings, max_comments=self.options.max_comments)
+        comments = self._parse_comments(soup, warnings)
         media = self._media_summary(content.blocks)
         post_metadata = {}
         if len(warnings):
@@ -103,6 +104,19 @@ class PostDetailService:
             comments=comments,
             metadata=post_metadata,
         )
+
+    def _parse_comments(self, soup: BeautifulSoup, warnings: ParseWarningCollector) -> list[Comment]:
+        if self.options.comment_mode == CommentMode.NONE:
+            return []
+        comments, _ = self.comment_parser.parse(soup, warnings, max_comments=self.options.max_comments)
+        return self._filter_comments(comments)
+
+    def _filter_comments(self, comments: list[Comment]) -> list[Comment]:
+        if self.options.comment_mode == CommentMode.NONE:
+            return []
+        if self.options.comment_mode == CommentMode.BEST_ONLY:
+            return [comment for comment in comments if comment.is_best]
+        return comments
 
     def _source_url(self, candidate_or_request: PostCandidate | PostRequest) -> str:
         return candidate_or_request.url

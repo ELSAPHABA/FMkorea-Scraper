@@ -768,6 +768,7 @@ async def _resume_layout_job_id(request: ResumeRequest, storage_config: StorageC
 
 def _parser_options(scrape_options: ScrapeOptions) -> ParserOptions:
     return ParserOptions(
+        comment_mode=scrape_options.comment_mode,
         max_comment_pages=scrape_options.max_comment_pages,
         max_content_blocks=scrape_options.max_content_blocks,
         max_comments=scrape_options.max_comments,

@@ -24,7 +24,7 @@ class TextNormalizer:
         if parent.name in self.ignored_parent_names or parent.find_parent(["a", "video", "iframe"]):
             return True
         text = self.normalize(str(node))
-        return not text or text in {"BeforeDocument", "AfterDocument", "__LAZY__"}
+        return not text or text in {"BeforeDocument", "AfterDocument", "__LAZY__"} or text.startswith("serverLog:")
 
 
 class ContentParser:
