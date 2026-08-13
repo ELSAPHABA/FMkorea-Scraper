@@ -1,0 +1,56 @@
+aws:
+  account: "111111111111"
+  region: "ap-northeast-2"
+
+naming:
+  project: "community-scraper"
+  name_prefix: "community-scraper"
+
+removal_policy:
+  profile: "prod"
+  allow_destroy_stateful: false
+
+network:
+  max_azs: 2
+  nat_gateways: 0
+  availability_zones: ["ap-northeast-2a", "ap-northeast-2c"]
+
+s3:
+  bucket_name:
+  versioned: true
+
+rds:
+  database_name: "scraper"
+  engine_version:
+  allocated_storage_gb: 20
+  instance_class: "t3.small"
+  multi_az: true
+  backup_retention_days: 7
+
+ecs:
+  cpu: 512
+  memory_mib: 1024
+  ephemeral_storage_gib:
+
+workers:
+  - site_id: "fmkorea"
+    image_uri: "111111111111.dkr.ecr.ap-northeast-2.amazonaws.com/fmkorea-scraper"
+    image_tag: "latest"
+    command: ["run"]
+    schedule:
+    failure_sns_topic_arn:
+    environment:
+      JOB_ID: "manual-prod"
+      RESUME: "false"
+      S3_FORCE_PATH_STYLE: "false"
+      FMKOREA_USER_AGENT_ROTATE_EVERY: "10"
+    secrets:
+      database_url:
+        name: "community-scraper/prod/database-url"
+      s3_access_key_id:
+        name: "community-scraper/prod/s3-access-key-id"
+      s3_secret_access_key:
+        name: "community-scraper/prod/s3-secret-access-key"
+      proxy_url:
+        name:
+

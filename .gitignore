@@ -221,3 +221,7 @@ __marimo__/
 outputs/
 Checkpoint.json
 user-agents.txt
+
+# AWS CDK generated files
+infra/cdk/cdk.out/
+infra/cdk/cdk.context.json
