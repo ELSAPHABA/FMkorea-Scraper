@@ -75,7 +75,6 @@ class RuntimeConfig(MetadataModel):
     user_agent_rotate_every: int = Field(default=10, ge=1)
     proxy_enabled: bool = False
     proxy_env_prefix: str = Field(default="FMKOREA_PROXY", min_length=1, max_length=100)
-    cookie_file: str | None = Field(default=None, max_length=4096)
     timeout_seconds: float = Field(default=30.0, gt=0)
 
 

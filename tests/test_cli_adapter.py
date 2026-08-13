@@ -53,6 +53,23 @@ def test_parser_accepts_confirmed_subcommands() -> None:
     assert args.subcommand == "run"
 
 
+def test_parser_rejects_user_cookie_file_option() -> None:
+    parser = cli.build_parser()
+
+    with pytest.raises(SystemExit):
+        parser.parse_args(
+            [
+                "run",
+                "--source",
+                "direct-post",
+                "--url",
+                "https://www.fmkorea.com/best/101",
+                "--cookie-file",
+                "cookies.txt",
+            ]
+        )
+
+
 def test_build_job_config_maps_board_search() -> None:
     config = cli.build_job_config(
         {

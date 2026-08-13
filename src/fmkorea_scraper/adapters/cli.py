@@ -138,7 +138,6 @@ def _add_runtime_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--proxy-host")
     parser.add_argument("--proxy-id")
     parser.add_argument("--proxy-pw")
-    parser.add_argument("--cookie-file")
 
 
 def normalize_command(value: argparse.Namespace | Mapping[str, Any]) -> dict[str, Any]:
@@ -309,7 +308,6 @@ def _build_runtime_config(command: Mapping[str, Any]) -> RuntimeConfig:
         user_agent_file=_blank_none(command.get("user_agent_file")),
         user_agent_rotate_every=int(command.get("user_agent_rotate_every") or 10),
         proxy_enabled=bool(_blank_none(command.get("proxy_host"))),
-        cookie_file=_blank_none(command.get("cookie_file")),
         timeout_seconds=float(command.get("timeout_seconds") or 30.0),
     )
 

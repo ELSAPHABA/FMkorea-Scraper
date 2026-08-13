@@ -620,6 +620,13 @@
     - 컨테이너 내부 프로그램은 로컬 실행과 동일하게 `.env`를 읽어 Proxy를 적용한다.
   - `.env`는 문서화된 보안 예외로 평문 저장을 허용하되, `.gitignore` 포함과 터미널 경고를 필수로 한다.
   - 로그에는 Proxy password, raw `.env` 내용, 인증정보를 남기지 않는다.
+- Cookie
+  - 사용자가 만든 cookie 파일을 읽거나 HTTP 요청에 적용하는 기능은 제공하지 않는다.
+  - CLI, 터미널 마법사, 컨테이너, MCP에는 사용자 cookie 파일 경로 입력 옵션을 두지 않는다.
+  - 서버가 응답으로 내려준 임시 cookie는 현재 `HttpClient` 생명주기 안에서만 메모리로 유지할 수 있다.
+  - User-Agent 교체 또는 `HttpClient` 종료 시 in-memory cookie jar를 reset한다.
+  - Job 재시작, resume, Proxy 변경 이후에는 이전 cookie를 재사용하지 않는다.
+  - raw cookie는 로그, checkpoint, output JSONL, report, failure record에 저장하지 않는다.
 - 스크래핑 속도 조절
   - 요청 사이의 대기 시간을 사용자가 설정 가능하다.
   - 기본값은 안정성을 우선하여 너무 빠른 연속 요청을 피하도록 설정한다.
@@ -646,7 +653,7 @@
 ## 3. 기술 스택
 - Proxy를 통한 httpx 요청 전송
 - `.env` 파일 기반 Proxy 환경변수 로드
-- 요청별 세션 분리 (쿠키 reset)
+- 서버가 내려준 임시 cookie는 `HttpClient` 생명주기 안에서만 메모리로 유지하고, User-Agent 교체 또는 client 종료 시 reset
 - BeautifulSoup 기반 HTML 파싱
 - httpx 기반 동기/비동기 HTTP 요청
 - asyncio 기반 링크 수집 워커 + 게시글 수집 워커 분리

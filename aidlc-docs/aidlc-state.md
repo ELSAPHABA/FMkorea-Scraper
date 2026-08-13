@@ -99,7 +99,7 @@
 - FMKorea-specific URL/query builders, pagination, search parsers, post parsers, content/media parsers, comment parsers, and block-detection rules must be implemented separately.
 - Blocking migration points should be handled by AI-DLC question gates instead of silent assumptions.
 - Confirmed exception: FMKorea original JSON schema omits `is_repost` and `repost`; common normalization may synthesize null/default values later.
-- Confirmed exception: user-provided cookie files are supported only as explicit inputs and must not be logged, persisted to outputs, or written to checkpoints.
+- Confirmed exception: user-provided cookie files are not supported. Server-set cookies may exist only in the current in-memory `HttpClient` lifecycle and must not be logged, persisted to outputs, or written to checkpoints.
 
 ## Requirements Status
 - **Requirement Verification Questions**: Confirmed
