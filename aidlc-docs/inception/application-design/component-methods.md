@@ -21,7 +21,7 @@
 | Method | Input | Output | Purpose |
 |---|---|---|---|
 | `validate_job_config` | `Mapping[str, Any]` | `JobConfig` | 모든 adapter 입력을 공통 Job 설정으로 변환 |
-| `validate_scrape_options` | `Mapping[str, Any]` | `ScrapeOptions` | 댓글, media, request delay, worker 옵션 검증 |
+| `validate_scrape_options` | `Mapping[str, Any]` | `ScrapeOptions` | 댓글, media, request delay, retry, parser guardrail 옵션 검증 |
 | `validate_realtime_options` | `Mapping[str, str]` | `RealtimeOptions` | realtime env 조합 검증 |
 | `validate_storage_config` | `Mapping[str, str]` | `StorageConfig` | local, PostgreSQL, S3-compatible 설정 검증 |
 | `validate_resume_request` | `job_id: str | None` | `ResumeRequest` | 재개 요청 검증 |

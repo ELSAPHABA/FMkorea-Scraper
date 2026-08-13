@@ -8,7 +8,7 @@ UOW-005 reuses model and port contracts from earlier units.
 |---|---|---|
 | `JobConfig` | `models/job.py` | immutable Job configuration used by the runner |
 | `WorkerConfig` | `models/job.py` | post worker count, media concurrency, queue size |
-| `ScrapeOptions` | `models/job.py` | media mode, comment mode, retry-related scrape options |
+| `ScrapeOptions` | `models/job.py` | media mode, comment mode, retry, delay, and parser guardrail options persisted in checkpoints |
 | `RealtimeTermination` | `models/job.py` | realtime duration or end-at stop condition |
 | `PostCandidate` | `models/job.py` | queue item collected by UOW-003 |
 | `PostKey` | `models/job.py` | completed-key identity stored in checkpoint |

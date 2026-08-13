@@ -62,6 +62,9 @@ class ScrapeOptions(MetadataModel):
     include_attachments: bool = True
     request_interval_seconds: float = Field(default=1.0, ge=0)
     max_post_retries: int = Field(default=3, ge=0)
+    max_comment_pages: int | None = Field(default=None, ge=1)
+    max_content_blocks: int | None = Field(default=None, ge=1)
+    max_comments: int | None = Field(default=None, ge=1)
 
 
 class WorkerConfig(MetadataModel):

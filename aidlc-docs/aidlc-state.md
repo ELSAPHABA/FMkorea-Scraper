@@ -102,6 +102,7 @@
 - Confirmed exception: FMKorea original JSON schema omits `is_repost` and `repost`; common normalization may synthesize null/default values later.
 - Confirmed exception: user-provided cookie files are not supported. Server-set cookies may exist only in the current in-memory `HttpClient` lifecycle and must not be logged, persisted to outputs, or written to checkpoints.
 - Confirmed alignment: `JobConfig` follows the baseline scraper boundary and does not persist HTTP runtime inputs. CLI/container/MCP/library adapters map User-Agent, Proxy, and timeout inputs to `HttpRuntimeConfig` at execution time; legacy checkpoint `job_config.runtime_config` is dropped on load.
+- Confirmed alignment: parser guardrails (`max_comment_pages`, `max_content_blocks`, `max_comments`) are persisted in `JobConfig.scrape_options`, and adapters derive `ParserOptions` from that persisted scrape config for run, resume, and parser-failure retry consistency.
 
 ## Requirements Status
 - **Requirement Verification Questions**: Confirmed

@@ -90,6 +90,25 @@ def test_build_job_config_maps_board_search() -> None:
     assert config.worker_config.post_worker_count == 3
 
 
+def test_build_job_config_persists_parser_guardrails() -> None:
+    config = cli.build_job_config(
+        {
+            "subcommand": "run",
+            "source": "direct-post",
+            "job_id": "job-1",
+            "urls": ["https://www.fmkorea.com/best/101"],
+            "max_comment_pages": 3,
+            "max_content_blocks": 50,
+            "max_comments": 100,
+        },
+        env={},
+    )
+
+    assert config.scrape_options.max_comment_pages == 3
+    assert config.scrape_options.max_content_blocks == 50
+    assert config.scrape_options.max_comments == 100
+
+
 def test_build_job_config_does_not_persist_runtime_options() -> None:
     config = cli.build_job_config(
         {
@@ -301,6 +320,35 @@ def test_build_local_runtime_uses_command_runtime_options(monkeypatch, tmp_path:
     assert client.config.timeout.connect_seconds == 7
     assert client.config.user_agent.explicit_file_path == str(user_agent_file)
     assert client.config.user_agent.rotation_interval_requests == 3
+
+
+def test_build_local_runtime_uses_persisted_parser_guardrails(monkeypatch, tmp_path: Path) -> None:
+    def fake_create(config, *, job_id, run_id, s3_client=None):
+        store = SimpleNamespace()
+        return SimpleNamespace(output_store=store, failure_store=store, media_store=store, checkpoint_store=store, layout=None)
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(cli.StorageFactory, "create", staticmethod(fake_create))
+    config = cli.build_job_config(
+        {
+            "subcommand": "run",
+            "source": "direct-post",
+            "job_id": "job-1",
+            "urls": ["https://www.fmkorea.com/best/101"],
+            "max_comment_pages": 3,
+            "max_content_blocks": 50,
+            "max_comments": 100,
+        },
+        env={},
+    )
+
+    client, runner = cli.build_local_runtime(config, run_id="run-fixed", command={})
+    asyncio.run(client.close())
+
+    options = runner.dependencies.detail_service.options
+    assert options.max_comment_pages == 3
+    assert options.max_content_blocks == 50
+    assert options.max_comments == 100
 
 
 def test_core_api_passes_optional_run_id() -> None:

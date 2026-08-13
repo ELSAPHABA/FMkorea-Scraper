@@ -116,7 +116,7 @@ PostgreSQL checkpoint storage remains deferred to UOW-008.
 - [x] Implement `build_resume_request`.
 - [x] Implement `build_retry_request`.
 - [x] Map CLI source names to existing UOW-001 source models.
-- [x] Build `ScrapeOptions`, `WorkerConfig`, and `StorageConfig` from command fields.
+- [x] Build `ScrapeOptions` including parser guardrails, `WorkerConfig`, and `StorageConfig` from command fields.
 - [x] Keep timeout, User-Agent, and Proxy command fields out of `JobConfig`; map them directly to `HttpRuntimeConfig` during local runtime assembly.
 
 ### Step 4. Realtime Environment Mapping

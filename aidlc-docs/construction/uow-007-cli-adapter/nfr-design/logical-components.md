@@ -91,7 +91,7 @@ Responsibilities:
 
 - build selected source model
 - apply realtime environment when enabled
-- build `ScrapeOptions`
+- build `ScrapeOptions` including parser guardrails
 - build `WorkerConfig`
 - build `StorageConfig`
 - leave timeout, User-Agent, and Proxy values for runtime assembly rather than persisting them in `JobConfig`

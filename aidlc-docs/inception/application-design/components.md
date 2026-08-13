@@ -59,7 +59,7 @@
 
 ### JobModels
 
-- **Purpose**: Job 실행 입력과 runtime 옵션 모델 정의.
+- **Purpose**: Job 실행 입력과 저장 가능한 수집 옵션 모델 정의.
 - **Responsibilities**: `JobConfig`, `ScrapeOptions`, `RangeFilter`, `RealtimeOptions`, `StorageConfig`, `WorkerConfig`, `ResumeRequest`.
 - **Rules**:
   - realtime 종료 조건은 duration 또는 end_at 중 정확히 하나만 허용한다.

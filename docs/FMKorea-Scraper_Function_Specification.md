@@ -116,6 +116,11 @@
   - 댓글 미수집
   - 전체 댓글 수집
   - BEST 댓글만 수집
+- 파서 제한 옵션
+  - `max_comment_pages`: 추가 댓글 페이지 요청 상한. 값이 없으면 상세 HTML에 포함된 댓글만 파싱한다.
+  - `max_comments`: 댓글 저장 개수 상한. 값이 없으면 발견된 정상 댓글을 모두 저장한다.
+  - `max_content_blocks`: 본문 content block 저장 개수 상한. 값이 없으면 발견된 정상 block을 모두 저장한다.
+  - 위 제한값은 `JobConfig.scrape_options`에 저장해 체크포인트 재개와 parser-stage 실패 재처리에서 동일하게 재현한다.
 - 본문 미디어 수집 옵션
   - 이미지/동영상 URL 및 메타데이터만 저장
   - 이미지/동영상 파일 저장
@@ -581,6 +586,7 @@
   - 이미 저장된 게시글은 `(site_id, board_id, document_srl)` 기준으로 중복 저장되지 않도록 처리
 - 체크포인트에 저장되는 `JobConfig`
   - `JobConfig`는 수집 대상, 수집 옵션, 워커 옵션, 저장소 옵션만 저장한다.
+  - `ScrapeOptions`에는 댓글/미디어 모드, 첨부파일 포함 여부, 요청 간격, 게시글 재시도 횟수, 파서 제한값(`max_comment_pages`, `max_comments`, `max_content_blocks`)을 저장한다.
   - User-Agent 파일 경로, User-Agent 교체 주기, Proxy, timeout 같은 HTTP 실행값은 `JobConfig`에 저장하지 않는다.
   - 위 HTTP 실행값은 CLI, 터미널 마법사, 컨테이너, MCP, 라이브러리 adapter가 실행 시점에 `HttpRuntimeConfig`로 조립한다.
   - 과거 체크포인트에 `job_config.runtime_config`가 남아 있으면 로드 시 해당 legacy 필드만 버리고 재개한다.

@@ -184,7 +184,7 @@ X) 기타
 
 본문/댓글/미디어/요청 간격/worker 수 같은 실행 옵션은 어떤 CLI 옵션으로 둘까요?
 
-A) (권장) `--comment-mode`, `--media-mode`, `--include-attachments/--no-attachments`, `--request-interval-seconds`, `--max-post-retries`, `--post-worker-count`, `--media-worker-count`, `--queue-max-size`, `--timeout-seconds`를 둔다. 수집/워커 값은 `ScrapeOptions`, `WorkerConfig`에 저장하고, timeout/User-Agent/Proxy 같은 실행값은 `JobConfig`에 저장하지 않고 `HttpRuntimeConfig`로 직접 조립한다.
+A) (권장) `--comment-mode`, `--media-mode`, `--include-attachments/--no-attachments`, `--request-interval-seconds`, `--max-post-retries`, `--max-comment-pages`, `--max-content-blocks`, `--max-comments`, `--post-worker-count`, `--media-worker-count`, `--queue-max-size`, `--timeout-seconds`를 둔다. 수집/파서/워커 값은 `ScrapeOptions`, `WorkerConfig`에 저장하고, timeout/User-Agent/Proxy 같은 실행값은 `JobConfig`에 저장하지 않고 `HttpRuntimeConfig`로 직접 조립한다.
 
 추천 사유: 이미 모델 필드가 있으므로 CLI 옵션명만 얇게 붙이면 됩니다. FMKorea에 없는 site-specific 옵션은 만들지 않습니다.
 

@@ -259,7 +259,12 @@ Fields:
 - `include_attachments: bool`
 - `request_interval_seconds: float`
 - `max_post_retries: int`
+- `max_comment_pages: int | None`
+- `max_content_blocks: int | None`
+- `max_comments: int | None`
 - `metadata: dict[str, Any]`
+
+Parser guardrail values are persisted here, not only in adapter-local parser settings, so checkpoint resume and parser-failure retry can rebuild the same detail parser behavior.
 
 ### WorkerConfig
 

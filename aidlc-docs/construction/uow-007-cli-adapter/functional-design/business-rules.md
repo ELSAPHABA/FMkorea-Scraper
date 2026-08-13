@@ -142,6 +142,7 @@
 - `--include-attachments` and `--no-attachments` map to `ScrapeOptions.include_attachments`.
 - `--request-interval-seconds` maps to `ScrapeOptions.request_interval_seconds` and `HttpRuntimeConfig.request_interval_seconds`.
 - `--max-post-retries` maps to `ScrapeOptions.max_post_retries` and runtime retry policy where applicable.
+- `--max-comment-pages`, `--max-content-blocks`, and `--max-comments` map to `ScrapeOptions` and are used to assemble `ParserOptions` from the persisted `JobConfig`.
 - `--post-worker-count` maps to `WorkerConfig.post_worker_count`.
 - `--media-worker-count` maps to `WorkerConfig.media_worker_count`.
 - `--queue-max-size` maps to `WorkerConfig.queue_max_size`.

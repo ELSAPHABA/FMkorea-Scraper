@@ -288,7 +288,18 @@ def _build_range_filter(command: Mapping[str, Any]) -> RangeFilter | None:
 
 
 def _build_scrape_options(command: Mapping[str, Any]) -> ScrapeOptions:
-    data = {key: command[key] for key in ("include_attachments", "request_interval_seconds", "max_post_retries") if key in command}
+    data = {
+        key: command[key]
+        for key in (
+            "include_attachments",
+            "request_interval_seconds",
+            "max_post_retries",
+            "max_comment_pages",
+            "max_content_blocks",
+            "max_comments",
+        )
+        if key in command
+    }
     if command.get("comment_mode"):
         data["comment_mode"] = CommentMode(str(command["comment_mode"]))
     if command.get("media_mode"):
@@ -334,7 +345,7 @@ def build_local_runtime(config: JobConfig, *, run_id: str, command: Mapping[str,
     runner = JobRunner(
         JobRunDependencies(
             collector=LinkCollectorService(client),
-            detail_service=PostDetailService(client, options=_parser_options(command)),
+            detail_service=PostDetailService(client, options=_parser_options(config.scrape_options)),
             output_store=bundle.output_store,
             failure_store=bundle.failure_store,
             media_store=bundle.media_store,
@@ -711,11 +722,11 @@ async def _resume_layout_job_id(request: ResumeRequest, storage_config: StorageC
     return checkpoint.job_id if checkpoint else "resume"
 
 
-def _parser_options(command: Mapping[str, Any]) -> ParserOptions:
+def _parser_options(scrape_options: ScrapeOptions) -> ParserOptions:
     return ParserOptions(
-        max_comment_pages=command.get("max_comment_pages"),
-        max_content_blocks=command.get("max_content_blocks"),
-        max_comments=command.get("max_comments"),
+        max_comment_pages=scrape_options.max_comment_pages,
+        max_content_blocks=scrape_options.max_content_blocks,
+        max_comments=scrape_options.max_comments,
     )
 
 

@@ -56,6 +56,8 @@ Accepted inputs:
 - `max_content_blocks: int | None`
 - `max_comments: int | None`
 
+Adapters should derive these values from persisted UOW-001 `ScrapeOptions` when a parser is used as part of a Job run.
+
 When `max_comment_pages` is set, `parse()` fetches discovered comment page links sequentially through the injected HTTP client. Duplicate comment IDs are stored once. `parse_html()` parses only the provided HTML.
 
 ## Parsed Output

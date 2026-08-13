@@ -2,7 +2,7 @@
   "schemas": [
     {
       "name": "checkpoint",
-      "schema_hash": "c2f687db0047c8ba09ded2cfdeafc5335fc1b8cf2aa10cc95fa7216fc5510980",
+      "schema_hash": "347096c726e47f6e9418ec6fdc1cbf76ef5154136e1a731fa35015c5236d8a98",
       "version": "fmkorea.checkpoint.v1"
     },
     {

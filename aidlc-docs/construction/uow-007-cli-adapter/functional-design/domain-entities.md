@@ -17,7 +17,7 @@ UOW-007 reuses the UOW-001 through UOW-006 contracts below.
 | `NoKeywordRangeSource` | `models/job.py` | no-keyword range source |
 | `RealtimeKeywordSource` | `models/job.py` | realtime keyword source built from environment variables |
 | `RealtimeAllSource` | `models/job.py` | realtime all source built from environment variables |
-| `ScrapeOptions` | `models/job.py` | comments, media, attachment, delay, and retry options |
+| `ScrapeOptions` | `models/job.py` | comments, media, attachment, delay, retry, and parser guardrail options |
 | `WorkerConfig` | `models/job.py` | post worker count, media worker count, and queue max size |
 | `StorageConfig` | `models/job.py` | output base path and storage backend selection |
 | `HttpRuntimeConfig` | `http/runtime.py` | request delay, timeout, retry, User-Agent, Proxy, and execution directory |
