@@ -512,7 +512,7 @@
 - **NFR Design Plan Created At**: 2026-08-13T00:35:48Z
 - **NFR Design Plan Artifact**: `aidlc-docs/construction/plans/uow-007-cli-adapter-nfr-design-plan.md`
 - **NFR Design Answers Confirmed At**: 2026-08-13T00:46:22Z
-- **NFR Design Answer Analysis**: Q1-Q11 were A. No ambiguity or conflicts found. UOW-007 keeps a single `fmkorea_scraper.adapters.cli` module, shared command dict builders, stream-injected wizard, debug-only traceback, atomic config file helpers, `JobRunner.stop` interrupt mapping, explicit run id alignment, and console script plus `python -m` entrypoints without root `main.py`.
+- **NFR Design Answer Analysis**: Q1-Q11 were A. No ambiguity or conflicts found. UOW-007 keeps a single `fmkorea_scraper.adapters.cli` module, shared command dict builders, stream-injected wizard, debug-only traceback, atomic config file helpers, `JobRunner.stop` interrupt mapping, explicit run id alignment, and console script plus `python -m` entrypoints. Root `main.py` was added later as a DCinside-compatible thin wrapper.
 - **NFR Design Generated At**: 2026-08-13T00:46:22Z
 - **NFR Design Artifacts**: `nfr-design-patterns.md`, `logical-components.md`
 - **Next Stage After NFR Design Approval**: UOW-007 Infrastructure Design
@@ -551,6 +551,7 @@
 - **Next Stage After Build and Test Approval**: UOW-008 Functional Design
 - **Build and Test Approved At**: 2026-08-13T01:37:21Z
 - **Status**: Complete
+- **Post-Completion Baseline Alignment**: Added root `main.py` wrapper and `requirements.lock` to match the DCinside-Scraper execution/dependency artifact shape.
 
 ## UOW-008 Container, MCP, And Test Harness Status
 - **Functional Design Plan Created At**: 2026-08-13T01:37:21Z

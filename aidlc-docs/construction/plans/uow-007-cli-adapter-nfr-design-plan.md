@@ -190,7 +190,7 @@ X) 기타
 
 실행 진입점 호환성은 어디까지 둘까요?
 
-A) (권장) `pyproject.toml`에 console script `fmkorea-scraper`를 추가하고, 문서상 실행은 `python -m fmkorea_scraper.adapters.cli ...`와 console script 둘 다 허용한다. 루트 `main.py`는 만들지 않는다.
+A) (권장) `pyproject.toml`에 console script `fmkorea-scraper`를 추가하고, 문서상 실행은 `python -m fmkorea_scraper.adapters.cli ...`와 console script 둘 다 허용한다. UOW-007 당시에는 루트 `main.py`를 만들지 않는다.
 
 추천 사유: 패키지형 실행과 설치 후 실행을 모두 지원하면서 루트 스크립트 중복은 피합니다.
 
@@ -222,4 +222,4 @@ X) 기타
 - **Confirmed Answers**: Q1-Q11 were A.
 - **Ambiguity Review**: No ambiguity or conflicts found.
 - **Follow-up Questions**: Not required.
-- **Key Implementation Note**: FMKorea chooses the package/module entrypoint and console script only. Unlike the baseline variant that allowed a root `main.py`, this UOW-007 decision avoids a duplicated wrapper and keeps official local execution at `fmkorea-scraper ...` or `python -m fmkorea_scraper.adapters.cli ...`.
+- **Key Implementation Note**: FMKorea originally chose package/module entrypoint and console script only. Post-completion baseline alignment later added root `main.py` as a thin wrapper around the same CLI entrypoint.

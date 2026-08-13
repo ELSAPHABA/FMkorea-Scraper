@@ -19,7 +19,7 @@ Contract:
 
 - importing `fmkorea_scraper.adapters.cli` has no runtime side effects
 - `main(argv=None) -> int` returns `0`, `1`, or `2`
-- no root `main.py` wrapper is provided in UOW-007
+- root `main.py` is provided as a thin DCinside-compatible wrapper around `fmkorea_scraper.adapters.cli.main`
 
 ## Supported Commands
 

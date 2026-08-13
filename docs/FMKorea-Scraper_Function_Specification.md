@@ -716,12 +716,15 @@ FMKorea-Scraper/
 ├── docker-entrypoint.sh
 ├── Checkpoint.json
 ├── pyproject.toml
+├── requirements.lock
 └── README.md
 ```
 
 ## 5. 실행 형태
 - CLI 직접 실행
   - 명령형 실행: `python -m fmkorea_scraper.adapters.cli run ...`
+  - DCinside-Scraper와 같은 루트 호환 실행: `python main.py ...`
+  - 설치 후 console script 실행: `fmkorea-scraper ...`
   - 터미널 마법사 실행은 같은 CLI 엔트리에서 선택형 UI로 제공 가능
 - 라이브러리 import
   - 설정 객체와 Job 객체를 코드에서 생성해 수집기를 직접 호출할 수 있게 구성

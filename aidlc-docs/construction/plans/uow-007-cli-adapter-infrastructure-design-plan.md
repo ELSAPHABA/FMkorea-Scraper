@@ -50,7 +50,7 @@ X) 기타
 
 로컬 실행 진입점은 어떻게 문서화할까요?
 
-A) (권장) `python -m fmkorea_scraper.adapters.cli ...`와 console script `fmkorea-scraper ...`를 공식 지원한다. 두 진입점은 같은 `fmkorea_scraper.adapters.cli.main`을 호출해야 한다. 루트 `main.py`는 만들지 않는다.
+A) (권장) `python -m fmkorea_scraper.adapters.cli ...`와 console script `fmkorea-scraper ...`를 공식 지원한다. 두 진입점은 같은 `fmkorea_scraper.adapters.cli.main`을 호출해야 한다. UOW-007 당시에는 루트 `main.py`를 만들지 않는다.
 
 추천 사유: UOW-007 NFR Design의 Q11 A 결정을 그대로 반영하고, 실행 로직 중복을 막을 수 있습니다.
 

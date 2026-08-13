@@ -17,7 +17,7 @@
 
 - UOW-007는 `fmkorea-scraper` console script와 `fmkorea_scraper.adapters.cli` 모듈을 제공한다.
 - 터미널 마법사는 이번 UOW-007 1차 구현 범위에 포함한다.
-- 별도 `python main.py` 루트 스크립트는 필수 범위로 두지 않는다.
+- 별도 `python main.py` 루트 스크립트는 UOW-007 당시 필수 범위로 두지 않았다. 이후 기준 프로젝트 정렬을 위해 루트 `main.py` 호환 wrapper를 추가했다.
 - CLI는 core scraping 로직을 새로 구현하지 않고 UOW-001~UOW-006의 public API와 service를 연결한다.
 - 질문지의 A 선택지는 기준 프로젝트 구조를 최대한 계승하는 권장안이다.
 

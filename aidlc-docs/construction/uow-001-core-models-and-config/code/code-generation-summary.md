@@ -39,7 +39,7 @@ Documentation:
 
 ## Dependency Lock Handling
 
-`uv` was not available in the current environment, so no lockfile was generated during this step. Lockfile creation is a Build and Test follow-up.
+`uv` was not available in the current environment, so no lockfile was generated during this step. `requirements.lock` was generated later during post-completion baseline alignment.
 
 ## Deployment Artifacts
 

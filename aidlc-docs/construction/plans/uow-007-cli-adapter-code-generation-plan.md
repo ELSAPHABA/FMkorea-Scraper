@@ -68,7 +68,7 @@ UOW-007 does not implement:
 - MCP server
 - GUI/Web UI
 - AWS CDK
-- root `main.py`
+- root `main.py` was originally out of UOW-007 scope; it was later added as a thin compatibility wrapper for baseline alignment
 
 ## Expected Interfaces And Contracts
 
@@ -106,7 +106,7 @@ PostgreSQL checkpoint storage remains deferred to UOW-008.
 - [x] Implement `main(argv: list[str] | None = None) -> int`.
 - [x] Support `run`, `resume`, `retry-parser-failures`, `import-user-agents`, `configure-proxy`, and `wizard`.
 - [x] Support `python -m fmkorea_scraper.adapters.cli`.
-- [x] Do not create root `main.py`.
+- [x] UOW-007 originally did not create root `main.py`; post-completion baseline alignment later added a thin wrapper.
 
 ### Step 3. Command Normalization And Model Builders
 

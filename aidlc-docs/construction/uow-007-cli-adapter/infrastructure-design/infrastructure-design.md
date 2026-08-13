@@ -31,7 +31,7 @@ Out of scope:
 |---|---|
 | Deployment environment | UOW-007 is an importable package CLI adapter, not a standalone service/container |
 | Entrypoints | support `python -m fmkorea_scraper.adapters.cli ...` and console script `fmkorea-scraper ...`; both call `fmkorea_scraper.adapters.cli.main` |
-| Root wrapper | no root `main.py` is created |
+| Root wrapper | root `main.py` is provided as a thin compatibility wrapper |
 | Virtualenv/PATH | local development uses activated venv plus `pip install -e .`; no required Windows system PATH editing |
 | Execution directory | default base is `Path.cwd()` |
 | Output path | `--output-path` changes only UOW-006 output base |
@@ -83,7 +83,7 @@ Both must delegate to:
 fmkorea_scraper.adapters.cli.main(argv=None) -> int
 ```
 
-No root `main.py` compatibility wrapper is created for UOW-007.
+Root `main.py` is available as a compatibility wrapper and delegates to `fmkorea_scraper.adapters.cli.main`.
 
 ## Current Working Directory Boundary
 

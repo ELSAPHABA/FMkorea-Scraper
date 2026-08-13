@@ -1046,3 +1046,12 @@
 **Next Step**: Optional deployment/operations planning outside the current AI-DLC workflow.
 
 ---
+
+## Post-Completion Baseline Alignment - Entrypoint And Lockfile
+
+**Timestamp**: 2026-08-13T15:16:54Z
+**User Input**: "DCinside-Scraper와 비교해 FMkorea-Scraper에 `main.py`와 `requirements.lock`이 없으므로 추가하고 문서를 수정해 달라."
+**AI Response**: "Added root `main.py` as a thin wrapper around `fmkorea_scraper.adapters.cli.main`, generated `requirements.lock` from a clean Python 3.12 environment with base plus test dependencies, and updated README/spec/AI-DLC docs to record the compatibility change."
+**Context**: Post-AI-DLC baseline alignment after Construction completion.
+
+---

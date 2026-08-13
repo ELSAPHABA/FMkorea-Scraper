@@ -16,7 +16,7 @@ This document translates UOW-007 NFR requirements into implementation patterns f
 | Q8 | A | Use a function/context helper for local runtime assembly; do not add a factory class. |
 | Q9 | A | Generate one `run_id` and pass it to both `StorageFactory` and `JobRunner`; inject deterministic factory in tests. |
 | Q10 | A | Put example tests in `tests/test_cli_adapter.py`, PBT in `tests/test_cli_properties.py`, strategies in `tests/strategies/cli.py`. |
-| Q11 | A | Support console script and `python -m fmkorea_scraper.adapters.cli`; do not create root `main.py`. |
+| Q11 | A | Support console script and `python -m fmkorea_scraper.adapters.cli`; root `main.py` later added as a compatibility wrapper. |
 
 No follow-up question is required.
 
@@ -32,7 +32,7 @@ src/fmkorea_scraper/adapters/
 
 `src/fmkorea_scraper/adapters/__init__.py` remains import-safe and should not expose runtime side effects.
 
-No root `main.py` is created for UOW-007.
+Root `main.py` is available as a thin wrapper around the same CLI entrypoint.
 
 ## Command Normalization Pattern
 

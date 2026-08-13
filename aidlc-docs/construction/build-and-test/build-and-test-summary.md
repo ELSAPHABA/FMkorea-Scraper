@@ -81,7 +81,7 @@
 - **Supported Python Used For Official Checks**: 3.12.10
 - **Docker**: Docker 29.7.2
 - **CDK CLI**: 2.1135.1
-- **Lockfile**: not generated in this stage
+- **Lockfile**: `requirements.lock` generated after completion for DCinside-Scraper baseline alignment
 
 ## Overall Status
 
