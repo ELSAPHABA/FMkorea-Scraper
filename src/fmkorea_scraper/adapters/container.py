@@ -35,6 +35,7 @@ from fmkorea_scraper.models.job import (
 from fmkorea_scraper.outputs import OutputRunLayout, PostgresCheckpointStore, S3OutputStore
 from fmkorea_scraper.outputs.errors import StorageConfigurationError
 from fmkorea_scraper.parse import ParserOptions, PostDetailService
+from fmkorea_scraper.retry import CompositeFailureInputReader, ParserFailureRetryService, S3FailureInputReader
 from fmkorea_scraper.runner import JobRunDependencies, JobRunner
 
 EXIT_SUCCESS = 0
@@ -171,15 +172,52 @@ async def run_container_async(
                 report = await resume_job(request, runner=runner, run_id=run_id)
         else:
             command = _parse_container_command(argv)
-            config = cli.build_job_config(command, env=env)
-            storage_config = env_config.storage_config(base_output_path=config.storage_config.base_output_path)
-            config = config.model_copy(update={"storage_config": storage_config})
-            if runner is None:
-                runtime = build_container_runtime(config, env_config, run_id=run_id)
-                runner = runtime.runner
-                config = runtime.config
-            with ContainerSignalController(runner, output=error_output):
-                report = await run_job(config, runner=runner, run_id=run_id)
+            if command.get("subcommand") == "retry-parser-failures":
+                request = cli.build_retry_request(command)
+                reader = CompositeFailureInputReader(
+                    s3=S3FailureInputReader(
+                        default_bucket=env_config.s3_bucket,
+                        endpoint_url=env_config.s3_endpoint_url,
+                        region_name=env_config.s3_region,
+                        access_key_id=env_config.s3_access_key_id,
+                        secret_access_key=env_config.s3_secret_access_key,
+                        force_path_style=env_config.s3_force_path_style,
+                    ),
+                    prefer_s3_object_keys=True,
+                )
+                service = ParserFailureRetryService(
+                    reader,
+                    scrape_options=cli._build_scrape_options(command),
+                    worker_config=cli._build_worker_config(command),
+                    storage_config=env_config.storage_config(base_output_path=_blank_none(command.get("output_path"))),
+                )
+
+                async def _execute_retry(config: JobConfig) -> Any:
+                    retry_runtime = None
+                    actual_runner = runner
+                    config = config.model_copy(update={"storage_config": env_config.storage_config(base_output_path=config.storage_config.base_output_path)})
+                    if actual_runner is None:
+                        retry_runtime = build_container_runtime(config, env_config, run_id=run_id)
+                        actual_runner = retry_runtime.runner
+                        config = retry_runtime.config
+                    try:
+                        with ContainerSignalController(actual_runner, output=error_output):
+                            return await run_job(config, runner=actual_runner, run_id=run_id)
+                    finally:
+                        if retry_runtime is not None:
+                            await retry_runtime.close()
+
+                report = await service.retry(request, execute_job=_execute_retry)
+            else:
+                config = cli.build_job_config(command, env=env)
+                storage_config = env_config.storage_config(base_output_path=config.storage_config.base_output_path)
+                config = config.model_copy(update={"storage_config": storage_config})
+                if runner is None:
+                    runtime = build_container_runtime(config, env_config, run_id=run_id)
+                    runner = runtime.runner
+                    config = runtime.config
+                with ContainerSignalController(runner, output=error_output):
+                    report = await run_job(config, runner=runner, run_id=run_id)
         _write_json(output, {"ok": True, "report": report.model_dump(mode="json")})
         return EXIT_SUCCESS if report.status == JobReportStatus.COMPLETED else EXIT_RUNTIME_ERROR
     except (ValidationFailure, ValidationError) as exc:
@@ -245,8 +283,8 @@ def _parse_container_command(argv: list[str] | None) -> dict[str, Any]:
     except SystemExit as exc:
         raise ValidationFailure("invalid container arguments", details={"reason": "invalid_args"}) from exc
     command = cli.normalize_command(args)
-    if command.get("subcommand") != "run":
-        raise ValidationFailure("container entrypoint supports run or RESUME=true", details={"reason": "unsupported_command"})
+    if command.get("subcommand") not in {"run", "retry-parser-failures"}:
+        raise ValidationFailure("container entrypoint supports run, retry-parser-failures, or RESUME=true", details={"reason": "unsupported_command"})
     return command
 
 

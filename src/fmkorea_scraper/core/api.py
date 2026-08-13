@@ -57,7 +57,9 @@ async def resume_job(request: ResumeRequest, *, runner: Any | None = None, run_i
 async def retry_parser_failures(request: RetryRequest, *, retry_service: Any | None = None) -> RetryReport:
     if retry_service is not None:
         return await retry_service.run(request)
-    raise UnsupportedSourceError("retry_parser_failures is implemented in UOW-009", details={"stage": "retry"})
+    from fmkorea_scraper.retry import ParserFailureRetryService
+
+    return await ParserFailureRetryService().run(request)
 
 
 def _report_from_result(result: Any) -> JobReport:

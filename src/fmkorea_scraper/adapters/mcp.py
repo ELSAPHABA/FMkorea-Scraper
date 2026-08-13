@@ -28,6 +28,7 @@ from fmkorea_scraper.models.job import (
     ResumeRequest,
     RetryRequest,
 )
+from fmkorea_scraper.retry import retry_safe_summary
 
 HttpClientFactory = Callable[[], Any]
 
@@ -73,7 +74,7 @@ class McpToolHandlers:
     async def retry_parser_failures(self, payload: Mapping[str, Any], *, retry_service: Any | None = None) -> dict[str, Any]:
         return await _safe_call(
             "retry_parser_failures",
-            lambda: api_retry_parser_failures(RetryRequest.model_validate(payload), retry_service=retry_service),
+            lambda: _retry_summary(RetryRequest.model_validate(payload), retry_service=retry_service),
         )
 
     async def _with_http(
@@ -96,6 +97,10 @@ async def _safe_call(stage: str, call: Callable[[], Awaitable[Any]]) -> dict[str
         return {"ok": True, "data": _jsonable(await call())}
     except Exception as exc:
         return {"ok": False, "error": safe_error_payload(exc, stage=stage)}
+
+
+async def _retry_summary(request: RetryRequest, *, retry_service: Any | None) -> dict[str, Any]:
+    return retry_safe_summary(await api_retry_parser_failures(request, retry_service=retry_service))
 
 
 def _jsonable(value: Any) -> Any:

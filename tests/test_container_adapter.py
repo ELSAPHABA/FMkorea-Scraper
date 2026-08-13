@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import io
+import json
+from pathlib import Path
 
 from fmkorea_scraper.adapters.container import (
     EXIT_RUNTIME_ERROR,
@@ -91,6 +93,21 @@ def direct_post_job() -> JobConfig:
     )
 
 
+def _failure_line(document_id_raw: str) -> str:
+    return json.dumps(
+        {
+            "job_id": "job-1",
+            "stage": "post",
+            "reason": "post title missing",
+            "retryable": True,
+            "url": f"https://www.fmkorea.com/best/{document_id_raw}",
+            "post_key": {"board_id": "best", "document_srl": int(document_id_raw), "document_id_raw": document_id_raw},
+            "safe_message": "safe parser failure",
+        },
+        ensure_ascii=False,
+    ) + "\n"
+
+
 def test_container_env_config_maps_storage_and_redacts_secrets() -> None:
     config = ContainerEnvConfig.from_env(container_env())
     storage = config.storage_config()
@@ -133,6 +150,27 @@ def test_container_run_uses_cli_job_with_s3_and_postgres_storage() -> None:
     assert runner.config.storage_config.s3.prefix == "fmkorea"
     assert runner.run_id
     assert '"ok": true' in out.getvalue()
+
+
+def test_container_retry_uses_existing_entrypoint_and_storage(tmp_path: Path) -> None:
+    failures = tmp_path / "failures.jsonl"
+    failures.write_text(_failure_line("101"), encoding="utf-8")
+    runner = FakeRunner()
+    out = io.StringIO()
+
+    code = run(
+        run_container_async(
+            ["retry-parser-failures", "--failure-path", str(failures), "--job-id", "job-1"],
+            env=container_env(),
+            runner=runner,
+            output=out,
+        )
+    )
+
+    assert code == EXIT_SUCCESS
+    assert runner.config.source.type == "direct_post"
+    assert runner.config.storage_config.output_mode == StorageMode.S3_COMPATIBLE
+    assert '"selected_count": 1' in out.getvalue()
 
 
 def test_container_resume_uses_env_job_id() -> None:

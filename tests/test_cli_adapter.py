@@ -260,19 +260,6 @@ def test_resume_command_uses_injected_runner_without_network() -> None:
     assert runner.run_id == "run-resume"
 
 
-def test_retry_parser_failures_is_safe_unsupported_until_uow009() -> None:
-    error = io.StringIO()
-    code = asyncio.run(
-        cli.retry_parser_failures_command_async(
-            {"subcommand": "retry-parser-failures", "failure_path": "failures.jsonl"},
-            error_output=error,
-        )
-    )
-
-    assert code == cli.EXIT_RUNTIME_ERROR
-    assert "UOW-009" in error.getvalue()
-
-
 def test_build_local_runtime_passes_run_id_to_storage_factory(monkeypatch, tmp_path: Path) -> None:
     calls = []
 

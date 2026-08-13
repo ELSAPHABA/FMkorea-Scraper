@@ -281,6 +281,16 @@ class ResumeRequest(MetadataModel):
 class RetryRequest(MetadataModel):
     failure_input: FailureInput
     skip_existing_success: bool = True
+    existing_success_path: str | None = Field(default=None, max_length=4096)
+    from_report_path: str | None = Field(default=None, max_length=4096)
+    from_checkpoint_path: str | None = Field(default=None, max_length=4096)
+    retry_job_id: str | None = Field(default=None, max_length=200)
+
+    @model_validator(mode="after")
+    def _validate_restore_source(self) -> "RetryRequest":
+        if self.from_report_path and self.from_checkpoint_path:
+            raise ValueError("from_report_path and from_checkpoint_path cannot be combined")
+        return self
 
 
 class PostKey(MetadataModel):

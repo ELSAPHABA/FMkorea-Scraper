@@ -75,7 +75,7 @@ def test_mcp_retry_parser_failures_can_delegate_to_service() -> None:
     )
 
     assert result["ok"] is True
-    assert result["data"]["selected_count"] == 1
+    assert result["data"]["selected"] == 1
     assert service.request.failure_input.failure_path == "failures.jsonl"
 
 

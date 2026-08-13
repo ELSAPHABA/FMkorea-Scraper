@@ -44,6 +44,7 @@ from fmkorea_scraper.models.job import (
 )
 from fmkorea_scraper.outputs import LocalCheckpointStore, OutputRunLayout, StorageFactory
 from fmkorea_scraper.parse import ParserOptions, PostDetailService
+from fmkorea_scraper.retry import ParserFailureRetryService, retry_safe_summary
 from fmkorea_scraper.runner import JobRunDependencies, JobRunner
 
 EXIT_SUCCESS = 0
@@ -90,6 +91,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     retry = subcommands.add_parser("retry-parser-failures", help="build parser failure retry input")
     retry.add_argument("--failure-path", required=True)
+    retry.add_argument("--existing-success-path")
+    retry.add_argument("--from-report")
+    retry.add_argument("--from-checkpoint")
+    retry.add_argument("--retry-job-id")
     retry.add_argument("--job-id")
     retry.add_argument("--stage", dest="stage_allowlist", action="append")
     retry.add_argument("--skip-existing-success", dest="skip_existing_success", action="store_true", default=True)
@@ -185,6 +190,10 @@ def build_retry_request(command: Mapping[str, Any]) -> RetryRequest:
             stage_allowlist=[str(stage) for stage in stages],
         ),
         skip_existing_success=bool(command.get("skip_existing_success", True)),
+        existing_success_path=_blank_none(command.get("existing_success_path")),
+        from_report_path=_blank_none(command.get("from_report")),
+        from_checkpoint_path=_blank_none(command.get("from_checkpoint")),
+        retry_job_id=_blank_none(command.get("retry_job_id")),
     )
 
 
@@ -421,15 +430,38 @@ async def resume_scrape_command_async(
 async def retry_parser_failures_command_async(
     command: Mapping[str, Any],
     *,
+    runner: Any | None = None,
     output: TextIO | None = None,
     error_output: TextIO | None = None,
+    run_id_factory: RunIdFactory = lambda: f"run-{uuid.uuid4().hex}",
 ) -> int:
-    _ = output or sys.stdout
+    output = output or sys.stdout
     error_output = error_output or sys.stderr
-    build_retry_request(command)
-    error_output.write("retry-parser-failures is not available until UOW-009.\n")
-    error_output.flush()
-    return EXIT_RUNTIME_ERROR
+    command = normalize_command(command)
+    request = build_retry_request(command)
+    service = ParserFailureRetryService(
+        scrape_options=_build_scrape_options(command),
+        worker_config=_build_worker_config(command),
+        storage_config=StorageConfig(base_output_path=_blank_none(command.get("output_path"))),
+    )
+
+    async def _execute(config: JobConfig) -> Any:
+        run_id = run_id_factory()
+        client = None
+        actual_runner = runner
+        if actual_runner is None:
+            client, actual_runner = build_local_runtime(config, run_id=run_id, command=command)
+        try:
+            with InterruptController(actual_runner, output=error_output):
+                return await run_job(config, runner=actual_runner, run_id=run_id)
+        finally:
+            if client is not None:
+                await client.close()
+
+    report = await service.retry(request, execute_job=_execute)
+    _print_retry_summary(report, output)
+    _print_report(report, command.get("output_path"), output)
+    return _exit_code_for_report(report)
 
 
 def import_user_agents(source: str | Path, destination: str | Path) -> None:
@@ -700,6 +732,18 @@ def _print_report(report: Any, output_path: str | None, output: TextIO) -> None:
         if label:
             output.write(f"output_ref: {label}\n")
     output.write(f"resume: {_resume_command(report.job_id, output_path)}\n")
+    output.flush()
+
+
+def _print_retry_summary(report: Any, output: TextIO) -> None:
+    summary = retry_safe_summary(report)
+    output.write(
+        "retry "
+        f"selected={summary['selected']} "
+        f"skipped={summary['skipped']} "
+        f"stored={summary['stored']} "
+        f"remaining_failure={summary['remaining_failure']}\n"
+    )
     output.flush()
 
 
