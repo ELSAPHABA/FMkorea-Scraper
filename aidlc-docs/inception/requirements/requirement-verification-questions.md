@@ -133,11 +133,11 @@ A) (권장) persistent cookie는 저장하지 않는다. 공개 페이지/AJAX�
 
 B) Job 단위 cookie jar를 유지하고 checkpoint에는 저장하지 않는다
 
-C) 사용자가 제공한 cookie 파일을 지원한다
+C) 사용자 제공 cookie 파일을 지원한다
 
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: C
+[Answer]: A
 
 ## Question 10
 저장소와 인프라 방향은 어떻게 계승할까요?

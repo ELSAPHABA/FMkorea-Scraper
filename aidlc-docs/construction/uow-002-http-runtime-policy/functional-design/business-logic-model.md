@@ -11,7 +11,7 @@ This unit owns:
 - retry and backoff policy
 - User-Agent rotation
 - proxy config conversion
-- optional static cookie header
+- in-memory server cookie lifecycle
 - response classification
 - safe HTTP log event shaping
 
@@ -38,7 +38,7 @@ This unit does not own:
 | CAPTCHA/block | classify only; no bypass and no checkpoint write in HTTP layer |
 | User-Agent | sequential rotation every configured outbound attempts, default 10 |
 | Proxy | pure provider from explicit options/env mapping to httpx config |
-| Cookie | explicit static cookie header only, no cookie jar |
+| Cookie | server-set in-memory cookies only; clear on User-Agent rotation and client close |
 | Logging | safe method/host/path/status/kind/attempt/elapsed only |
 | Tests | `httpx.MockTransport` and fake clock, no live network by default |
 
@@ -48,12 +48,12 @@ This unit does not own:
 2. Adapter builds `HttpRuntimeConfig` from CLI/env/MCP/library execution inputs.
 3. `UserAgentProvider` is created from supplied UA file path or default fallback.
 4. `ProxyProvider` receives explicit proxy values or env mapping from adapter and produces `ProxyConfig | None`.
-5. `CookieProvider` is created only if an explicit cookie file path is supplied.
-6. `RateLimiter` is created from `request_interval_seconds`.
-7. `RetryPolicy` is created from configured retry count and defaults.
-8. `HttpClient` opens one `httpx.AsyncClient`.
+5. `RateLimiter` is created from `request_interval_seconds`.
+6. `RetryPolicy` is created from configured retry count and defaults.
+7. `HttpClient` opens one `httpx.AsyncClient`.
+8. Server-set cookies may live only inside that client instance.
 9. All later requests use this same `HttpClient`.
-10. Job shutdown closes the client.
+10. Job shutdown closes the client and drops the in-memory cookies.
 
 ## Request Execution Flow
 
@@ -63,7 +63,7 @@ For `get`, `post`, and `download`:
 2. Derive safe log labels from method, host, path, and request kind.
 3. Wait on Job-scoped `RateLimiter`.
 4. Ask `UserAgentProvider` for the current User-Agent.
-5. Attach static cookie header if enabled.
+5. Use the current `httpx.AsyncClient` in-memory cookie jar; do not inject user-provided cookie headers.
 6. Send request through `httpx.AsyncClient`.
 7. Classify the raw response or transport failure.
 8. If retryable and attempts remain, calculate backoff and retry.
@@ -154,17 +154,16 @@ The resulting config is converted to the format accepted by `httpx.AsyncClient`.
 
 ## Cookie Logic
 
-Cookie behavior is deliberately static.
+Cookie behavior matches the baseline scraper.
 
 Flow:
 
-1. If no cookie file path is provided, cookie provider is disabled.
-2. If provided, adapter/core runtime reads the file as a static cookie header.
-3. Requests include `Cookie: <value>`.
-4. Response `Set-Cookie` is ignored.
-5. No cookie jar is maintained.
-
-This reduces tracking and accidental session mutation risk.
+1. User-provided cookie files and static `Cookie` headers are not supported.
+2. `httpx.AsyncClient` may keep server-set `Set-Cookie` values only in the current client lifecycle.
+3. User-Agent rotation clears the in-memory cookie jar before the next request.
+4. `HttpClient.close()` drops the in-memory cookie jar.
+5. Restart, resume, proxy change, or a new Job never reuses old cookies.
+6. Raw cookie values are never written to logs, checkpoints, reports, failure records, or JSONL output.
 
 ## Error And Stop Handling
 
@@ -192,8 +191,8 @@ Property and example tests should cover:
 - retry happens for 429/5xx/network/timeout only
 - CAPTCHA/block/404/login-required are not retried
 - proxy password is masked in string/log/error paths
-- cookie file value is attached only when explicitly enabled
-- `Set-Cookie` is not persisted
+- server-set cookies stay memory-only inside one `HttpClient` lifecycle
+- User-Agent rotation clears the in-memory cookie jar
 - `HttpResponse.kind` is always set
 - import has no file, network, or terminal side effects
 
@@ -204,8 +203,8 @@ Property and example tests should cover:
 | UOW-003 Search And Link Collection | `HttpClient.get`, classified page responses, safe network errors |
 | UOW-004 Post Detail And Content Parsing | detail/comment/media request methods and response classification |
 | UOW-005 Job Runner And Checkpoint | CAPTCHA/block response kinds and network failure categories |
-| UOW-007 CLI Adapter | User-Agent/proxy/cookie option values passed into providers |
-| UOW-008 Container/MCP/Test Harness | env-provided proxy/cookie/runtime config and fake/live smoke harness |
+| UOW-007 CLI Adapter | User-Agent/proxy/runtime option values passed into providers |
+| UOW-008 Container/MCP/Test Harness | env-provided proxy/runtime config and fake/live smoke harness |
 
 ## UOW Exclusions
 

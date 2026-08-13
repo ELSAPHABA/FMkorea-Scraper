@@ -36,7 +36,7 @@ Not required:
 
 - live FMKorea access
 - real Proxy
-- real cookie file
+- real cookie secret input
 - Garage/S3
 - PostgreSQL
 - Docker

@@ -9,7 +9,7 @@
 - **Unit**: UOW-007 CLI Adapter
 - **NFR Requirements**: 승인됨
 - **Depends On**: UOW-001 Core Models And Config, UOW-002 HTTP Runtime Policy, UOW-003 Search And Link Collection, UOW-004 Post Detail And Content Parsing, UOW-005 Job Runner And Checkpoint, UOW-006 Output And Storage
-- **Scope**: stdlib command CLI, numbered wizard menu, model builder reuse, safe error/debug traceback output, Proxy `.env` update, User-Agent import, cookie file option safety, Ctrl+C stop hook, run id/storage alignment, adapter tests
+- **Scope**: stdlib command CLI, numbered wizard menu, model builder reuse, safe error/debug traceback output, Proxy `.env` update, User-Agent import, cookie redaction safety, Ctrl+C stop hook, run id/storage alignment, adapter tests
 - **Out Of Scope**: scraping/parsing logic, HTTP retry internals, worker scheduling, storage layout internals, Docker entrypoint, MCP adapter, GUI/Web UI, AWS CDK, external TUI dependency
 
 ## NFR Design 작업 체크리스트

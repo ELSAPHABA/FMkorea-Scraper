@@ -19,7 +19,7 @@
 
 **Execute User Stories**: Yes
 
-**Reasoning**: 이 프로젝트는 단순 parser 구현이 아니라 CLI, 라이브러리, 컨테이너, MCP, 저장소, 재처리, CDK까지 포함하는 전체 스크래퍼 시스템입니다. 사용자 유형과 사용 흐름이 여러 개이고, FMKorea 원본 JSON에서 `is_repost`/`repost`를 제외하는 결정과 cookie 파일 지원 같은 예외가 있어 스토리 단계가 실제 수용 기준을 명확히 하는 데 필요합니다.
+**Reasoning**: 이 프로젝트는 단순 parser 구현이 아니라 CLI, 라이브러리, 컨테이너, MCP, 저장소, 재처리, CDK까지 포함하는 전체 스크래퍼 시스템입니다. 사용자 유형과 사용 흐름이 여러 개이고, FMKorea 원본 JSON에서 `is_repost`/`repost`를 제외하는 결정과 사용자 제공 cookie 파일을 지원하지 않는 예외가 있어 스토리 단계가 실제 수용 기준을 명확히 하는 데 필요합니다.
 
 ## Expected Outcomes
 

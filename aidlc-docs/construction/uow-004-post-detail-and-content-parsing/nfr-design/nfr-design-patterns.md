@@ -199,7 +199,7 @@ Disallowed warning fields:
 - cookies
 - proxy credentials
 - raw `.env` contents
-- user-provided cookie file path/content
+- raw cookie content
 
 Warnings are stored under:
 

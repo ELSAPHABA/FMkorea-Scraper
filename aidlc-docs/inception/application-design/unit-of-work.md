@@ -11,12 +11,12 @@ FMKorea-specific URL/query/parser는 UOW-003과 UOW-004에서 구현하고, 공�
 | Unit | Name | Responsibility | Primary Owner Boundary |
 |---|---|---|---|
 | UOW-001 | Core Models And Config | Pydantic 모델, Job 설정, validation, public API request/result schema, port protocol | models/config |
-| UOW-002 | HTTP Runtime Policy | `httpx` client, request delay, retry, timeout, User-Agent rotation, Proxy, optional cookie file, block/CAPTCHA response classification | runtime |
+| UOW-002 | HTTP Runtime Policy | `httpx` client, request delay, retry, timeout, User-Agent rotation, Proxy, in-memory cookie lifecycle, block/CAPTCHA response classification | runtime |
 | UOW-003 | Search And Link Collection | direct URL, board list/search, integrated search, deep search, no-keyword range, realtime link discovery, dedupe, range filter | search |
 | UOW-004 | Post Detail And Content Parsing | post metadata/body, comments/replies, BEST comment fields, media/content blocks, attachments, FMKorea video, YouTube/X/link parsing | detail |
 | UOW-005 | Job Runner And Checkpoint | `JobRunner`, `asyncio.Queue`, worker pool, lifecycle state, stop/resume, checkpoint update ordering | runtime/detail integration |
 | UOW-006 | Output And Storage | local JSONL/media, failure records, S3-compatible output port, Garage default object storage, local checkpoint port | storage |
-| UOW-007 | CLI Adapter | command options, terminal wizard, Job creation, resume/retry command, Proxy/User-Agent/cookie option flow | adapters |
+| UOW-007 | CLI Adapter | command options, terminal wizard, Job creation, resume/retry command, Proxy/User-Agent option flow | adapters |
 | UOW-008 | Container, MCP, And Test Harness | one-shot container contract, PostgreSQL checkpoint adapter, MCP tools, fixture tests, PBT, smoke test wiring | adapters/tests |
 | UOW-009 | Parser Failure Retry Reprocessor | parser-stage failure records ingestion, direct-post retry batch creation, retry output/report generation, optional existing-success skip | retry/adapters |
 | UOW-010 | AWS CDK Infrastructure IaC | AWS CDK app/stacks for deployable scraper infrastructure, environment configuration, synth/deploy documentation | infrastructure |
@@ -110,7 +110,7 @@ Storage is implemented before `JobRunner` integration so result writes and check
 ### UOW-002. HTTP Runtime Policy
 
 - Wraps `httpx.AsyncClient`.
-- Applies global request delay, retry, timeout, User-Agent, Proxy, and optional cookie file consistently.
+- Applies global request delay, retry, timeout, User-Agent, Proxy, and in-memory cookie lifecycle consistently.
 - Loads `user-agents.txt`, defaults to rotation every 10 requests, and falls back to one default User-Agent.
 - Applies Proxy priority: explicit option first, then `.env`, then disabled.
 - Classifies CAPTCHA/block/unavailable responses without bypassing CAPTCHA.
@@ -159,14 +159,14 @@ Storage is implemented before `JobRunner` integration so result writes and check
 
 - Provides command-line execution and terminal wizard.
 - Builds `JobConfig` through shared validation.
-- Supports direct URL, board list/search, integrated search, deep search, no-keyword range, realtime modes, resume, parser-failure retry, media mode, request interval, worker count, User-Agent file, Proxy, and cookie file options.
+- Supports direct URL, board list/search, integrated search, deep search, no-keyword range, realtime modes, resume, parser-failure retry, media mode, request interval, worker count, User-Agent file, and Proxy options.
 - Calls core async API through `asyncio.run()`.
 - Keeps terminal prompts out of core imports.
 
 ### UOW-008. Container, MCP, And Test Harness
 
 - Provides one-shot worker container entrypoint.
-- Reads `RESUME`, `JOB_ID`, storage env, realtime env, proxy env, and optional cookie path.
+- Reads `RESUME`, `JOB_ID`, storage env, realtime env, and proxy env.
 - Adds PostgreSQL checkpoint adapter for container/shared-store mode.
 - Provides MCP tools for search, fetch, Job run, resume, and parser-failure retry.
 - Adds parser fixture tests, Hypothesis PBT, import side-effect tests, adapter validation tests, and optional live smoke test hooks.

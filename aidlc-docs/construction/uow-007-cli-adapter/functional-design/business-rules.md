@@ -7,7 +7,7 @@
 - The package console script must call `main`.
 - Importing `fmkorea_scraper.adapters.cli` must not execute a scrape.
 - Importing the CLI module must not prompt the terminal.
-- Importing the CLI module must not read environment variables, `.env`, `user-agents.txt`, or cookie files.
+- Importing the CLI module must not read environment variables, `.env`, or `user-agents.txt`.
 - Importing the CLI module must not create output files.
 - Importing the CLI module must not perform network requests.
 
@@ -129,13 +129,11 @@
 
 ## Cookie Rules
 
-- Cookie file is disabled by default.
-- `--cookie-file` is accepted only as an explicit user input.
-- CLI must validate the cookie file path before use.
-- CLI must not copy cookie files.
+- CLI must not expose a user cookie-file option.
+- CLI must not read, copy, validate, or persist user-provided cookie files.
 - CLI must not print raw cookie content.
-- CLI must not persist raw cookie content to output, report, failure record, or checkpoint.
-- Cookie file support does not imply CAPTCHA bypass, automatic login, or private-content recovery.
+- Server-set temporary cookies are owned by UOW-002 `HttpClient` memory only.
+- Cookie handling does not imply CAPTCHA bypass, automatic login, or private-content recovery.
 
 ## Scrape Option Rules
 

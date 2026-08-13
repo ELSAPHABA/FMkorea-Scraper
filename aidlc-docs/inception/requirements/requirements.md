@@ -18,7 +18,7 @@
 - `site_id=fmkorea`, package=`fmkorea_scraper`, console script=`fmkorea-scraper`, env prefix=`FMKOREA_`를 사용한다.
 - 공통 런타임, 저장소, checkpoint, CLI, container, MCP, CDK 구조는 계승하고, FMKorea URL/query/parser만 site-specific으로 교체한다.
 - FMKorea 원본 JSON 스키마에서는 재게시/공유/인용/펌 필드인 `is_repost`, `repost`를 제거한다. 단, 공통 분석 스키마 정규화 단계에서는 필요 시 `is_repost=false`, `repost=null` 값을 합성할 수 있다.
-- 사용자가 명시적으로 제공한 cookie 파일을 지원한다. Cookie는 기본 사용하지 않고, 로그/출력/checkpoint에 저장하지 않는다.
+- 사용자가 제공하는 cookie 파일은 지원하지 않는다. 서버가 내려준 임시 cookie는 현재 `HttpClient` 생명주기 안에서만 메모리로 유지하고 로그/출력/checkpoint에 저장하지 않는다.
 - Security Baseline, Resiliency Baseline, Property-Based Testing을 모두 적용한다.
 
 ## 기능 요구사항
@@ -57,7 +57,7 @@ GUI 또는 Web UI는 1차 구현 범위가 아닙니다.
 - CAPTCHA 우회 또는 자동 CAPTCHA 풀이
 - 삭제되었거나 접근할 수 없는 게시글 복구
 
-사용자 제공 cookie 파일은 명시 옵션으로만 사용합니다. Cookie 파일 지원은 인증 우회를 의미하지 않으며, 보안 요구사항에 따라 저장/로그/checkpoint에서 제외해야 합니다.
+사용자 제공 cookie 파일은 지원하지 않습니다. 서버가 내려준 임시 cookie만 현재 HTTP client 생명주기 안에서 메모리로 유지할 수 있으며, 인증 우회/자동 로그인/비공개 콘텐츠 접근 자동화를 의미하지 않습니다.
 
 ### FR-004. 수집 진입점
 
@@ -368,20 +368,19 @@ FMKorea Proxy 환경변수:
 
 `.env`는 평문 저장 보안 예외로 허용하되 `.gitignore` 포함과 터미널 경고가 필수입니다.
 
-### FR-027. Cookie 파일 지원
+### FR-027. 임시 Cookie 메모리 처리
 
-사용자가 명시적으로 제공한 cookie 파일을 지원해야 합니다.
+사용자가 명시적으로 제공한 cookie 파일은 지원하지 않아야 합니다.
 
-Cookie 파일 요구사항:
+Cookie 처리 요구사항:
 
-- 기본값은 미사용
-- CLI/컨테이너/MCP 입력 검증 적용
+- 서버가 내려준 임시 cookie는 같은 `HttpClient` 생명주기 안에서만 메모리로 유지 가능
+- User-Agent 교체 또는 `HttpClient` 종료 시 cookie jar reset
+- Job 재시작, resume, Proxy 변경 이후 기존 cookie 재사용 금지
 - checkpoint, output JSONL, report, failure record에 raw cookie 저장 금지
 - 로그에 raw cookie 저장 금지
-- cookie 파일 경로는 local/container runtime 입력으로만 사용
-- cookie 파일은 `.gitignore` 보호 대상
 
-Cookie 파일 지원은 CAPTCHA 우회, 자동 로그인, 비공개 콘텐츠 접근 자동화를 의미하지 않습니다.
+Cookie 처리는 CAPTCHA 우회, 자동 로그인, 비공개 콘텐츠 접근 자동화를 의미하지 않습니다.
 
 ### FR-028. Python 라이브러리 API
 
@@ -482,7 +481,7 @@ Security Baseline을 적용합니다.
 적용 요구사항:
 
 - secret, proxy password, cookie, token, raw credential을 로그에 남기지 않음
-- `.env`, `user-agents.txt`, `Checkpoint.json`, cookie 파일, 출력 파일, 다운로드 미디어, 로컬 인증정보를 `.gitignore`에 포함
+- `.env`, `user-agents.txt`, `Checkpoint.json`, 출력 파일, 다운로드 미디어, 로컬 인증정보를 `.gitignore`에 포함
 - 평문 Proxy credential을 가져오거나 감지하면 터미널에 경고 출력
 - CLI, 라이브러리, 워커, MCP 입력값에 명시적 validation 적용
 - 의존성은 정확한 버전 또는 lock file로 관리
@@ -493,7 +492,7 @@ Security Baseline을 적용합니다.
 문서화된 보안 예외:
 
 - `.env`는 사용자가 직접 편집할 수 있도록 Proxy credential을 평문 저장할 수 있으며, `.gitignore` 보호와 터미널 경고가 필수입니다.
-- 사용자 제공 cookie 파일은 명시 옵션으로만 사용하며 raw cookie는 저장/로그/checkpoint에서 제외합니다.
+- 사용자 제공 cookie 파일은 지원하지 않으며 raw cookie는 저장/로그/checkpoint에서 제외합니다.
 
 ### NFR-005. 회복성
 
@@ -683,7 +682,7 @@ FMKorea 원본 JSONL 필수 top-level 필드에는 `is_repost`, `repost`를 포�
 | 댓글/답글 수집 | Q6 |
 | 본문 콘텐츠와 미디어 | Q7 |
 | 재게시/공유/인용/펌 필드 제외 | Q8 |
-| Cookie 파일 지원 | Q9 |
+| 임시 Cookie 메모리 처리 | Q9 |
 | 저장소/인프라 계승 | Q10 |
 | Security Baseline | Q12 |
 | Resiliency Baseline | Q13 |
@@ -696,7 +695,7 @@ FMKorea 원본 JSONL 필수 top-level 필드에는 `is_repost`, `repost`를 포�
 ### Security Baseline
 
 - **상태**: 요구사항 단계 기준 준수
-- **메모**: 입력 검증, 민감정보 로그 제한, 의존성 pinning, `.gitignore` 보호, 평문 `.env` Proxy 예외, cookie 파일 보안 제한을 요구사항에 포함했습니다.
+- **메모**: 입력 검증, 민감정보 로그 제한, 의존성 pinning, `.gitignore` 보호, 평문 `.env` Proxy 예외, 임시 cookie 메모리 제한을 요구사항에 포함했습니다.
 
 ### Resiliency Baseline
 

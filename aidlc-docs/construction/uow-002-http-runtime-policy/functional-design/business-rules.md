@@ -192,17 +192,18 @@ Proxy password and credential-bearing proxy URLs must not be:
 
 ### BR-022. Cookie Disabled By Default
 
-Cookie support is disabled unless the user explicitly provides a cookie file path through adapter configuration.
+User-provided cookie files and static `Cookie` headers are not supported.
 
-### BR-023. Static Cookie Header Only
+### BR-023. In-Memory Server Cookie Only
 
-When cookie file is used, UOW-002 reads a static cookie header and attaches it to requests.
+`httpx.AsyncClient` may keep server-set cookies only in memory during the current `HttpClient` lifecycle.
 
 The client must not:
 
-- store `Set-Cookie`
-- mutate the cookie file
-- maintain a cookie jar across requests
+- accept user-provided cookie input
+- inject user-provided Cookie headers
+- write cookies to disk
+- reuse cookies after User-Agent rotation, client close, Job restart, resume, or proxy change
 
 ### BR-024. Cookie Secret Safety
 
@@ -279,6 +280,5 @@ Importing the HTTP package must not:
 - create an `AsyncClient`
 - read `.env`
 - read `user-agents.txt`
-- read cookie files
 - open network sockets
 - prompt terminal input

@@ -97,7 +97,7 @@ X) 기타
 
 ### Question 4. HTTP 요청 정책 경계
 
-요청 속도, retry, timeout, User-Agent, Proxy, optional cookie file 적용을 어디에서 담당하게 할까요?
+요청 속도, retry, timeout, User-Agent, Proxy, 임시 cookie 메모리 처리를 어디에서 담당하게 할까요?
 
 A) (권장) 단일 `HttpClient` 또는 `HttpPort` 구현이 모든 외부 요청 정책을 담당한다.
 

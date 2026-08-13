@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Greenfield
 - **Start Date**: 2026-08-11T23:58:42Z
-- **Current Stage**: CONSTRUCTION - UOW-007 Build and Test Review
+- **Current Stage**: CONSTRUCTION - UOW-008 Functional Design Question Collection
 
 ## Workspace State
 - **Existing Code**: No
@@ -83,16 +83,17 @@
 - [x] UOW-007 NFR Design - APPROVED
 - [x] UOW-007 Infrastructure Design - APPROVED
 - [x] UOW-007 Code Generation - APPROVED
-- [ ] UOW-007 Build and Test - REVIEW REQUIRED
+- [x] UOW-007 Build and Test - APPROVED
+- [ ] UOW-008 Functional Design - QUESTIONNAIRE REQUIRED
 
 ### OPERATIONS PHASE
 - [ ] Operations - PLACEHOLDER
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: UOW-007 Build and Test Review
-- **Next Step**: User reviews `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approves proceeding to UOW-008 Functional Design.
-- **Status**: UOW-007 Build and Test complete; review approval required before UOW-008.
+- **Current Stage**: UOW-008 Functional Design Question Collection
+- **Next Step**: User completes `aidlc-docs/construction/plans/uow-008-container-mcp-and-test-harness-functional-design-plan.md`.
+- **Status**: UOW-008 Functional Design questionnaire created; answers required before generating functional design artifacts.
 
 ## Migration Notes
 - DCinside-Scraper's feature surface, UOW sequence, runtime boundaries, storage contracts, container pattern, MCP adapter pattern, parser-failure retry unit, and CDK direction are the default baseline.
@@ -485,7 +486,7 @@
 - **NFR Requirements Plan Created At**: 2026-08-13T00:27:14Z
 - **NFR Requirements Plan Artifact**: `aidlc-docs/construction/plans/uow-007-cli-adapter-nfr-requirements-plan.md`
 - **NFR Requirements Answers Confirmed At**: 2026-08-13T00:32:26Z
-- **NFR Requirements Answer Analysis**: Q1-Q11 were A. No ambiguity or conflicts found. UOW-007 uses standard library CLI primitives, debug-only traceback, safe Proxy/User-Agent/cookie file handling, graceful Ctrl+C stop via `JobRunner.stop`, deterministic run id injection for tests, and no live FMKorea default test gate.
+- **NFR Requirements Answer Analysis**: Q1-Q11 were A. No ambiguity or conflicts found. UOW-007 uses standard library CLI primitives, debug-only traceback, safe Proxy/User-Agent handling, graceful Ctrl+C stop via `JobRunner.stop`, deterministic run id injection for tests, and no live FMKorea default test gate.
 - **NFR Requirements Generated At**: 2026-08-13T00:32:26Z
 - **NFR Requirements Artifacts**: `nfr-requirements.md`, `tech-stack-decisions.md`
 - **Next Stage After NFR Requirements Approval**: UOW-007 NFR Design
@@ -530,4 +531,20 @@
 - **CLI Help Smoke**: `$env:PYTHONPATH='src'; python -m fmkorea_scraper.adapters.cli --help` -> passed
 - **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/build-instructions.md`, `aidlc-docs/construction/build-and-test/unit-test-instructions.md`, `aidlc-docs/construction/build-and-test/integration-test-instructions.md`, `aidlc-docs/construction/build-and-test/performance-test-instructions.md`, `aidlc-docs/construction/build-and-test/security-test-instructions.md`, `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
 - **Next Stage After Build and Test Approval**: UOW-008 Functional Design
-- **Status**: Build and Test review required
+- **Build and Test Approved At**: 2026-08-13T01:37:21Z
+- **Status**: Complete
+
+## UOW-008 Container, MCP, And Test Harness Status
+- **Functional Design Plan Created At**: 2026-08-13T01:37:21Z
+- **Plan Artifact**: `aidlc-docs/construction/plans/uow-008-container-mcp-and-test-harness-functional-design-plan.md`
+- **Dependency Note**: UOW-008 starts after UOW-007 so container and MCP adapters can reuse the CLI command builders, core API, JobRunner, output stores, and shared validation contracts.
+- **Functional Design Answers Confirmed At**: 2026-08-13T02:28:50Z
+- **Functional Design Answer Analysis**: Q1-Q12 were A. No ambiguity or conflicts found. UOW-008 follows the baseline container/MCP adapter shape, adds root `docker-entrypoint.sh` plus `.dockerignore`, uses S3-compatible/Garage output with PostgreSQL checkpoint storage, preserves UOW-007 command builders for container argv, exposes one-shot MCP tool shapes, keeps parser-failure retry execution deferred to UOW-009, and gates Docker/Garage/PostgreSQL/MCP/live smoke checks.
+- **Functional Design Generated At**: 2026-08-13T02:28:50Z
+- **Artifacts**: `domain-entities.md`, `business-rules.md`, `business-logic-model.md`
+- **Next Stage After Approval**: UOW-008 NFR Requirements
+- **Functional Design Approved At**: 2026-08-13T02:30:33Z
+- **NFR Requirements Plan Created At**: 2026-08-13T02:30:33Z
+- **NFR Requirements Plan Artifact**: `aidlc-docs/construction/plans/uow-008-container-mcp-and-test-harness-nfr-requirements-plan.md`
+- **Next Step**: Complete all `[Answer]:` fields in the NFR Requirements questionnaire.
+- **Status**: NFR Requirements questionnaire pending

@@ -77,7 +77,7 @@ Deferred:
 
 - CLI wizard and command wiring
 - environment and `.env` mapping
-- user-agent/proxy/cookie file loading
+- user-agent/proxy loading
 - concrete storage factory usage by adapters
 - PostgreSQL checkpoint adapter
 - parser-stage failure retry reprocessor

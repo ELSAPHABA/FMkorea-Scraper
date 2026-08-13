@@ -15,7 +15,7 @@ Responsibilities:
 - own one `httpx.AsyncClient` per Job execution
 - apply rate limiting before every external request
 - apply User-Agent headers
-- apply optional static cookie header
+- keep server-set cookies only in the underlying client memory
 - apply proxy config
 - apply timeout and retry policy
 - return classified `HttpResponse` values
@@ -27,7 +27,6 @@ Relationships:
 - uses `RetryPolicy`
 - uses `UserAgentProvider`
 - uses `ProxyProvider`
-- uses `CookieProvider`
 - emits safe log events through `LoggerPort`
 - uses `ClockPort` for sleeps and elapsed timing
 
@@ -209,23 +208,17 @@ Rules:
 - may be transformed to httpx proxy configuration
 - string representation must mask password
 
-### CookieProvider
+### InMemoryCookieLifecycle
 
-Optional static cookie header provider.
-
-Fields:
-
-- `cookie_header: str | None`
-- `source_path: str | None`
-- `metadata: dict[str, Any]`
+Server-set cookie behavior owned by the underlying `httpx.AsyncClient`.
 
 Rules:
 
-- disabled by default
-- used only when adapter provides an explicit cookie file path
-- reads a static cookie header for request headers
-- does not persist `Set-Cookie`
-- does not maintain a mutable cookie jar across requests
+- user-provided cookie files are not supported
+- static `Cookie` headers are not injected from CLI, container, or MCP inputs
+- server `Set-Cookie` values may remain only in the current `HttpClient` memory
+- User-Agent rotation clears the in-memory cookie jar
+- closing `HttpClient` drops all temporary cookies
 - raw cookie is never logged or persisted
 
 ## Log Entity

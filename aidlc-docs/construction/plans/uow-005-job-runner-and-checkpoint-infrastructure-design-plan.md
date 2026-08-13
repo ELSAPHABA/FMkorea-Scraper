@@ -117,7 +117,7 @@ X) 기타
 
 worker count, queue size, media mode, checkpoint mode 같은 runtime 설정은 어디에서 들어오나요?
 
-A) (권장) UOW-005는 이미 구성된 `JobConfig`와 explicit dependencies만 받는다. 환경변수, `.env`, user-agent file, cookie file, terminal input mapping은 CLI/container adapter가 처리한다.
+A) (권장) UOW-005는 이미 구성된 `JobConfig`와 explicit dependencies만 받는다. 환경변수, `.env`, user-agent file, terminal input mapping은 CLI/container adapter가 처리한다.
 
 추천 사유: core runner가 환경을 읽지 않으면 library import, unit test, MCP/CLI/container 재사용이 단순합니다.
 

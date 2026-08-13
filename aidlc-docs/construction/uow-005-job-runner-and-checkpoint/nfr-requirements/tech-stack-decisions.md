@@ -92,7 +92,7 @@ UOW-005 runner creation must not:
 - prompt terminal input
 - open `.env`
 - open `user-agents.txt`
-- read cookie files
+- accept user-provided cookie input
 - connect to S3
 - connect to PostgreSQL
 - create SQS queues

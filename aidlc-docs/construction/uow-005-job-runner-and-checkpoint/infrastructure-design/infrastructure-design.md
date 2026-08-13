@@ -152,7 +152,7 @@ UOW-005 must not:
 
 - create an HTTP client from environment
 - read proxy credentials
-- read cookie files
+- accept user-provided cookie input
 - open browser automation
 - configure VPC/NAT/proxy gateway resources
 

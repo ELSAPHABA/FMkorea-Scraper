@@ -58,7 +58,7 @@
 | `.env` | preserve unrelated lines and update only `FMKOREA_PROXY_*` keys |
 | Proxy password | collect with `getpass.getpass()` |
 | Proxy warning | print plaintext storage warning before write |
-| Cookie file | explicit path only; never copy or print raw cookie content |
+| Cookie input | not supported from user files or CLI |
 | Environment mutation | do not call `load_dotenv()`; do not mutate `os.environ` for Proxy loading |
 
 ## Security Strategy
@@ -98,7 +98,7 @@ Required default test categories:
 - Ctrl+C graceful stop hook
 - User-Agent import file validation
 - Proxy `.env` update and password output safety
-- cookie file path validation
+- absence of user cookie input option
 - pure function PBT
 
 ## Deferred Decisions

@@ -619,10 +619,11 @@
     - `.env`가 없거나 유효한 Proxy 변수가 없으면 Proxy를 비활성화한다.
   - 컨테이너 실행 Flow
     - 컨테이너 이미지는 `docker-entrypoint.sh`를 포함한다.
+    - `.dockerignore`는 `.git`, 가상환경, 테스트 캐시, 출력물, `.env` 계열 secret 후보, 문서 산출물을 Docker build context에서 제외한다.
     - `docker run` 시 환경변수로 `FMKOREA_PROXY_HOST`, `FMKOREA_PROXY_ID`, `FMKOREA_PROXY_PW`를 입력 가능하다.
-    - `docker-entrypoint.sh`는 전달받은 Proxy 환경변수를 컨테이너 내부 `.env` 파일로 생성한다.
-    - 컨테이너에 `.env` 파일을 직접 주입하는 방식도 허용한다.
-    - 컨테이너 내부 프로그램은 로컬 실행과 동일하게 `.env`를 읽어 Proxy를 적용한다.
+    - Docker `--env-file`을 통해 `.env` 형식 파일을 환경변수로 주입하는 방식도 허용한다.
+    - `docker-entrypoint.sh`는 Docker 전용 시작 스크립트이며, 전달받은 argv를 유지한 채 `python -m fmkorea_scraper.adapters.container "$@"`로 실행을 위임한다.
+    - 컨테이너 내부 프로그램은 Docker가 주입한 환경변수를 직접 읽어 Proxy를 적용한다.
   - `.env`는 문서화된 보안 예외로 평문 저장을 허용하되, `.gitignore` 포함과 터미널 경고를 필수로 한다.
   - 로그에는 Proxy password, raw `.env` 내용, 인증정보를 남기지 않는다.
 - Cookie
@@ -705,6 +706,7 @@ FMKorea-Scraper/
 │   └── FMKorea-Scraper_Function_Specification.md
 ├── user-agents.txt
 ├── .env
+├── .dockerignore
 ├── docker-entrypoint.sh
 ├── Checkpoint.json
 ├── pyproject.toml

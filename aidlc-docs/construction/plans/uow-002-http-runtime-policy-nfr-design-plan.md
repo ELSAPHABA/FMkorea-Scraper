@@ -100,9 +100,9 @@ C) response classification을 UOW-003/UOW-004 parser에 전부 맡긴다.
 
 Proxy/cookie secret masking은 어떤 방식으로 구현할까요?
 
-A) (권장) `SecretStr`와 safe `__repr__`/`to_safe_dict()`를 가진 `ProxyConfig`, `CookieConfig`를 두고, log/error 변환은 allowlist 기반 sanitizer를 한 번 더 통과시킨다.
+A) (권장) `SecretStr`와 safe `__repr__`/`to_safe_dict()`를 가진 `ProxyConfig`를 두고, log/error 변환은 allowlist 기반 sanitizer를 한 번 더 통과시킨다. cookie는 사용자 입력 파일을 받지 않으며, 서버 임시 cookie 값은 로그/오류/checkpoint/output에 포함하지 않는다.
 
-추천 사유: 기존 스크래퍼의 중복 방어 방식을 계승합니다. 객체 표현에서 한 번, 로그/오류 출력에서 한 번 막으면 실수로 원문이 새는 가능성이 줄어듭니다.
+추천 사유: 기준 프로젝트의 중복 방어 방식을 계승합니다. Proxy는 설정 객체에서 한 번, 로그/오류 출력에서 한 번 막고, cookie는 아예 사용자 입력 경로를 만들지 않는 것이 더 작고 안전합니다.
 
 B) 로그 작성 함수에서만 마스킹한다.
 

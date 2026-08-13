@@ -971,3 +971,35 @@
 - `aidlc-docs/construction/build-and-test/security-test-instructions.md`
 - `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
 **Approval Prompt**: Review `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approve proceeding to UOW-008 Functional Design.
+
+---
+
+## UOW-007 Build and Test Approval And UOW-008 Functional Design Plan
+
+**Timestamp**: 2026-08-13T01:37:21Z
+**User Response**: "승인합니다. 다음 단계를 진행해 주세요."
+**Decision**: UOW-007 Build and Test approved.
+**Generated Plan**: `aidlc-docs/construction/plans/uow-008-container-mcp-and-test-harness-functional-design-plan.md`
+**Next Gate**: User completes UOW-008 Functional Design questionnaire.
+**Context**: Construction transition from UOW-007 Build and Test Review to UOW-008 Functional Design question collection.
+
+---
+
+## UOW-008 Functional Design Answer Validation And Generation
+
+**Timestamp**: 2026-08-13T02:28:50Z
+**User Input**: "질문지의 답변들을 모두 A로 확정하고 다음 단계를 진행해 주세요."
+**AI Response**: "Filled UOW-008 Functional Design answers with A, confirmed Q1-Q12 were A with no ambiguity or conflicts, generated `business-logic-model.md`, `business-rules.md`, and `domain-entities.md`, and moved UOW-008 Functional Design to review required."
+**Approval Prompt**: "Please review `aidlc-docs/construction/uow-008-container-mcp-and-test-harness/functional-design/` and approve to proceed to UOW-008 NFR Requirements."
+**Context**: Construction UOW-008 Functional Design artifact generation, approval gate before NFR Requirements.
+
+---
+
+## UOW-008 Functional Design Approval And NFR Requirements Plan
+
+**Timestamp**: 2026-08-13T02:30:33Z
+**User Response**: "승인합니다. 다음 단계를 진행해 주세요."
+**Decision**: UOW-008 Functional Design approved.
+**Generated Plan**: `aidlc-docs/construction/plans/uow-008-container-mcp-and-test-harness-nfr-requirements-plan.md`
+**Next Gate**: User completes UOW-008 NFR Requirements questionnaire.
+**Context**: Construction transition from UOW-008 Functional Design Review to UOW-008 NFR Requirements question collection.

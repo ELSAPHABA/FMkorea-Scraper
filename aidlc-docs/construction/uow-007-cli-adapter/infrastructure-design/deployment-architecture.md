@@ -44,7 +44,7 @@ UOW-007 import must not:
 - read environment variables
 - read `.env`
 - read `user-agents.txt`
-- read cookie files
+- accept user-provided cookie input
 - create output directories
 - create `Checkpoint.json`
 - prompt the terminal

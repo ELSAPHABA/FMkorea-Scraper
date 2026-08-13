@@ -13,7 +13,6 @@ In scope:
 - import side-effect safety
 - Proxy credential input and `.env` file update
 - User-Agent file import
-- cookie file option safety
 - runtime dependency lifecycle
 - Ctrl+C/manual stop handling
 - run id and storage alignment
@@ -60,7 +59,6 @@ Import must not:
 - read environment variables
 - read `.env`
 - read `user-agents.txt`
-- read cookie files
 - create files
 - prompt terminal input
 - perform network I/O
@@ -178,11 +176,11 @@ CLI and UOW-002 runtime must not call `load_dotenv()` or mutate `os.environ` for
 
 Proxy reading must remain allow-list based on documented `FMKOREA_PROXY_*` keys.
 
-### NFR-UOW007-SEC-006. Cookie File Safety
+### NFR-UOW007-SEC-006. Cookie Safety
 
-Cookie file support must remain explicit and disabled by default.
+User-provided cookie files must not be supported.
 
-CLI must not print, copy, persist, or checkpoint raw cookie contents.
+CLI must not print, copy, persist, checkpoint, or accept raw cookie contents. Server-set temporary cookies remain inside the UOW-002 HTTP client lifecycle only.
 
 ### NFR-UOW007-SEC-007. Import Command Side Effects
 
@@ -237,7 +235,6 @@ Default tests must not require:
 
 - live FMKorea access
 - real proxy
-- real cookie file with secret values
 - real CAPTCHA response
 - Garage/S3
 - PostgreSQL
@@ -262,7 +259,7 @@ Tests must cover:
 - User-Agent import
 - Proxy `.env` writer preserving unrelated lines
 - Proxy password not echoed or printed
-- cookie file path validation without raw cookie output
+- absence of user cookie input option and raw cookie output
 
 ### NFR-UOW007-TEST-003. Property-Based Tests
 

@@ -12,7 +12,7 @@
 
 - 모든 스토리는 공개 콘텐츠 수집만 다룹니다.
 - CAPTCHA 우회, 자동 로그인, 계정 생성 자동화, 삭제글 복구는 제외합니다.
-- 사용자 제공 cookie 파일은 명시 옵션으로만 사용하며 raw cookie는 로그, output, checkpoint, report, failure record에 저장하지 않습니다.
+- 사용자 제공 cookie 파일은 지원하지 않습니다. 서버가 내려준 임시 cookie는 현재 `HttpClient` 생명주기 안에서만 메모리로 유지하고, raw cookie는 로그, output, checkpoint, report, failure record에 저장하지 않습니다.
 - 런타임 스크래핑은 `httpx`, `asyncio`, BeautifulSoup, 표준 `json` 기반입니다.
 - Playwright 또는 브라우저 자동화는 조사 도구로만 사용할 수 있으며, 스크래퍼 런타임 의존성으로 포함하지 않습니다.
 - CLI, 라이브러리, 워커 컨테이너, MCP는 같은 core library 함수를 공유합니다.
@@ -42,11 +42,11 @@
 - CLI argument/config validation 단위 테스트로 검증한다.
 - import side-effect 테스트를 둔다.
 
-### US-002. User-Agent, Proxy, cookie 파일을 안전하게 적용한다
+### US-002. User-Agent, Proxy, 임시 cookie를 안전하게 적용한다
 
 **페르소나**: P-001 터미널 수집 사용자, P-003 워커 컨테이너 운영자
 
-**User Story**: 터미널 수집 사용자로서, User-Agent, Proxy, cookie 파일을 명시적으로 설정하고 싶다. 그래서 차단 위험과 공개 페이지 접근 조건을 제어하면서도 민감정보를 결과에 남기지 않을 수 있다.
+**User Story**: 터미널 수집 사용자로서, User-Agent와 Proxy를 명시적으로 설정하고 싶다. 그래서 차단 위험과 공개 페이지 접근 조건을 제어하면서도 민감정보와 임시 cookie를 결과에 남기지 않을 수 있다.
 
 **요구사항 추적**: FR-003, FR-025, FR-026, FR-027, NFR-004
 
@@ -57,19 +57,22 @@
 - [ ] Proxy는 `FMKOREA_PROXY_HOST`, `FMKOREA_PROXY_ID`, `FMKOREA_PROXY_PW`를 사용한다.
 - [ ] 사용자가 Proxy 옵션을 켠 경우 명시 입력값을 최우선으로 적용한다.
 - [ ] Proxy 옵션이 없고 `.env`가 있으면 `.env`의 FMKorea Proxy 변수를 자동 사용한다.
-- [ ] cookie 파일은 명시 옵션으로만 사용하고 기본값은 미사용이다.
+- [ ] 사용자 제공 cookie 파일 옵션은 제공하지 않는다.
+- [ ] 서버가 내려준 임시 cookie는 현재 `HttpClient` 생명주기 안에서만 메모리로 유지한다.
+- [ ] User-Agent 교체 또는 `HttpClient` 종료 시 cookie jar를 reset한다.
 - [ ] raw cookie, Proxy password, token, credential은 로그, checkpoint, JSONL, report, failure record에 저장하지 않는다.
-- [ ] `.env`, cookie 파일, output, checkpoint는 `.gitignore` 보호 대상이다.
+- [ ] `.env`, output, checkpoint는 `.gitignore` 보호 대상이다.
 
 **Given/When/Then**
 
-- Given 사용자가 cookie 파일 경로를 CLI 옵션으로 전달했을 때
-- When Job이 실행되면
-- Then HTTP 요청에는 cookie가 적용될 수 있지만 raw cookie 값은 어떤 출력 파일에도 기록되지 않는다.
+- Given 서버가 응답에서 `Set-Cookie`를 내려줬을 때
+- When 같은 `HttpClient` 생명주기 안에서 후속 요청이 실행되면
+- Then 임시 cookie는 메모리 안에서만 사용될 수 있고 어떤 출력 파일에도 기록되지 않는다.
 
 **검증 메모**
 
 - 로그 캡처 테스트에서 raw cookie와 Proxy password가 없는지 확인한다.
+- User-Agent 교체 시 in-memory cookie가 reset되는지 확인한다.
 - 파일 파싱 테스트는 빈 줄, 잘못된 User-Agent, 누락 Proxy 변수를 포함한다.
 
 ### US-003. 요청 속도와 worker 수를 조절한다

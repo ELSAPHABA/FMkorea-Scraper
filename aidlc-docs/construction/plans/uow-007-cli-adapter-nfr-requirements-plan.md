@@ -11,7 +11,7 @@
 - **Depends On**: UOW-001 Core Models And Config, UOW-002 HTTP Runtime Policy, UOW-003 Search And Link Collection, UOW-004 Post Detail And Content Parsing, UOW-005 Job Runner And Checkpoint, UOW-006 Output And Storage
 - **Primary Stories**: US-001
 - **Related Stories**: US-002, US-003, US-006, US-013, US-014, US-015
-- **Scope**: terminal command UX, terminal wizard UX, safe error/debug traceback output, import side-effect safety, Proxy/User-Agent/cookie file operations, runtime dependency lifecycle, Ctrl+C stop handling, run id/storage alignment, adapter tests
+- **Scope**: terminal command UX, terminal wizard UX, safe error/debug traceback output, import side-effect safety, Proxy/User-Agent operations, runtime dependency lifecycle, Ctrl+C stop handling, run id/storage alignment, adapter tests
 - **Security Focus**: proxy credential input, `.env` plaintext warning, debug traceback redaction boundary, no raw cookie/header/body/env output, import safety
 - **Resiliency Focus**: graceful interrupt, final checkpoint preservation through UOW-005, dependency cleanup, file write safety for `user-agents.txt` and `.env`
 - **PBT Focus**: CLI argument/wizard answer to model mapping, realtime env validation, exit code mapping, safe output redaction, path/filename handling for local config files

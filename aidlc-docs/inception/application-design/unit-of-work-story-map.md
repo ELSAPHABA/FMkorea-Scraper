@@ -5,7 +5,7 @@
 | Story | Title | Primary UOW | Supporting UOWs |
 |---|---|---|---|
 | US-001 | CLI와 터미널 마법사에서 수집 Job을 생성한다 | UOW-007 | UOW-001, UOW-005 |
-| US-002 | User-Agent, Proxy, cookie 파일을 안전하게 적용한다 | UOW-002 | UOW-001, UOW-007, UOW-008 |
+| US-002 | User-Agent, Proxy, 임시 cookie를 안전하게 적용한다 | UOW-002 | UOW-001, UOW-007, UOW-008 |
 | US-003 | 요청 속도와 worker 수를 조절한다 | UOW-002 | UOW-001, UOW-005, UOW-007 |
 | US-004 | 게시글 URL과 게시판/검색 결과에서 후보 링크를 수집한다 | UOW-003 | UOW-001, UOW-002 |
 | US-005 | 통합 검색과 심층검색으로 후보 게시판과 게시글을 수집한다 | UOW-003 | UOW-001, UOW-002, UOW-005 |
@@ -35,7 +35,7 @@
 
 - Primary: US-002, US-003
 - Supporting: US-004, US-005, US-007, US-012
-- Coverage: request delay, User-Agent, proxy, optional cookie file, timeout/retry, CAPTCHA/block response classification.
+- Coverage: request delay, User-Agent, proxy, in-memory temporary cookie lifecycle, timeout/retry, CAPTCHA/block response classification.
 
 ### UOW-003. Search And Link Collection
 

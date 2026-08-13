@@ -53,7 +53,7 @@ UOW-005 does not implement:
 
 - CLI commands or terminal wizard
 - runtime environment mapping
-- user-agent/proxy/cookie file loading
+- user-agent/proxy loading
 - concrete HTTP client construction
 - list/search/detail HTML parsing
 - JSONL/media/checkpoint storage internals

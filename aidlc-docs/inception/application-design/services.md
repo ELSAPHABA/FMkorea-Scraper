@@ -21,7 +21,7 @@ Application Design 단계의 service는 orchestration 경계만 정의합니다.
   - global request interval 기본값은 1초다.
   - User-Agent 기본 교체 주기는 요청 10회마다 1회다.
   - 명시 proxy option이 `.env`보다 우선한다.
-  - optional cookie file은 명시 입력일 때만 사용한다.
+  - 사용자 제공 cookie 파일은 지원하지 않고 서버 임시 cookie는 HTTP client 메모리 안에서만 유지한다.
   - secret, raw cookie, proxy password는 log/output/checkpoint/failure에 남기지 않는다.
 
 ## SearchCollectionService

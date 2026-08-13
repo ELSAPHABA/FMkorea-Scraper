@@ -30,7 +30,7 @@ These should be handled inside the relevant AI-DLC UOW question gates rather tha
 - Post detail metadata selectors.
 - Body content block detection for text, image, FMKorea video, YouTube, X/Twitter embed, links, and attachments.
 - Comment/reply DOM structure and deleted/hidden comment handling.
-- Optional user-provided cookie file behavior.
+- User-provided cookie files are not supported; server-set cookies are memory-only.
 - Parser-failure retry report fields.
 - Live smoke test target pages and fixture capture strategy.
 
@@ -139,7 +139,7 @@ Use the baseline sequence and rename only site-specific behavior.
 1. **UOW-001 Core Models And Config**
    - Typed config, source/common schemas, public API request/result models, validation, ports.
 2. **UOW-002 HTTP Runtime Policy**
-   - `httpx` runtime, request delay, retry, timeout, User-Agent rotation, proxy, optional cookie file, block/CAPTCHA classification.
+   - `httpx` runtime, request delay, retry, timeout, User-Agent rotation, proxy, in-memory temporary cookie lifecycle, block/CAPTCHA classification.
 3. **UOW-003 Search And Link Collection**
    - Direct URL parsing, board list/search, integrated search, deep search, no-keyword range, realtime discovery, dedupe.
 4. **UOW-004 Post Detail And Content Parsing**
@@ -188,7 +188,7 @@ Storage is intentionally generated before the job runner so checkpoint commits a
 - Post detail parsing stores metadata, comments/replies, and content blocks in Polars-friendly JSONL.
 - FMKorea source JSON omits `is_repost` and `repost`; common normalization can synthesize defaults later.
 - Raw cookie/proxy secret values are never persisted.
-- Request pacing, User-Agent rotation, proxy, optional cookie file, and block/CAPTCHA fail-closed behavior are implemented.
+- Request pacing, User-Agent rotation, proxy, in-memory temporary cookie lifecycle, and block/CAPTCHA fail-closed behavior are implemented.
 - Checkpoint/resume works for normal stops and failure stops.
 - Parser-stage failure records can be retried by UOW-009 without rerunning unrelated successful posts.
 - Local JSONL/media, S3-compatible object storage, and PostgreSQL checkpoint paths are supported.

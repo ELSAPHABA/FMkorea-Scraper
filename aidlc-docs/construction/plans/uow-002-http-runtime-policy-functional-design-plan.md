@@ -5,7 +5,7 @@
 ## Unit Context
 
 - **Unit**: UOW-002 HTTP Runtime Policy
-- **Goal**: 모든 외부 HTTP 요청에 timeout, retry, 요청 간격, User-Agent rotation, Proxy, optional cookie file, CAPTCHA/차단 분류 정책을 일관되게 적용한다.
+- **Goal**: 모든 외부 HTTP 요청에 timeout, retry, 요청 간격, User-Agent rotation, Proxy, 임시 cookie 메모리 처리, CAPTCHA/차단 분류 정책을 일관되게 적용한다.
 - **Primary Stories**: US-002, US-003
 - **Supporting Stories**: US-004, US-005, US-007, US-012
 - **Depends On**: UOW-001 Core Models And Config
@@ -126,15 +126,15 @@ C) `httpx`의 기본 환경변수 proxy 처리에만 맡기고 별도 provider�
 
 ### Question 7. Cookie 적용 방식
 
-Optional cookie file은 어떻게 사용할까요?
+Cookie는 어떻게 사용할까요?
 
-A) (권장) 기본은 cookie 비활성화다. 사용자가 cookie file을 명시한 경우에만 정적 `Cookie` header를 요청에 붙이고, 응답의 `Set-Cookie`는 저장하거나 다음 요청에 누적하지 않는다.
+A) (권장) 사용자 제공 cookie 파일과 정적 `Cookie` header 입력은 지원하지 않는다. 서버가 내려준 `Set-Cookie`는 현재 `HttpClient` 메모리 안에서만 임시 유지하고, User-Agent 교체 또는 client 종료 시 reset한다.
 
-추천 사유: 사용자가 우려한 추적/차단 위험을 줄이면서, 필요한 경우에만 로그인/성인글 등 접근 보조를 허용할 수 있습니다.
+추천 사유: 기준 프로젝트와 동일한 동작입니다. 공개 콘텐츠 수집 범위를 넘지 않으면서, 서버가 정상 흐름에서 요구하는 임시 cookie만 최소 범위로 처리할 수 있습니다.
 
-B) `httpx` cookie jar를 켜서 응답 cookie를 Job 내내 유지한다.
+B) `httpx` cookie jar를 Job 내내 유지하고 User-Agent 교체 시에도 유지한다.
 
-C) cookie file 옵션 자체를 UOW-002에서 제거한다.
+C) 사용자가 제공한 cookie file을 읽어 정적 `Cookie` header로 붙인다.
 
 [Answer]: A
 

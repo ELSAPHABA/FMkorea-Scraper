@@ -8,7 +8,7 @@
 |---|---|
 | `models` | Pydantic request/result/content/comment/checkpoint/failure models |
 | `core` | public async API, config validation, ports, typed errors |
-| `http` | request delay, retry, timeout, User-Agent, proxy, optional cookie file, block/CAPTCHA classification |
+| `http` | request delay, retry, timeout, User-Agent, proxy, in-memory temporary cookie lifecycle, block/CAPTCHA classification |
 | `search` | FMKorea URL/query builders, board/list/search/integrated/deep/realtime link collection |
 | `post_detail` | FMKorea post metadata, content/media, attachment, comment/reply parsing |
 | `storage` | local JSONL/media, S3-compatible object storage, failure records, checkpoint ports |
@@ -78,7 +78,7 @@
 ### HttpClient
 
 - **Purpose**: 모든 외부 HTTP 요청 정책의 단일 적용 지점.
-- **Responsibilities**: global delay, retry, timeout, User-Agent rotation, proxy, optional cookie file, secret masking, CAPTCHA/block classification.
+- **Responsibilities**: global delay, retry, timeout, User-Agent rotation, proxy, in-memory temporary cookie lifecycle, secret masking, CAPTCHA/block classification.
 - **Interface**: async `get`, `post`, `download`, `close`.
 
 ### UserAgentProvider

@@ -108,7 +108,7 @@ X) Other (please describe after [Answer]: tag below)
 - [x] 모든 스토리에 acceptance criteria 포함
 - [x] 페르소나와 관련 유저 스토리 연결
 - [x] Security, Resiliency, PBT 관련 인수조건 포함
-- [x] FMKorea-specific 예외인 `is_repost`/`repost` 제외와 cookie 파일 보안 제한 반영
+- [x] FMKorea-specific 예외인 `is_repost`/`repost` 제외와 사용자 제공 cookie 파일 미지원 반영
 - [x] Polars 가공 가능한 JSONL/content block 검증 흐름 반영
 - [x] 완료한 항목은 즉시 체크리스트에 반영
 
@@ -151,6 +151,6 @@ X) Other (please describe after [Answer]: tag below)
 
 ## 확장 규칙 반영 메모
 
-- Security Baseline: 입력 검증, 민감정보 로그 금지, 평문 Proxy `.env` 경고, cookie 파일 보안 제한을 관련 acceptance criteria에 포함합니다.
+- Security Baseline: 입력 검증, 민감정보 로그 금지, 평문 Proxy `.env` 경고, 임시 cookie 메모리 제한을 관련 acceptance criteria에 포함합니다.
 - Resiliency Baseline: 중단점 저장/복구, 실패 처리, 로컬/컨테이너/AWS 선택 운영 범위를 관련 acceptance criteria에 포함합니다.
 - Property-Based Testing: URL/query, parser, 직렬화, 중복 제거, checkpoint, content block shape의 테스트 가능성을 관련 검증 메모에 반영합니다.
