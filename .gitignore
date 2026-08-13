@@ -218,9 +218,9 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Scraper runtime files
-outputs/
-Checkpoint.json
-user-agents.txt
+/outputs/
+/Checkpoint.json
+/user-agents.txt
 
 # AWS CDK generated files
 infra/cdk/cdk.out/
