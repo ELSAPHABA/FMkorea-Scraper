@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Greenfield
 - **Start Date**: 2026-08-11T23:58:42Z
-- **Current Stage**: CONSTRUCTION - UOW-008 Functional Design Question Collection
+- **Current Stage**: CONSTRUCTION - UOW-008 Build and Test Approval
 
 ## Workspace State
 - **Existing Code**: No
@@ -84,16 +84,21 @@
 - [x] UOW-007 Infrastructure Design - APPROVED
 - [x] UOW-007 Code Generation - APPROVED
 - [x] UOW-007 Build and Test - APPROVED
-- [ ] UOW-008 Functional Design - QUESTIONNAIRE REQUIRED
+- [x] UOW-008 Functional Design - APPROVED
+- [x] UOW-008 NFR Requirements - APPROVED
+- [x] UOW-008 NFR Design - APPROVED
+- [x] UOW-008 Infrastructure Design - APPROVED
+- [x] UOW-008 Code Generation - APPROVED
+- [ ] UOW-008 Build and Test - REVIEW REQUIRED
 
 ### OPERATIONS PHASE
 - [ ] Operations - PLACEHOLDER
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: UOW-008 Functional Design Question Collection
-- **Next Step**: User completes `aidlc-docs/construction/plans/uow-008-container-mcp-and-test-harness-functional-design-plan.md`.
-- **Status**: UOW-008 Functional Design questionnaire created; answers required before generating functional design artifacts.
+- **Current Stage**: UOW-008 Build and Test Approval
+- **Next Step**: User reviews and approves UOW-008 Build and Test results.
+- **Status**: UOW-008 Build and Test executed; approval required before UOW-009 Functional Design.
 
 ## Migration Notes
 - DCinside-Scraper's feature surface, UOW sequence, runtime boundaries, storage contracts, container pattern, MCP adapter pattern, parser-failure retry unit, and CDK direction are the default baseline.
@@ -547,5 +552,53 @@
 - **Functional Design Approved At**: 2026-08-13T02:30:33Z
 - **NFR Requirements Plan Created At**: 2026-08-13T02:30:33Z
 - **NFR Requirements Plan Artifact**: `aidlc-docs/construction/plans/uow-008-container-mcp-and-test-harness-nfr-requirements-plan.md`
-- **Next Step**: Complete all `[Answer]:` fields in the NFR Requirements questionnaire.
-- **Status**: NFR Requirements questionnaire pending
+- **NFR Requirements Answers Confirmed At**: 2026-08-13T07:08:50Z
+- **NFR Requirements Answer Analysis**: Q1-Q12 were A. No ambiguity or conflicts found. PostgreSQL and MCP stay optional extras, S3/Garage uses the existing boto3 boundary, Docker uses a thin entrypoint plus `.dockerignore`, secrets/cookies are redacted, quality checks are stdlib-first, and external smoke tests remain opt-in.
+- **NFR Requirements Generated At**: 2026-08-13T07:08:50Z
+- **NFR Requirements Artifacts**: `nfr-requirements.md`, `tech-stack-decisions.md`
+- **Next Stage After NFR Requirements Approval**: UOW-008 NFR Design
+- **NFR Requirements Approved At**: 2026-08-13T07:15:11Z
+- **NFR Design Plan Created At**: 2026-08-13T07:15:11Z
+- **NFR Design Plan Artifact**: `aidlc-docs/construction/plans/uow-008-container-mcp-and-test-harness-nfr-design-plan.md`
+- **NFR Design Answers Confirmed At**: 2026-08-13T07:19:19Z
+- **NFR Design Answer Analysis**: Q1-Q10 were A. No ambiguity or conflicts found. The design keeps a flat adapter/storage module layout, function-based container runtime assembly, dataclass env mapping, psycopg and boto3 via thread wrappers, testable MCP tool handlers, shared safe error mapping, test-only quality harness, and env-gated optional smoke markers.
+- **NFR Design Generated At**: 2026-08-13T07:19:19Z
+- **NFR Design Artifacts**: `nfr-design-patterns.md`, `logical-components.md`
+- **Next Stage After NFR Design Approval**: UOW-008 Infrastructure Design
+- **NFR Design Approved At**: 2026-08-13T07:23:02Z
+- **Infrastructure Design Plan Created At**: 2026-08-13T07:23:02Z
+- **Infrastructure Design Plan Artifact**: `aidlc-docs/construction/plans/uow-008-container-mcp-and-test-harness-infrastructure-design-plan.md`
+- **Infrastructure Design Answers Confirmed At**: 2026-08-13T07:30:18Z
+- **Infrastructure Design Answer Analysis**: Q1-Q10 were A. No ambiguity or conflicts found. Worker image, MCP entrypoint, stdio transport, optional smoke compose, runtime secret/env injection, no inbound worker ports, external PostgreSQL/Garage durability, adapter-owned schema init, graceful signal handling, and shared infrastructure notes are confirmed. Compose remains local/smoke only; scraper workers connect to common storage endpoints through env and do not own storage lifecycle.
+- **Infrastructure Design Generated At**: 2026-08-13T07:30:18Z
+- **Infrastructure Design Artifacts**: `infrastructure-design.md`, `deployment-architecture.md`
+- **Shared Infrastructure Note**: Common PostgreSQL/Garage/env/network/volume/smoke contract is summarized in UOW-008 Infrastructure Design; production Kubernetes/cloud provisioning remains out of scope.
+- **Next Stage After Infrastructure Design Approval**: UOW-008 Code Generation
+- **Infrastructure Design Approved At**: 2026-08-13T07:35:33Z
+- **Code Generation Plan Created At**: 2026-08-13T07:35:33Z
+- **Code Generation Plan Artifact**: `aidlc-docs/construction/plans/uow-008-container-mcp-and-test-harness-code-generation-plan.md`
+- **Code Generation Plan Approved At**: 2026-08-13T07:58:49Z
+- **Code Generated At**: 2026-08-13T07:58:49Z
+- **Code Artifacts**: `Dockerfile`, `.dockerignore`, `.gitattributes`, `docker-entrypoint.sh`, `src/fmkorea_scraper/adapters/container.py`, `src/fmkorea_scraper/adapters/mcp.py`, `src/fmkorea_scraper/adapters/safe_errors.py`, `src/fmkorea_scraper/outputs/postgres_checkpoint.py`, `src/fmkorea_scraper/outputs/s3_output.py`, `tests/test_container_adapter.py`, `tests/test_mcp_adapter.py`, `tests/test_s3_output_and_postgres.py`, `tests/test_quality_harness.py`, `tests/fixtures/quality/`
+- **Code Documentation Artifacts**: `aidlc-docs/construction/uow-008-container-mcp-and-test-harness/code/public-contracts.md`, `aidlc-docs/construction/uow-008-container-mcp-and-test-harness/code/code-generation-summary.md`
+- **Generation Validation**: `$env:PYTHONPATH='src'; python -m pytest tests\test_container_adapter.py tests\test_mcp_adapter.py tests\test_s3_output_and_postgres.py tests\test_quality_harness.py tests\test_outputs_storage.py -q --tb=short` -> 26 passed; `$env:PYTHONPATH='src'; python -m pytest tests -q --tb=short` -> 144 passed, 1 skipped; `$env:PYTHONPATH='src'; python -m compileall -q src tests` -> passed; adapter import check -> ok
+- **Next Stage After Code Generation Approval**: Build and Test
+- **Code Generation Approved At**: 2026-08-13T08:08:37Z
+- **Build and Test Executed At**: 2026-08-13T08:08:37Z
+- **Build Command**: `py -3.12 -m pip wheel . --no-deps -w dist`
+- **Build Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
+- **Build Artifact Size**: 81648 bytes
+- **Build Artifact SHA256**: `77d72f19fb25a68597dee4cce293e54977ee335cc25b1fdea7154665fcafb800`
+- **Docker Build Command**: `docker build -t fmkorea-scraper:uow-008-build-test .`
+- **Docker Image ID**: `sha256:e49d413822544a7c1b5e237f5c7fdd0ad5f1c093ffdc5d7cd0383facc3e12025`
+- **Focused UOW-008 Test Command**: `$env:PYTHONPATH='src'; py -3.12 -m pytest tests\test_container_adapter.py tests\test_mcp_adapter.py tests\test_s3_output_and_postgres.py tests\test_quality_harness.py tests\test_outputs_storage.py -q --tb=short`
+- **Focused UOW-008 Test Result**: 25 passed, 1 skipped
+- **Test Command**: `$env:PYTHONPATH='src'; py -3.12 -m pytest tests -q --tb=short`
+- **Test Result**: 142 passed, 3 skipped
+- **Compile Check**: `$env:PYTHONPATH='src'; py -3.12 -m compileall -q src tests` -> passed
+- **Import Check**: `$env:PYTHONPATH='src'; py -3.12 -c "import fmkorea_scraper.adapters.container, fmkorea_scraper.adapters.mcp; print('ok')"` -> ok
+- **Container Validation Smoke**: local and Docker container missing-env validation returned safe JSON and exit code `2`
+- **Dependency Check**: clean Docker image `python -m pip check` -> No broken requirements found. Host global Python 3.12 has unrelated package conflicts and is not treated as project failure.
+- **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/build-instructions.md`, `aidlc-docs/construction/build-and-test/unit-test-instructions.md`, `aidlc-docs/construction/build-and-test/integration-test-instructions.md`, `aidlc-docs/construction/build-and-test/performance-test-instructions.md`, `aidlc-docs/construction/build-and-test/security-test-instructions.md`, `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
+- **Next Stage After Build and Test Approval**: UOW-009 Functional Design
+- **Status**: Build and Test executed; review required

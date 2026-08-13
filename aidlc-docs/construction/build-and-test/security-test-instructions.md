@@ -1,55 +1,55 @@
-# Security Test Instructions - UOW-007 CLI Adapter
+# Security Test Instructions - UOW-008 Container, MCP, And Test Harness
 
-## Security Scope
+## Safe Error Checks
 
-UOW-007 security checks focus on terminal adapter behavior:
-
-- import safety
-- secret-safe error output
-- Proxy password handling
-- plaintext `.env` update boundary
-- User-Agent import validation
-- no live network in default tests
-- no raw cookie persistence by CLI
-
-## Default Security Test Command
+Run:
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m pytest `
-  tests\test_cli_adapter.py::test_import_user_agents_rejects_blank_without_overwriting `
-  tests\test_cli_adapter.py::test_update_proxy_env_preserves_unrelated_lines `
-  tests\test_cli_adapter.py::test_print_error_uses_safe_summary_and_debug_gate `
-  tests\test_cli_adapter.py::test_cli_import_has_no_runtime_side_effects `
-  -q --tb=short
+py -3.12 -m pytest tests\test_container_adapter.py tests\test_mcp_adapter.py tests\test_quality_harness.py -q --tb=short
 ```
 
 Covered:
 
-- blank User-Agent source does not overwrite existing destination
-- `.env` updater changes only documented `FMKOREA_PROXY_*` keys
-- safe error output does not expose secret details
-- CLI import does not create `.env` or `user-agents.txt`
+- `ContainerEnvConfig` repr excludes `DATABASE_URL` and S3 secret values
+- container validation errors expose only safe details
+- MCP validation and unsupported errors use safe payloads
+- fixture failure records exclude raw HTML, cookies, passwords, and tokens
 
-## Dependency Check
+## Docker Context Checks
+
+Root files verified by build:
+
+- `.dockerignore`
+- `.gitattributes`
+- `Dockerfile`
+- `docker-entrypoint.sh`
+
+Expected security behavior:
+
+- local `.env` and `.env.*` files are excluded from Docker context
+- local output/checkpoint/cache directories are excluded from Docker context
+- shell script line endings stay LF in Git
+- worker container exposes no inbound port by default
+
+## Dependency Checks
+
+Clean image check:
 
 ```powershell
-python -m pip check
+docker run --rm --entrypoint python fmkorea-scraper:uow-008-build-test -m pip check
 ```
 
-Latest result:
+UOW-008 result:
 
 ```text
 No broken requirements found.
 ```
 
-## Deferred Security Work
+Host global check note:
 
-Not covered in UOW-007:
+```powershell
+py -3.12 -m pip check
+```
 
-- external vulnerability scanning
-- live CAPTCHA/block smoke tests
-- Docker secret injection
-- PostgreSQL credential handling
-- MCP server access control
-- AWS IAM policy validation
+The host global Python 3.12 environment has unrelated package issues involving Google packages, `selenium`, and `update`. The clean Docker image built from this project passes dependency validation, so the host global issue is not treated as a UOW-008 project failure.

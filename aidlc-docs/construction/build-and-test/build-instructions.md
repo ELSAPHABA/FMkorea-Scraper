@@ -1,25 +1,23 @@
-# Build Instructions - UOW-007 CLI Adapter
+# Build Instructions - UOW-008 Container, MCP, And Test Harness
 
-## Prerequisites
+## Python Version
 
-- **Build Tool**: `pip wheel` with hatchling PEP 517 backend
-- **Python**: 3.11+ required, validated on Python 3.13.9
-- **Dependencies**: project dependencies from `pyproject.toml`
-- **Required Environment Variables**: none for default build
-- **Optional Environment Variables**: live/S3/Polars smoke variables are not required for UOW-007 default gate
-
-## Build Steps
-
-### 1. Install Test Dependencies
+Use a supported Python version. In this workspace, plain `python` resolves to 3.10.20, which is below `requires-python >=3.11`, so official checks use:
 
 ```powershell
-python -m pip install -e ".[test]"
+py -3.12 --version
 ```
 
-### 2. Build Wheel
+Expected:
+
+```text
+Python 3.12.10
+```
+
+## Wheel Build
 
 ```powershell
-python -m pip wheel . --no-deps -w dist
+py -3.12 -m pip wheel . --no-deps -w dist
 ```
 
 Expected artifact:
@@ -28,47 +26,56 @@ Expected artifact:
 dist/fmkorea_scraper-0.1.0-py3-none-any.whl
 ```
 
-### 3. Verify CLI Module Help
+UOW-008 result:
 
-```powershell
-$env:PYTHONPATH='src'
-python -m fmkorea_scraper.adapters.cli --help
+```text
+size: 81648 bytes
+sha256: 77d72f19fb25a68597dee4cce293e54977ee335cc25b1fdea7154665fcafb800
 ```
 
-Expected result:
-
-- command exits `0`
-- help lists `run`, `resume`, `retry-parser-failures`, `import-user-agents`, `configure-proxy`, and `wizard`
-
-## Latest Build Result
-
-- **Executed At**: 2026-08-13T01:26:37Z
-- **Build Command**: `python -m pip wheel . --no-deps -w dist`
-- **Status**: PASS
-- **Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
-- **Artifact Size**: 75751 bytes
-- **Artifact SHA256**: `294305329e7aa4fb2365c72c2419a89856a0b51d499083b2d50e6cdbf814794c`
-
-## Troubleshooting
-
-### Build Fails with Missing Hatchling
-
-Cause: build isolation could not install the backend.
-
-Fix:
+## Docker Image Build
 
 ```powershell
-python -m pip install --upgrade pip
-python -m pip wheel . --no-deps -w dist
+docker build -t fmkorea-scraper:uow-008-build-test .
 ```
 
-### CLI Module Help Fails
+Expected:
 
-Cause: package source path is not visible to Python.
+- image builds from `python:3.11-slim`
+- `docker-entrypoint.sh` is executable in the image
+- package installs with `.[s3,postgres]`
 
-Fix:
+UOW-008 result:
+
+```text
+PASS
+image: sha256:e49d413822544a7c1b5e237f5c7fdd0ad5f1c093ffdc5d7cd0383facc3e12025
+```
+
+## Docker Entrypoint Check
 
 ```powershell
-$env:PYTHONPATH='src'
-python -m fmkorea_scraper.adapters.cli --help
+docker image inspect fmkorea-scraper:uow-008-build-test --format '{{json .Config.Entrypoint}}'
 ```
+
+Expected:
+
+```text
+["/app/docker-entrypoint.sh"]
+```
+
+Safe validation smoke:
+
+```powershell
+docker run --rm fmkorea-scraper:uow-008-build-test run
+Write-Output "LAST=$LASTEXITCODE"
+```
+
+Expected:
+
+```text
+LAST=2
+{"ok": false, "error": {"code": "validation_error", ...}}
+```
+
+This smoke intentionally omits storage env values so it does not contact Garage, PostgreSQL, or the live site.

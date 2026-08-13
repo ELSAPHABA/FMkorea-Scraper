@@ -1,49 +1,72 @@
-# Integration Test Instructions - UOW-007 CLI Adapter
+# Integration Test Instructions - UOW-008 Container, MCP, And Test Harness
 
-## Purpose
-
-Validate UOW-007 integration with the existing local package boundaries:
-
-- UOW-001 Pydantic models
-- UOW-002 HTTP runtime config objects
-- UOW-003 link collector service wiring
-- UOW-004 post detail parser service wiring
-- UOW-005 runner API
-- UOW-006 storage factory
-
-## Default Integration Tests
-
-Run:
+## Import Safety
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m pytest tests\test_cli_adapter.py -q --tb=short
+py -3.12 -c "import fmkorea_scraper.adapters.container, fmkorea_scraper.adapters.mcp; print('ok')"
 ```
 
-Key scenarios:
+Expected:
 
-- `core.api.run_job(..., run_id=...)` forwards `run_id` to runners that support it
-- `build_local_runtime()` creates the existing collector/parser/storage/runner dependency graph
-- `StorageFactory.create()` receives the CLI-generated `run_id`
-- `python -m fmkorea_scraper.adapters.cli --help` works without installing the package
-- fake runner execution does not hit live FMKorea
+```text
+ok
+```
 
-## External Integration Tests
+This confirms adapter imports do not read env, open network connections, connect to PostgreSQL/S3, or start an MCP server.
 
-External live tests are not part of the default UOW-007 gate.
+## CLI Help Smoke
 
-Not required:
+```powershell
+$env:PYTHONPATH='src'
+py -3.12 -m fmkorea_scraper.adapters.cli --help
+```
 
-- live FMKorea access
-- real Proxy
-- real cookie secret input
-- Garage/S3
+Expected:
+
+- command exits successfully
+- shows `run`, `resume`, `retry-parser-failures`, `import-user-agents`, `configure-proxy`, and `wizard`
+
+## Container Local Validation Smoke
+
+```powershell
+$env:PYTHONPATH='src'
+py -3.12 -m fmkorea_scraper.adapters.container run
+```
+
+Expected:
+
+- exits with code `2`
+- prints safe JSON validation error
+- does not include secret values
+
+## Docker Validation Smoke
+
+```powershell
+docker build -t fmkorea-scraper:uow-008-build-test .
+docker run --rm fmkorea-scraper:uow-008-build-test run
+Write-Output "LAST=$LASTEXITCODE"
+```
+
+Expected:
+
+- Docker build succeeds
+- Docker run exits with `LAST=2`
+- output is safe validation JSON for missing `DATABASE_URL`
+
+## Optional External Smoke Tests
+
+External checks are not default tests. Run only when endpoints are intentionally available:
+
+- Garage/S3-compatible object storage
 - PostgreSQL
-- Docker
-- MCP server
+- MCP runtime package
+- live site network access
 
-These remain later-unit or optional smoke-test concerns.
+Use pytest markers to gate those tests:
 
-## Cleanup
+```powershell
+py -3.12 -m pytest -m "docker or garage or postgres or mcp or live"
+```
 
-Default integration tests use `tmp_path` and fake dependencies. No manual cleanup is required.
+Do not run optional live/storage smoke checks during default CI unless the required env values are explicitly provided.

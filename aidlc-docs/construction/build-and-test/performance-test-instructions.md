@@ -1,42 +1,35 @@
-# Performance Test Instructions - UOW-007 CLI Adapter
+# Performance Test Instructions - UOW-008 Container, MCP, And Test Harness
 
-## Scope
+## Status
 
-UOW-007 is a local CLI adapter. It has no standalone server, distributed worker service, database, or cloud runtime.
+No dedicated performance benchmark is required for UOW-008.
 
-Load/stress testing is not applicable in this unit.
+Reason:
 
-## Default Performance Checks
+- the unit adds adapter boundaries, Docker packaging, S3/PostgreSQL storage adapters, MCP handler wrappers, and fixture checks
+- it does not add a parser hot path, scheduler, queue algorithm, or network pagination strategy
 
-The default gate uses lightweight substitutes:
+## Substitute Checks
 
-- import-safety subprocess test
-- parser construction test
-- fake-runner command execution
-- property-based command mapping tests
-- no-live-network default suite
-
-Command:
+Use the default validation suite as the regression baseline:
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m pytest tests\test_cli_adapter.py tests\test_cli_properties.py -q --tb=short
+py -3.12 -m pytest tests -q --tb=short
 ```
 
-Latest result:
+UOW-008 result:
 
 ```text
-21 passed
+142 passed, 3 skipped in 28.20s
 ```
 
-## Deferred Performance Work
+## Future Benchmarks
 
-Later units may add:
+Add targeted benchmarks only if later units introduce:
 
-- container startup timing
-- queue-backed worker throughput
-- live smoke rate-limit validation
-- S3-compatible output throughput
-- PostgreSQL checkpoint latency
-
-Those are outside UOW-007.
+- high-volume parser-failure retry processing
+- queue consumers
+- multi-scraper orchestration
+- large S3 JSONL spool throughput requirements
+- PostgreSQL checkpoint contention

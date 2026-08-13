@@ -1,64 +1,51 @@
-# Unit Test Execution - UOW-007 CLI Adapter
+# Unit Test Instructions - UOW-008 Container, MCP, And Test Harness
 
-## Run Unit Tests
-
-### Focused CLI Tests
+## Focused UOW-008 Tests
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m pytest tests\test_cli_adapter.py tests\test_cli_properties.py -q --tb=short
+py -3.12 -m pytest tests\test_container_adapter.py tests\test_mcp_adapter.py tests\test_s3_output_and_postgres.py tests\test_quality_harness.py tests\test_outputs_storage.py -q --tb=short
 ```
 
-Latest result:
+UOW-008 result:
 
 ```text
-21 passed
+25 passed, 1 skipped in 7.84s
 ```
 
-### Full Default Suite
+Coverage:
+
+- container env mapping and exit code behavior
+- container runtime assembly with fake S3/PostgreSQL/HTTP
+- MCP JSON-safe success/error handler boundary
+- S3-compatible output and media upload behavior with fake client
+- PostgreSQL checkpoint save/load/latest with fake connection
+- JSONL/report/failure quality fixture shape
+
+## Full Default Suite
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m pytest tests -q --tb=short
+py -3.12 -m pytest tests -q --tb=short
 ```
 
-Latest result:
+UOW-008 result:
 
 ```text
-118 passed, 2 skipped in 20.71s
+142 passed, 3 skipped in 28.20s
 ```
 
-## Covered UOW-007 Behavior
+Default tests must not require Docker, Garage, PostgreSQL, MCP runtime, Polars, or live network access.
 
-- CLI parser accepts confirmed subcommands
-- CLI source options map to existing UOW-001 source models
-- realtime env validation enforces exactly one termination condition
-- `resume` and `retry-parser-failures` request builders validate input
-- fake runner execution avoids live network
-- CLI-generated `run_id` reaches the runner
-- runtime builder passes the same `run_id` to `StorageFactory`
-- `import-user-agents` rejects invalid input without overwriting
-- Proxy `.env` update preserves unrelated lines
-- wizard answers map to the same command dict shape as argparse
-- safe error output redacts unsafe details
-- Ctrl+C handler requests `JobRunner.stop(StopReason.MANUAL_STOP)`
-- importing `fmkorea_scraper.adapters.cli` has no runtime side effects
+## Compile Check
 
-## Property-Based Tests
+```powershell
+$env:PYTHONPATH='src'
+py -3.12 -m compileall -q src tests
+```
 
-Tool: Hypothesis
+UOW-008 result:
 
-Covered properties:
-
-- direct-post command mapping preserves URL lists
-- realtime keyword env maps to duration termination source
-- source alias normalization accepts both hyphen and underscore forms
-
-## Failure Handling
-
-If tests fail:
-
-1. inspect the first failing test in pytest output
-2. fix the shared builder/runtime boundary instead of patching individual callers
-3. rerun focused CLI tests
-4. rerun the full default suite
+```text
+PASS
+```
