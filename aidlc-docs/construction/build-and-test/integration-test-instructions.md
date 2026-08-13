@@ -1,45 +1,70 @@
-# Integration Test Instructions - UOW-009 Parser Failure Retry Reprocessor
+# Integration Test Instructions - UOW-010 AWS CDK Infrastructure IaC
 
-## Default Integration Boundary
+## Scope
 
-UOW-009 integration checks stay local and fake-backed by default.
+UOW-010 integration validation is local-only. It verifies that the generated CDK stacks integrate with the existing container runtime contract without deploying to AWS.
 
-Covered by default tests:
+Live AWS deployment, ECS RunTask smoke, RDS connection smoke, and S3 object-write smoke are deferred until real AWS account, image registry, and Secrets Manager values are available.
 
-- CLI `retry-parser-failures` to `ParserFailureRetryService`
-- service to injected direct-post `JobRunner`
-- container argv acceptance for `retry-parser-failures`
-- MCP `retry_parser_failures` safe summary response
-- `RetryRequest` model validation
-- S3/Garage env validation boundary without live storage
+## CDK Synth Integration
 
-## Commands
+Run:
 
 ```powershell
-$env:PYTHONPATH='src'
-py -3.12 -m pytest tests\test_parser_failure_retry.py tests\test_cli_adapter.py tests\test_container_adapter.py tests\test_mcp_adapter.py -q --tb=short
+$venv = Join-Path $env:TEMP 'fmkorea-uow010-cdk-venv'
+$env:PATH = (Join-Path $venv 'Scripts') + ';' + $env:PATH
+cd infra/cdk
+cdk synth -c env=dev
 ```
 
-The full default suite was also run:
-
-```powershell
-$env:PYTHONPATH='src'
-py -3.12 -m pytest tests -q --tb=short
-```
-
-Result:
+Verified result:
 
 ```text
-151 passed, 3 skipped in 23.73s
+Successfully synthesized to D:\HongDev\ELSAPHABA\FMkorea-Scraper\infra\cdk\cdk.out
+Supply a stack id (community-scraper-dev-shared, community-scraper-dev-fmkorea-worker) to display its template.
 ```
 
-## Optional External Smoke
+## Container Contract Smoke
 
-These remain opt-in:
+Build:
 
-- Garage/S3 input object read
-- PostgreSQL checkpoint integration
-- MCP runtime process
-- live FMKorea retry
+```powershell
+docker build -t fmkorea-scraper:uow-010-build-test .
+```
 
-Use project markers/env gates for those checks. They are not required for the default Build and Test gate.
+Check dependency integrity inside the built image:
+
+```powershell
+docker run --rm --entrypoint python fmkorea-scraper:uow-010-build-test -m pip check
+```
+
+Verified result:
+
+```text
+No broken requirements found.
+```
+
+Check that container commands fail safely when required environment variables are missing:
+
+```powershell
+docker run --rm fmkorea-scraper:uow-010-build-test run
+docker run --rm fmkorea-scraper:uow-010-build-test retry-parser-failures --failure-path s3://bucket/failures.jsonl
+```
+
+Verified result:
+
+```text
+exit code 2 with safe validation JSON for missing DATABASE_URL
+```
+
+This confirms the CDK-provided secret contract is still required before live task execution.
+
+## Deferred Live Integration
+
+Before live ECS execution:
+
+- publish the worker image to the configured ECR repository
+- create referenced Secrets Manager values for `DATABASE_URL`, `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY`
+- update `infra/cdk/config/{env}.yaml` placeholder account/image values
+- bootstrap the target AWS account for CDK
+- run `cdk deploy -c env=<env> -c use_config_account=true`

@@ -1,38 +1,42 @@
-# Performance Test Instructions - UOW-009 Parser Failure Retry Reprocessor
+# Performance Test Instructions - UOW-010 AWS CDK Infrastructure IaC
 
 ## Scope
 
-UOW-009 performance risk is bounded to retry selection over JSONL inputs.
+UOW-010 does not add scraper throughput logic. Performance validation is limited to infrastructure shape and build-time checks.
 
-The design keeps:
+## Verified Cost/Capacity Defaults
 
-- streaming failure input reads
-- key-only existing success index
-- no raw invalid-line storage
-- direct-post execution through existing worker/rate policy
+The CDK template tests verify:
 
-## Default Checks
+- no NAT Gateway in default config
+- one Fargate worker task definition per configured worker
+- configurable ECS CPU and memory values
+- private/isolated RDS placement
+- bounded S3 prefix permissions per environment/site worker
 
-Property tests cover selector invariants:
+## Commands
+
+Run the CDK template test suite:
 
 ```powershell
-$env:PYTHONPATH='src'
-py -3.12 -m pytest tests\test_parser_failure_retry_properties.py -q --tb=short
+$venv = Join-Path $env:TEMP 'fmkorea-uow010-cdk-venv'
+& (Join-Path $venv 'Scripts\python.exe') -m pytest infra\cdk\tests -q --tb=short
 ```
 
-Included in focused result:
+Verified result:
 
 ```text
-45 passed in 13.84s
+11 passed in 36.86s
 ```
 
-## Deferred Checks
+## Deferred Performance Tests
 
-Large-file benchmarks are deferred until real failure files show memory or runtime pressure.
+Live performance tests require deployed AWS resources and real workload input:
 
-Future benchmarks should measure:
+- ECS task cold-start timing
+- scraper throughput per task CPU/memory setting
+- RDS checkpoint write latency
+- S3 output write latency
+- EventBridge scheduled run behavior
 
-- 10k, 100k, and 1M failure line selection
-- existing success index memory use
-- S3/Garage object streaming latency
-- queue/DLQ retry throughput after platform queue work exists
+These remain operations/deployment validation, not local Build and Test gates.

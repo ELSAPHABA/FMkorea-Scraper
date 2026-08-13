@@ -1,56 +1,61 @@
-# Unit Test Instructions - UOW-009 Parser Failure Retry Reprocessor
+# Unit Test Instructions - UOW-010 AWS CDK Infrastructure IaC
 
-## Focused UOW-009 Tests
+## Application Test Suite
 
-```powershell
-$env:PYTHONPATH='src'
-py -3.12 -m pytest tests\test_parser_failure_retry.py tests\test_parser_failure_retry_properties.py tests\test_cli_adapter.py tests\test_mcp_adapter.py tests\test_container_adapter.py -q --tb=short
-```
-
-UOW-009 result:
-
-```text
-45 passed in 13.84s
-```
-
-Coverage:
-
-- parser-stage failure selection
-- malformed JSONL tolerance
-- parser reason allowlist and infrastructure failure exclusion
-- duplicate last-valid behavior
-- existing success skip
-- inaccessible input validation before retry Job start
-- fake runner direct-post assembly
-- CLI retry safe summary
-- container retry argv path
-- MCP retry safe summary
-- import side-effect safety
-
-## Full Default Suite
+Run from the repository root:
 
 ```powershell
 $env:PYTHONPATH='src'
 py -3.12 -m pytest tests -q --tb=short
 ```
 
-UOW-009 result:
+Verified result:
 
 ```text
-151 passed, 3 skipped in 23.73s
+151 passed, 3 skipped in 18.47s
 ```
 
-Default tests do not require Docker, Garage, PostgreSQL, MCP runtime, Polars, or live network access.
-
-## Compile Check
+## Application Compile Check
 
 ```powershell
 $env:PYTHONPATH='src'
 py -3.12 -m compileall -q src tests
 ```
 
-UOW-009 result:
+Verified result: pass.
+
+## CDK Template Tests
+
+Run from the repository root:
+
+```powershell
+$venv = Join-Path $env:TEMP 'fmkorea-uow010-cdk-venv'
+& (Join-Path $venv 'Scripts\python.exe') -m pytest infra\cdk\tests -q --tb=short
+```
+
+Verified result:
 
 ```text
-PASS
+11 passed in 36.86s
 ```
+
+The CDK tests cover config validation, deterministic naming, no-NAT shared infrastructure, private RDS placement, S3 hardening, ECS worker task wiring, Secrets Manager injection, and worker failure signal resources.
+
+## CDK Compile Check
+
+```powershell
+$venv = Join-Path $env:TEMP 'fmkorea-uow010-cdk-venv'
+& (Join-Path $venv 'Scripts\python.exe') -m compileall -q infra\cdk
+```
+
+Verified result: pass.
+
+## Smoke Checks
+
+```powershell
+$env:PYTHONPATH='src'
+py -3.12 -c "import fmkorea_scraper, fmkorea_scraper.adapters.cli, fmkorea_scraper.adapters.container, fmkorea_scraper.adapters.mcp; print('ok')"
+py -3.12 -m fmkorea_scraper.adapters.cli --help
+```
+
+Verified result: import returned `ok`; CLI help printed successfully.

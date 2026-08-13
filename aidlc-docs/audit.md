@@ -1003,3 +1003,35 @@
 **Generated Plan**: `aidlc-docs/construction/plans/uow-008-container-mcp-and-test-harness-nfr-requirements-plan.md`
 **Next Gate**: User completes UOW-008 NFR Requirements questionnaire.
 **Context**: Construction transition from UOW-008 Functional Design Review to UOW-008 NFR Requirements question collection.
+
+---
+
+## UOW-010 Build and Test Stage
+
+**Timestamp**: 2026-08-13T14:24:57Z
+**User Response**: "승인합니다. 다음 단계를 진행해 주세요."
+**Decision**: UOW-010 Code Generation approved.
+**Build Status**: PASS
+**Test Status**: PASS
+**Build Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
+**Artifact SHA256**: `B22590BA2332B664C36D5F1AEFA8C4557D50F2030BDC7FB97BAE23C548D00BCA`
+**Validation Commands**:
+- `py -3.12 -m pip wheel . --no-deps -w dist` -> PASS
+- `$env:PYTHONPATH='src'; py -3.12 -m pytest tests -q --tb=short` -> 151 passed, 3 skipped
+- `$env:PYTHONPATH='src'; py -3.12 -m compileall -q src tests` -> PASS
+- CDK venv `python -m pytest infra\cdk\tests -q --tb=short` -> 11 passed
+- CDK venv `python -m compileall -q infra\cdk` -> PASS
+- `cd infra/cdk; cdk synth -c env=dev` -> PASS
+- clean app venv `python -m pip check` -> PASS
+- `docker build -t fmkorea-scraper:uow-010-build-test .` -> PASS
+- `docker run --rm --entrypoint python fmkorea-scraper:uow-010-build-test -m pip check` -> PASS
+**Files Generated**:
+- `aidlc-docs/construction/build-and-test/build-instructions.md`
+- `aidlc-docs/construction/build-and-test/unit-test-instructions.md`
+- `aidlc-docs/construction/build-and-test/integration-test-instructions.md`
+- `aidlc-docs/construction/build-and-test/performance-test-instructions.md`
+- `aidlc-docs/construction/build-and-test/security-test-instructions.md`
+- `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
+**Approval Prompt**: Review `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approve proceeding to Operations/deployment planning handoff.
+
+---

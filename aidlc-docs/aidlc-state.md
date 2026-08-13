@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Greenfield
 - **Start Date**: 2026-08-11T23:58:42Z
-- **Current Stage**: CONSTRUCTION - UOW-010 Functional Design Question Review
+- **Current Stage**: CONSTRUCTION - UOW-010 Build and Test Review
 
 ## Workspace State
 - **Existing Code**: No
@@ -96,21 +96,21 @@
 - [x] UOW-009 Infrastructure Design - APPROVED
 - [x] UOW-009 Code Generation - APPROVED
 - [x] UOW-009 Build and Test - APPROVED
-- [ ] UOW-010 Functional Design - REVIEW REQUIRED
-- [ ] UOW-010 NFR Requirements
-- [ ] UOW-010 NFR Design
-- [ ] UOW-010 Infrastructure Design
-- [ ] UOW-010 Code Generation
-- [ ] UOW-010 Build and Test
+- [x] UOW-010 Functional Design - APPROVED
+- [x] UOW-010 NFR Requirements - APPROVED
+- [x] UOW-010 NFR Design - APPROVED
+- [x] UOW-010 Infrastructure Design - APPROVED
+- [x] UOW-010 Code Generation - APPROVED
+- [ ] UOW-010 Build and Test - REVIEW REQUIRED
 
 ### OPERATIONS PHASE
 - [ ] Operations - PLACEHOLDER
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: UOW-010 Functional Design Question Review
-- **Next Step**: User completes/confirms UOW-010 Functional Design questionnaire.
-- **Status**: UOW-009 Build and Test approved; UOW-010 Functional Design questionnaire created.
+- **Current Stage**: UOW-010 Build and Test Review
+- **Next Step**: User reviews and approves UOW-010 Build and Test results.
+- **Status**: UOW-010 Build and Test completed; approval required before closing construction/operations handoff.
 
 ## Migration Notes
 - DCinside-Scraper's feature surface, UOW sequence, runtime boundaries, storage contracts, container pattern, MCP adapter pattern, parser-failure retry unit, and CDK direction are the default baseline.
@@ -675,5 +675,54 @@
 - **Plan Artifact**: `aidlc-docs/construction/plans/uow-010-aws-cdk-infrastructure-iac-functional-design-plan.md`
 - **Dependency Note**: UOW-010 starts after UOW-009 so the AWS CDK design can wrap the completed worker container, S3-compatible output contract, PostgreSQL checkpoint contract, MCP/container boundary, and parser-failure retry entrypoint without changing scraper runtime behavior.
 - **Design Direction**: Shared infra stack plus reusable worker stack pattern; centralized multi-community platform, SQS queue workers, dashboards, and scraper-specific API/query/parser logic remain out of scope for this unit.
-- **Next Stage After Functional Design Questions**: UOW-010 Functional Design artifact generation
-- **Status**: Functional Design questionnaire created; answers required
+- **Functional Design Answers Confirmed At**: 2026-08-13T13:25:24Z
+- **Functional Design Answer Analysis**: Q1-Q10 were A. No ambiguity or conflicts found. The design follows the baseline CDK unit with ECS Fargate one-shot tasks, AWS S3/RDS shared infra, reusable worker stack pattern, ECR image references, optional EventBridge schedules, Secrets Manager injection, minimal CloudWatch observability, and Python CDK v2 under `infra/cdk`.
+- **Functional Design Generated At**: 2026-08-13T13:25:24Z
+- **Artifacts**: `domain-entities.md`, `business-rules.md`, `business-logic-model.md`
+- **Next Stage After Approval**: UOW-010 NFR Requirements
+- **Functional Design Approved At**: 2026-08-13T13:27:59Z
+- **NFR Requirements Plan Created At**: 2026-08-13T13:27:59Z
+- **NFR Requirements Plan Artifact**: `aidlc-docs/construction/plans/uow-010-aws-cdk-infrastructure-iac-nfr-requirements-plan.md`
+- **Next Stage After NFR Requirements Questions**: UOW-010 NFR Requirements artifact generation
+- **NFR Requirements Answers Confirmed At**: 2026-08-13T13:33:24Z
+- **NFR Requirements Answer Analysis**: Q1-Q10 were A. No ambiguity or conflicts found. The requirements keep a low-cost ECS Fargate one-shot baseline, AWS S3/RDS shared infra, Secrets Manager injection, least-privilege IAM, private RDS, public-subnet outbound worker, basic CloudWatch observability, `cdk synth` plus template tests, and future platform-compatible inputs without implementing the platform.
+- **NFR Requirements Generated At**: 2026-08-13T13:33:24Z
+- **NFR Requirements Artifacts**: `nfr-requirements.md`, `tech-stack-decisions.md`
+- **Next Stage After NFR Requirements Approval**: UOW-010 NFR Design
+- **NFR Requirements Approved At**: 2026-08-13T13:35:52Z
+- **NFR Design Plan Created At**: 2026-08-13T13:35:52Z
+- **NFR Design Plan Artifact**: `aidlc-docs/construction/plans/uow-010-aws-cdk-infrastructure-iac-nfr-design-plan.md`
+- **Next Stage After NFR Design Questions**: UOW-010 NFR Design artifact generation
+- **NFR Design Answers Confirmed At**: 2026-08-13T13:41:07Z
+- **NFR Design Answer Analysis**: Q1-Q10 were A. No ambiguity or conflicts found. The design keeps a small Python CDK v2 app, shared/worker stack split, dataclass config validation, deterministic naming/tagging, stateful destroy opt-in, S3/RDS hardening, Secrets Manager injection, least-privilege IAM, no-NAT network default, CloudWatch task failure visibility, CDK assertions, and `cdk synth`.
+- **NFR Design Generated At**: 2026-08-13T13:41:07Z
+- **NFR Design Artifacts**: `nfr-design-patterns.md`, `logical-components.md`
+- **Next Stage After NFR Design Approval**: UOW-010 Infrastructure Design
+- **NFR Design Approved At**: 2026-08-13T13:43:11Z
+- **Infrastructure Design Plan Created At**: 2026-08-13T13:43:11Z
+- **Infrastructure Design Plan Artifact**: `aidlc-docs/construction/plans/uow-010-aws-cdk-infrastructure-iac-infrastructure-design-plan.md`
+- **Next Stage After Infrastructure Design Questions**: UOW-010 Infrastructure Design artifact generation
+- **Infrastructure Design Answers Confirmed At**: 2026-08-13T13:55:27Z
+- **Infrastructure Design Answer Analysis**: Q1-Q10 were A. No ambiguity or conflicts found. The design maps UOW-010 to minimal Python CDK dependencies, one environment YAML shape, new no-NAT VPC, environment shared S3/RDS/ECS cluster, worker-specific Fargate task definitions, Secrets Manager ECS injection, scoped IAM/security groups, CloudWatch/EventBridge failure signal, and pytest plus `cdk synth` verification.
+- **Infrastructure Design Generated At**: 2026-08-13T13:55:27Z
+- **Infrastructure Design Artifacts**: `infrastructure-design.md`, `deployment-architecture.md`
+- **Shared Infrastructure Note**: No separate shared infrastructure artifact is required; UOW-010 documents shared infra directly through its infrastructure design and deployment architecture.
+- **Next Stage After Infrastructure Design Approval**: UOW-010 Code Generation
+- **Infrastructure Design Approved At**: 2026-08-13T13:58:17Z
+- **Code Generation Plan Created At**: 2026-08-13T13:58:17Z
+- **Code Generation Plan Artifact**: `aidlc-docs/construction/plans/uow-010-aws-cdk-infrastructure-iac-code-generation-plan.md`
+- **Next Stage After Code Generation Plan Approval**: UOW-010 Code Generation
+- **Code Generation Plan Approved At**: 2026-08-13T14:15:56Z
+- **Code Generated At**: 2026-08-13T14:15:56Z
+- **Code Artifacts**: `infra/cdk/app.py`, `infra/cdk/cdk.json`, `infra/cdk/requirements.txt`, `infra/cdk/stacks/config.py`, `infra/cdk/stacks/naming.py`, `infra/cdk/stacks/shared_infra_stack.py`, `infra/cdk/stacks/worker_stack.py`, `infra/cdk/config/dev.yaml`, `infra/cdk/config/staging.yaml`, `infra/cdk/config/prod.yaml`, `infra/cdk/tests/`
+- **Code Documentation Artifacts**: `aidlc-docs/construction/uow-010-aws-cdk-infrastructure-iac/code/public-contracts.md`, `aidlc-docs/construction/uow-010-aws-cdk-infrastructure-iac/code/code-generation-summary.md`
+- **Generation Validation**: CDK unit/template tests -> 11 passed; `cdk synth -c env=dev` -> passed; live AWS deploy/destroy not run
+- **Next Stage After Code Generation Approval**: Build and Test
+- **Code Generation Approved At**: 2026-08-13T14:20:46Z
+- **Build and Test Executed At**: 2026-08-13T14:24:57Z
+- **Wheel Build**: `py -3.12 -m pip wheel . --no-deps -w dist` -> `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`, 87472 bytes, SHA256 `B22590BA2332B664C36D5F1AEFA8C4557D50F2030BDC7FB97BAE23C548D00BCA`
+- **Docker Build**: `docker build -t fmkorea-scraper:uow-010-build-test .` -> PASS, image `sha256:ed8b487f929bfa6193e8f6741ec0065896494eb58aa6f900ee5b799fc4be318f`
+- **Test Results**: full default suite -> 151 passed, 3 skipped; CDK template tests -> 11 passed; application/CDK compile checks -> passed; `cdk synth -c env=dev` -> passed; clean venv/Docker dependency checks -> passed
+- **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/build-instructions.md`, `aidlc-docs/construction/build-and-test/unit-test-instructions.md`, `aidlc-docs/construction/build-and-test/integration-test-instructions.md`, `aidlc-docs/construction/build-and-test/performance-test-instructions.md`, `aidlc-docs/construction/build-and-test/security-test-instructions.md`, `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
+- **Next Stage After Build and Test Approval**: Operations/deployment planning handoff
+- **Status**: Build and Test complete; review/approval required

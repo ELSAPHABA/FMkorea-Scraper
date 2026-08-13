@@ -1,44 +1,59 @@
-# Security Test Instructions - UOW-009 Parser Failure Retry Reprocessor
+# Security Test Instructions - UOW-010 AWS CDK Infrastructure IaC
 
 ## Security Checks
 
-UOW-009 security checks focus on safe retry diagnostics.
-
-Validated by default tests:
-
-- raw malformed failure lines are not included in reports
-- CLI retry output is a numeric safe summary
-- MCP retry output is a numeric safe summary
-- S3 refs do not include credentials
-- container missing-env validation returns safe JSON
-- retry imports have no filesystem/env/network side effects
-- existing failure inputs and success inputs are read-only
-
-## Commands
+Run CDK template tests:
 
 ```powershell
-$env:PYTHONPATH='src'
-py -3.12 -m pytest tests\test_parser_failure_retry.py tests\test_cli_adapter.py tests\test_mcp_adapter.py tests\test_container_adapter.py -q --tb=short
+$venv = Join-Path $env:TEMP 'fmkorea-uow010-cdk-venv'
+& (Join-Path $venv 'Scripts\python.exe') -m pytest infra\cdk\tests -q --tb=short
 ```
 
-Result:
+Verified result:
 
 ```text
-PASS
+11 passed in 36.86s
 ```
 
-## Docker Secret Boundary
+Covered invariants:
 
-Docker image build still uses runtime env injection only.
+- plaintext secret-like values are rejected from CDK YAML config
+- ECS container secrets are injected through Secrets Manager references
+- secret values are not embedded in synthesized templates
+- S3 bucket blocks public access and uses encryption
+- RDS is not public
+- worker security group has no inbound app ports
+- worker-to-RDS ingress is limited to PostgreSQL port 5432
+- worker S3 permissions are scoped to `outputs/{environment}/{site_id}`
+- prod-like stateful resources retain by default
 
-Checks:
+## Dependency Checks
+
+Clean application venv:
 
 ```powershell
-docker run --rm fmkorea-scraper:uow-009-build-test retry-parser-failures --failure-path s3://bucket/failures.jsonl
+$venv = Join-Path $env:TEMP 'fmkorea-uow010-app-venv'
+& (Join-Path $venv 'Scripts\python.exe') -m pip check
 ```
 
-Expected without env:
+Verified result:
 
-- safe validation JSON
-- exit code `2`
-- no credential output
+```text
+No broken requirements found.
+```
+
+Docker image:
+
+```powershell
+docker run --rm --entrypoint python fmkorea-scraper:uow-010-build-test -m pip check
+```
+
+Verified result:
+
+```text
+No broken requirements found.
+```
+
+## Environment Note
+
+Host-level `py -3.12 -m pip check` reported unrelated global package conflicts involving Google/gRPC/protobuf, Selenium typing extensions, and `update/style`. Clean venv and Docker checks passed, so the project dependency gate is pass.
