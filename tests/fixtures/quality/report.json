@@ -1,0 +1,18 @@
+{
+  "schema_version": "fmkorea.job_report.v1",
+  "job_id": "job-1",
+  "status": "completed",
+  "started_at": "2026-08-13T00:00:00Z",
+  "finished_at": "2026-08-13T00:01:00Z",
+  "collected_count": 1,
+  "stored_count": 1,
+  "failure_count": 1,
+  "output_refs": [
+    {
+      "storage_mode": "s3_compatible",
+      "path": null,
+      "bucket": "scraper",
+      "object_key": "fmkorea/outputs/job-1/run-1/posts.jsonl"
+    }
+  ]
+}

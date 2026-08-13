@@ -11,7 +11,8 @@ from fmkorea_scraper.outputs.checkpoint import LocalCheckpointStore
 from fmkorea_scraper.outputs.errors import StorageConfigurationError
 from fmkorea_scraper.outputs.layout import OutputRunLayout
 from fmkorea_scraper.outputs.local import LocalFailureStore, LocalMediaStore, LocalOutputStore
-from fmkorea_scraper.outputs.s3 import S3ObjectStore
+from fmkorea_scraper.outputs.postgres_checkpoint import PostgresCheckpointStore
+from fmkorea_scraper.outputs.s3_output import S3OutputStore
 
 
 @dataclass(frozen=True)
@@ -51,7 +52,7 @@ class StorageFactory:
         if config.output_mode == StorageMode.S3_COMPATIBLE:
             if config.s3 is None:
                 raise StorageConfigurationError("s3 config is required when output_mode is s3_compatible")
-            s3_store = S3ObjectStore(layout, config.s3, client=s3_client)
+            s3_store = S3OutputStore(layout, config.s3, client=s3_client)
             return StorageBundle(
                 output_store=s3_store,
                 failure_store=s3_store,
@@ -62,10 +63,14 @@ class StorageFactory:
         raise StorageConfigurationError(f"unsupported output mode: {config.output_mode}")
 
     @staticmethod
-    def _checkpoint_store(config: StorageConfig, layout: OutputRunLayout) -> LocalCheckpointStore:
+    def _checkpoint_store(config: StorageConfig, layout: OutputRunLayout) -> Any:
         if config.checkpoint_mode == CheckpointMode.LOCAL:
             return LocalCheckpointStore(layout)
-        raise StorageConfigurationError("postgres checkpoint storage is deferred beyond UOW-006")
+        if config.checkpoint_mode == CheckpointMode.POSTGRES:
+            if config.postgres is None:
+                raise StorageConfigurationError("postgres config is required when checkpoint_mode is postgres")
+            return PostgresCheckpointStore(config.postgres.dsn)
+        raise StorageConfigurationError(f"unsupported checkpoint mode: {config.checkpoint_mode}")
 
 
 __all__ = ["StorageBundle", "StorageFactory"]

@@ -24,6 +24,7 @@ from fmkorea_scraper.models.report import JobReport
 from fmkorea_scraper.outputs import (
     OutputRunLayout,
     PathTraversalError,
+    PostgresCheckpointStore,
     StorageConfigurationError,
     StorageFactory,
     ensure_under_base,
@@ -194,17 +195,18 @@ def test_s3_store_uses_matching_keys_and_same_key_spool(tmp_path: Path) -> None:
     assert media.object_key == "prefix/outputs/job-1/run-1/media/unknown_board/unknown_post/image/0-y.jpg"
 
 
-def test_factory_rejects_deferred_postgres_checkpoint(tmp_path: Path) -> None:
-    with pytest.raises(StorageConfigurationError):
-        StorageFactory.create(
-            StorageConfig(
-                base_output_path=str(tmp_path),
-                checkpoint_mode=CheckpointMode.POSTGRES,
-                postgres=PostgresCheckpointConfig(dsn="postgresql://example"),
-            ),
-            job_id="job-1",
-            run_id="run-1",
-        )
+def test_factory_builds_postgres_checkpoint_store_without_connecting(tmp_path: Path) -> None:
+    bundle = StorageFactory.create(
+        StorageConfig(
+            base_output_path=str(tmp_path),
+            checkpoint_mode=CheckpointMode.POSTGRES,
+            postgres=PostgresCheckpointConfig(dsn="postgresql://example"),
+        ),
+        job_id="job-1",
+        run_id="run-1",
+    )
+
+    assert isinstance(bundle.checkpoint_store, PostgresCheckpointStore)
 
 
 def test_output_layout_sanitizes_local_paths_and_keys(tmp_path: Path) -> None:

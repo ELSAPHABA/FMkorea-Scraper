@@ -9,6 +9,7 @@ description = "FMKorea scraper core contracts"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+  "anyio>=4,<5",
   "pydantic>=2,<3",
   "httpx>=0.28,<1",
   "python-dotenv>=1,<2",
@@ -41,6 +42,11 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 markers = [
   "benchmark_smoke: optional model validation/serialization timing smoke tests",
+  "docker: optional Docker smoke tests",
+  "garage: optional Garage/S3-compatible smoke tests",
+  "postgres: optional PostgreSQL smoke tests",
+  "mcp: optional MCP smoke tests",
+  "live: optional live network smoke tests",
   "live_smoke: optional live HTTP smoke tests",
   "polars_smoke: optional Polars JSONL readability smoke tests",
   "s3_smoke: optional S3-compatible object storage smoke tests",
