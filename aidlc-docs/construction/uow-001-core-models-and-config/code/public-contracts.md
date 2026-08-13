@@ -58,7 +58,9 @@ Validation rules:
 
 ## Runtime And Storage Config
 
-`RuntimeConfig` stores passive options only: user-agent file, rotation period, proxy enable flag, proxy environment prefix, cookie file, and timeout. UOW-001 never reads those files or environment variables during import.
+`JobConfig` does not persist HTTP runtime inputs such as User-Agent file path, rotation period, proxy, or timeout. CLI, container, MCP, and library adapters map those execution inputs to `HttpRuntimeConfig` when they open a client.
+
+Older checkpoint payloads that contain `job_config.runtime_config` are accepted by dropping that legacy field during model loading. New checkpoint writes must not include it.
 
 `StorageConfig` supports local output and S3-compatible output contracts. If `output_mode=s3_compatible`, `s3` config is required. If `checkpoint_mode=postgres`, `postgres` config is required.
 

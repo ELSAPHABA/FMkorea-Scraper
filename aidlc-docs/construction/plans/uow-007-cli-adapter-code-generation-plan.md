@@ -46,7 +46,7 @@ UOW-007 implements:
 - command dict normalization shared by CLI and wizard
 - `JobConfig`, `ResumeRequest`, and `RetryRequest` builders
 - realtime environment source mapping with exactly-one termination validation
-- runtime options mapping for comments, media, request interval, timeout, worker count, queue size, User-Agent, Proxy, cookie file, and output path
+- runtime options mapping for comments, media, request interval, timeout, worker count, queue size, User-Agent, Proxy, and output path
 - local runtime assembly using existing HTTP, collector, parser, storage factory, and runner components
 - explicit CLI `run_id` generation and storage/runner alignment
 - safe terminal start/report/error output
@@ -116,7 +116,8 @@ PostgreSQL checkpoint storage remains deferred to UOW-008.
 - [x] Implement `build_resume_request`.
 - [x] Implement `build_retry_request`.
 - [x] Map CLI source names to existing UOW-001 source models.
-- [x] Build `ScrapeOptions`, `WorkerConfig`, `RuntimeConfig`, and `StorageConfig` from command fields.
+- [x] Build `ScrapeOptions`, `WorkerConfig`, and `StorageConfig` from command fields.
+- [x] Keep timeout, User-Agent, and Proxy command fields out of `JobConfig`; map them directly to `HttpRuntimeConfig` during local runtime assembly.
 
 ### Step 4. Realtime Environment Mapping
 
@@ -233,7 +234,7 @@ PostgreSQL checkpoint storage remains deferred to UOW-008.
 | Story | Coverage In This Unit |
 |---|---|
 | US-001 | CLI and wizard create validated scraping Jobs |
-| US-002 | User-Agent import, Proxy `.env`, cookie file option, and safe terminal handling |
+| US-002 | User-Agent import, Proxy `.env`, cookie redaction, and safe terminal handling |
 | US-003 | request interval, worker count, queue size, retry, timeout, and media/comment mode options |
 | US-006 | no-keyword range and realtime source command/environment mapping |
 | US-013 | resume command and latest/explicit checkpoint request mapping |

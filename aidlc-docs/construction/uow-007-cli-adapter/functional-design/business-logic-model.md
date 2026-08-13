@@ -4,7 +4,7 @@
 
 UOW-007 provides the local terminal adapter for running the FMKorea scraper.
 
-This unit owns command parsing, the terminal wizard, CLI-to-model mapping, local dependency assembly, User-Agent import, Proxy `.env` setup, cookie file option flow, terminal messages, exit codes, resume command handling, and parser-failure retry command shell. It does not own FMKorea HTML parsing, source traversal internals, worker queue internals, storage layout rules, container entrypoint, PostgreSQL checkpoint storage, MCP tools, GUI/Web UI, or AWS CDK.
+This unit owns command parsing, the terminal wizard, CLI-to-model mapping, local dependency assembly, User-Agent import, Proxy `.env` setup, terminal messages, exit codes, resume command handling, and parser-failure retry command shell. It does not own FMKorea HTML parsing, source traversal internals, worker queue internals, storage layout rules, container entrypoint, PostgreSQL checkpoint storage, MCP tools, GUI/Web UI, or AWS CDK.
 
 ## Confirmed Decisions
 
@@ -23,7 +23,7 @@ This unit owns command parsing, the terminal wizard, CLI-to-model mapping, local
 | Output base | `--output-path` maps to `StorageConfig.base_output_path`; omitted value uses current working directory through UOW-006 |
 | User-Agent | `--user-agent-file` and `--user-agent-rotate-every` configure current run; `import-user-agents` copies to `user-agents.txt` |
 | Proxy | explicit CLI proxy values win, then `.env`, then disabled; `configure-proxy` writes plaintext `FMKOREA_PROXY_*` values after warning |
-| Cookie | `--cookie-file` applies only to the current runtime and is never logged, persisted to output, or stored in checkpoints |
+| Cookie | no user-provided cookie input; server-set temporary cookies are handled only inside `HttpClient` memory |
 | Scrape options | comment mode, media mode, attachment flag, request interval, retry count, worker count, queue size, and timeout map to existing models |
 | Terminal output | print safe start summary, final report summary, and resume command; raw traceback is printed only with `--debug` |
 | Exit codes | success `0`, validation/usage error `2`, stopped/CAPTCHA/block/runtime error `1` |
@@ -45,10 +45,10 @@ This unit owns command parsing, the terminal wizard, CLI-to-model mapping, local
 1. Parse `run` options.
 2. If `FMKOREA_REALTIME_ENABLED=true`, build a realtime source from environment variables.
 3. If realtime is not enabled, build the selected source from `--source`.
-4. Build `ScrapeOptions`, `WorkerConfig`, `RuntimeConfig`, and `StorageConfig`.
+4. Build `ScrapeOptions`, `WorkerConfig`, and `StorageConfig`.
 5. Validate the resulting `JobConfig` through Pydantic model construction.
 6. Generate one `run_id`.
-7. Build `HttpRuntimeConfig` from request interval, timeout, User-Agent, Proxy, cookie file handling boundary, and execution directory.
+7. Build `HttpRuntimeConfig` directly from command/runtime inputs: request interval, timeout, User-Agent, Proxy, and execution directory.
 8. Open one `HttpClient` lifecycle for the Job run.
 9. Create:
    - `LinkCollectorService`

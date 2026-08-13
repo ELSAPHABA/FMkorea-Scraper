@@ -17,8 +17,6 @@ UOW-002 introduces concrete HTTP runtime components under `fmkorea_scraper.http`
 | `UserAgentProvider` | `http/user_agent.py` | file/default based sequential UA rotation |
 | `ProxyProvider` | `http/proxy.py` | explicit/env proxy config conversion |
 | `ProxyConfig` | `http/proxy.py` | masked proxy settings |
-| `CookieProvider` | `http/cookies.py` | optional static Cookie header provider |
-| `CookieConfig` | `http/cookies.py` | masked cookie header config |
 | `ResponseClassifier` | `http/classify.py` | status/header/body-sample classification |
 | `HttpLogEvent` | `http/logging.py` | safe structured request attempt event |
 | `sanitize_url_for_log` | `http/logging.py` | host/path extraction without query |
@@ -33,7 +31,6 @@ HttpClient
   -> RetryPolicy
   -> UserAgentProvider
   -> ProxyProvider / ProxyConfig
-  -> CookieProvider / CookieConfig
   -> ResponseClassifier
   -> HttpLogEvent builder
   -> httpx.AsyncClient
@@ -63,9 +60,9 @@ Rules:
 
 1. Build request headers.
 2. Apply User-Agent.
-3. Apply static Cookie header when enabled.
-4. Wait on `RateLimiter`.
-5. Send with `httpx.AsyncClient`.
+3. Wait on `RateLimiter`.
+4. Send with `httpx.AsyncClient`.
+5. Keep server-set cookies only in the current client memory.
 6. Classify response or exception.
 7. Emit safe log event.
 8. Retry if `RetryPolicy` allows.
@@ -89,7 +86,7 @@ Rules:
 
 | Field | Default |
 |---|---|
-| `page_timeout_seconds` | `RuntimeConfig.timeout_seconds`, default 30 |
+| `page_timeout_seconds` | adapter-provided `HttpRuntimeConfig.timeout`, default 30 |
 | `media_timeout_seconds` | 120 |
 | `max_connections` | `post_worker_count + media_worker_count + 2` |
 | `max_keepalive_connections` | `max(1, max_connections)` |
@@ -172,19 +169,15 @@ Rules:
 - safe dict omits or masks credentials
 - raw proxy URL with credentials is not logged
 
-## CookieProvider And CookieConfig
+## In-Memory Cookie Lifecycle
 
-### CookieProvider Methods
+Rules:
 
-- `disabled()`
-- `from_file(path)`
-- `headers()`
-
-### Rules
-
-- no cookie jar
-- no `Set-Cookie` persistence
-- Cookie header only appears in outbound request headers, never logs
+- user-provided cookie files are not supported
+- static `Cookie` headers are not injected
+- server-set cookies may stay only in the current `httpx.AsyncClient` memory
+- User-Agent rotation clears the in-memory cookie jar
+- closing `HttpClient` drops temporary cookies
 
 ## ResponseClassifier
 
@@ -273,7 +266,6 @@ Provides:
 
 - User-Agent file path
 - proxy explicit values
-- cookie file path
 - timeout/retry/rate-limit options
 
 ### UOW-008 Container And MCP

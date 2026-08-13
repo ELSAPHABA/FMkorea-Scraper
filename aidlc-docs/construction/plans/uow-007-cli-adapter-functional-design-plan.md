@@ -10,7 +10,7 @@
 - **Depends On**: UOW-001 Core Models And Config, UOW-002 HTTP Runtime Policy, UOW-003 Search And Link Collection, UOW-004 Post Detail And Content Parsing, UOW-005 Job Runner And Checkpoint, UOW-006 Output And Storage
 - **Primary Stories**: US-001
 - **Related Stories**: US-002, US-003, US-006, US-013, US-014, US-015
-- **Scope**: CLI entrypoint, argument parsing, terminal wizard, `JobConfig`/`ResumeRequest`/`RetryRequest` creation, local dependency assembly, local output/checkpoint wiring, User-Agent import flow, Proxy `.env` flow, cookie file option flow, resume command, parser-failure retry command shell, safe terminal messages
+- **Scope**: CLI entrypoint, argument parsing, terminal wizard, `JobConfig`/`ResumeRequest`/`RetryRequest` creation, local dependency assembly, local output/checkpoint wiring, User-Agent import flow, Proxy `.env` flow, resume command, parser-failure retry command shell, safe terminal messages
 - **Out Of Scope**: FMKorea HTML selector logic, search traversal internals, post parser internals, worker queue internals, container entrypoint, PostgreSQL checkpoint adapter, Garage provisioning, MCP tools, GUI/Web UI, AWS CDK
 
 ## Scope Notes
@@ -166,11 +166,11 @@ X) 기타
 
 ### Question 9. User-Agent, Proxy, Cookie Setup
 
-User-Agent 파일, Proxy, cookie 파일 flow는 어떻게 둘까요?
+User-Agent 파일, Proxy, cookie flow는 어떻게 둘까요?
 
-A) (권장) `--user-agent-file`, `--user-agent-rotate-every`, `--cookie-file`은 현재 실행에 적용한다. `import-user-agents`는 선택한 파일을 실행 기준 디렉터리의 `user-agents.txt`로 복사한다. `configure-proxy`는 host, ID, PW를 입력받아 평문 `.env`에 `FMKOREA_PROXY_*`로 저장하되 저장 전 보안 경고를 출력한다. 실행 시 Proxy는 명시 옵션, `.env`, 비활성 순서로 적용한다.
+A) (권장) `--user-agent-file`, `--user-agent-rotate-every`는 현재 실행에 적용한다. `import-user-agents`는 선택한 파일을 실행 기준 디렉터리의 `user-agents.txt`로 복사한다. `configure-proxy`는 host, ID, PW를 입력받아 평문 `.env`에 `FMKOREA_PROXY_*`로 저장하되 저장 전 보안 경고를 출력한다. 실행 시 Proxy는 명시 옵션, `.env`, 비활성 순서로 적용한다. 사용자 제공 cookie 파일 옵션은 만들지 않고, 서버 임시 cookie는 UOW-002 `HttpClient` 메모리 정책을 따른다.
 
-추천 사유: UOW-002의 runtime config와 기존 요구사항의 평문 `.env` 편집 가능성을 그대로 사용하면서 secret 출력 금지 규칙을 지킬 수 있습니다.
+추천 사유: 기준 프로젝트와 동일하게 User-Agent/Proxy만 CLI 입력으로 다루고, cookie 파일 입력 경로를 만들지 않아 secret 노출면을 줄일 수 있습니다.
 
 B) CLI에서는 User-Agent/Proxy/cookie 설정을 다루지 않고 파일이 있으면 자동 사용만 한다.
 
@@ -184,7 +184,7 @@ X) 기타
 
 본문/댓글/미디어/요청 간격/worker 수 같은 실행 옵션은 어떤 CLI 옵션으로 둘까요?
 
-A) (권장) `--comment-mode`, `--media-mode`, `--include-attachments/--no-attachments`, `--request-interval-seconds`, `--max-post-retries`, `--post-worker-count`, `--media-worker-count`, `--queue-max-size`, `--timeout-seconds`를 두고 기존 `ScrapeOptions`, `WorkerConfig`, `RuntimeConfig`에 매핑한다.
+A) (권장) `--comment-mode`, `--media-mode`, `--include-attachments/--no-attachments`, `--request-interval-seconds`, `--max-post-retries`, `--post-worker-count`, `--media-worker-count`, `--queue-max-size`, `--timeout-seconds`를 둔다. 수집/워커 값은 `ScrapeOptions`, `WorkerConfig`에 저장하고, timeout/User-Agent/Proxy 같은 실행값은 `JobConfig`에 저장하지 않고 `HttpRuntimeConfig`로 직접 조립한다.
 
 추천 사유: 이미 모델 필드가 있으므로 CLI 옵션명만 얇게 붙이면 됩니다. FMKorea에 없는 site-specific 옵션은 만들지 않습니다.
 

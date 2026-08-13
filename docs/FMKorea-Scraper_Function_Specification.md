@@ -579,6 +579,11 @@
   - 재개 요청 시 `JOB_ID`가 없으면 가장 최근 체크포인트를 자동 선택
   - 재개 시 기존 JSONL 파일에 이어 쓰지 않고 새 JSONL 파일을 생성해 중단점 이후부터 기록
   - 이미 저장된 게시글은 `(site_id, board_id, document_srl)` 기준으로 중복 저장되지 않도록 처리
+- 체크포인트에 저장되는 `JobConfig`
+  - `JobConfig`는 수집 대상, 수집 옵션, 워커 옵션, 저장소 옵션만 저장한다.
+  - User-Agent 파일 경로, User-Agent 교체 주기, Proxy, timeout 같은 HTTP 실행값은 `JobConfig`에 저장하지 않는다.
+  - 위 HTTP 실행값은 CLI, 터미널 마법사, 컨테이너, MCP, 라이브러리 adapter가 실행 시점에 `HttpRuntimeConfig`로 조립한다.
+  - 과거 체크포인트에 `job_config.runtime_config`가 남아 있으면 로드 시 해당 legacy 필드만 버리고 재개한다.
 
 ### 2.6. 차단 대응, Proxy, User-Agent, 속도 제어
 - CAPTCHA/차단 포착

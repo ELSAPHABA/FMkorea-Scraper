@@ -42,7 +42,6 @@ src/fmkorea_scraper/http/
   retry.py
   user_agent.py
   proxy.py
-  cookies.py
   classify.py
   logging.py
 ```
@@ -50,9 +49,9 @@ src/fmkorea_scraper/http/
 Pattern rules:
 
 - `client.py` orchestrates request execution only.
-- `rate_limit.py`, `retry.py`, `user_agent.py`, `proxy.py`, `cookies.py`, `classify.py`, and `logging.py` hold focused policy logic.
+- `rate_limit.py`, `retry.py`, `user_agent.py`, `proxy.py`, `classify.py`, and `logging.py` hold focused policy logic.
 - `config.py` holds HTTP-runtime value objects such as `HttpClientConfig`, `HttpRequest`, and `HttpResponse`.
-- No module reads `.env`, `user-agents.txt`, or cookie files on import.
+- No module reads `.env` or `user-agents.txt` on import.
 - No speculative abstract interfaces are added; UOW-001 ports already define external I/O boundaries.
 
 ## Client Factory Pattern
@@ -72,15 +71,14 @@ HttpClient.from_job_config(
 
 Responsibilities:
 
-1. Read passive `RuntimeConfig`, `ScrapeOptions`, and `WorkerConfig`.
+1. Read adapter-provided `HttpRuntimeConfig`, `ScrapeOptions`, and `WorkerConfig`.
 2. Build `HttpClientConfig`.
 3. Build `UserAgentProvider`.
 4. Build `ProxyConfig` from explicit adapter values or env mapping.
-5. Build optional static `CookieConfig`.
-6. Build `RateLimiter`.
-7. Build `RetryPolicy`.
-8. Build `ResponseClassifier`.
-9. Create one `httpx.AsyncClient`.
+5. Build `RateLimiter`.
+6. Build `RetryPolicy`.
+7. Build `ResponseClassifier`.
+8. Create one `httpx.AsyncClient` with memory-only server cookie behavior.
 
 Rules:
 
@@ -165,10 +163,9 @@ Secret-bearing config objects use two layers of protection:
 1. Object-level masking with `SecretStr` or equivalent.
 2. Log/error output allowlist sanitizer.
 
-Required safe objects:
+Required safe object:
 
 - `ProxyConfig`
-- `CookieConfig`
 
 Rules:
 

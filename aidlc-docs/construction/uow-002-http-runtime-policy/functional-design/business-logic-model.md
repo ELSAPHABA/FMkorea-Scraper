@@ -45,7 +45,7 @@ This unit does not own:
 ## Client Setup Flow
 
 1. Job runner or service receives validated UOW-001 `JobConfig`.
-2. Runtime layer reads passive `RuntimeConfig` values provided by adapter.
+2. Adapter builds `HttpRuntimeConfig` from CLI/env/MCP/library execution inputs.
 3. `UserAgentProvider` is created from supplied UA file path or default fallback.
 4. `ProxyProvider` receives explicit proxy values or env mapping from adapter and produces `ProxyConfig | None`.
 5. `CookieProvider` is created only if an explicit cookie file path is supplied.
@@ -145,7 +145,6 @@ UOW-002 receives:
 Decision:
 
 ```text
-proxy_enabled false -> no proxy
 explicit host/url present -> explicit proxy config
 env mapping has host/url -> env proxy config
 otherwise -> no proxy

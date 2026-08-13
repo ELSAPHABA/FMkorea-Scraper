@@ -102,7 +102,7 @@ Concrete PostgreSQL checkpoint storage is deferred to UOW-008.
 ### Step 3. Business Logic Generation - Job And Request Models
 
 - [x] Create `src/fmkorea_scraper/models/job.py`.
-- [x] Implement `JobConfig`, `ScrapeOptions`, `WorkerConfig`, `RuntimeConfig`, `StorageConfig`, `RangeFilter`, realtime termination options, source discriminated unions, and public request models.
+- [x] Implement `JobConfig`, `ScrapeOptions`, `WorkerConfig`, `StorageConfig`, `RangeFilter`, realtime termination options, source discriminated unions, and public request models.
 - [x] Validate job/source type matching, range ordering, deep-search range requirement, no-keyword range requirement, and realtime exactly-one termination condition.
 
 ### Step 4. Business Logic Generation - Post, Comment, Media, Checkpoint, Failure, Report, Error Models

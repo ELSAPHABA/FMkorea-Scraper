@@ -216,7 +216,7 @@
 | `CliAdapter` | `main` | `argv: list[str]` | `int` |
 | `CliAdapter` | `run_wizard` | None | `JobConfig` |
 | `ContainerAdapter` | `main` | `env: Mapping[str, str]` | `int` |
-| `ContainerAdapter` | `load_runtime_config` | `env: Mapping[str, str]` | `JobConfig | ResumeRequest` |
+| `ContainerAdapter` | `load_execution_config` | `env: Mapping[str, str]` | `JobConfig | ResumeRequest` |
 | `McpAdapter` | `search_board` | `BoardSearchRequest` | `SearchPage` |
 | `McpAdapter` | `search_integrated` | `IntegratedSearchRequest` | `IntegratedSearchPage` |
 | `McpAdapter` | `fetch_post` | `PostRequest` | `PostResult` |

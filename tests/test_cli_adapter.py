@@ -90,6 +90,35 @@ def test_build_job_config_maps_board_search() -> None:
     assert config.worker_config.post_worker_count == 3
 
 
+def test_build_job_config_does_not_persist_runtime_options() -> None:
+    config = cli.build_job_config(
+        {
+            "subcommand": "run",
+            "source": "direct-post",
+            "job_id": "job-1",
+            "urls": ["https://www.fmkorea.com/best/101"],
+            "timeout_seconds": 7,
+            "user_agent_file": "user-agents.txt",
+            "user_agent_rotate_every": 3,
+            "proxy_host": "proxy.local:8080",
+        },
+        env={},
+    )
+
+    assert "runtime_config" not in config.model_dump()
+
+
+def test_job_config_accepts_legacy_runtime_config_without_persisting_it() -> None:
+    config = JobConfig(
+        job_id="job-1",
+        job_type=JobType.DIRECT_POST,
+        source={"type": "direct_post", "urls": ["https://www.fmkorea.com/best/101"]},
+        runtime_config={"timeout_seconds": 7},
+    )
+
+    assert "runtime_config" not in config.model_dump()
+
+
 def test_build_no_keyword_range_requires_range() -> None:
     with pytest.raises(PydanticValidationError):
         cli.build_job_config({"subcommand": "run", "source": "no-keyword-range", "board_id": "best"}, env={})
@@ -244,6 +273,34 @@ def test_build_local_runtime_passes_run_id_to_storage_factory(monkeypatch, tmp_p
     asyncio.run(client.close())
 
     assert calls == [(None, "job-1", "run-fixed", None)]
+
+
+def test_build_local_runtime_uses_command_runtime_options(monkeypatch, tmp_path: Path) -> None:
+    def fake_create(config, *, job_id, run_id, s3_client=None):
+        store = SimpleNamespace()
+        return SimpleNamespace(output_store=store, failure_store=store, media_store=store, checkpoint_store=store, layout=None)
+
+    user_agent_file = tmp_path / "user-agents.txt"
+    user_agent_file.write_text("Mozilla/5.0 Test\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(cli.StorageFactory, "create", staticmethod(fake_create))
+    command = {
+        "subcommand": "run",
+        "source": "direct-post",
+        "job_id": "job-1",
+        "urls": ["https://www.fmkorea.com/best/101"],
+        "timeout_seconds": 7,
+        "user_agent_file": str(user_agent_file),
+        "user_agent_rotate_every": 3,
+    }
+    config = cli.build_job_config(command, env={})
+
+    client, _runner = cli.build_local_runtime(config, run_id="run-fixed", command=command)
+    asyncio.run(client.close())
+
+    assert client.config.timeout.connect_seconds == 7
+    assert client.config.user_agent.explicit_file_path == str(user_agent_file)
+    assert client.config.user_agent.rotation_interval_requests == 3
 
 
 def test_core_api_passes_optional_run_id() -> None:

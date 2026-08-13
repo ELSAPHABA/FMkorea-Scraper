@@ -41,7 +41,7 @@ Must not:
 - read environment variables on import
 - read `.env` on import
 - read `user-agents.txt` on import
-- read cookie files on import
+- touch cookie input on import
 - prompt on import
 - perform network I/O on import
 
@@ -93,8 +93,8 @@ Responsibilities:
 - apply realtime environment when enabled
 - build `ScrapeOptions`
 - build `WorkerConfig`
-- build `RuntimeConfig`
 - build `StorageConfig`
+- leave timeout, User-Agent, and Proxy values for runtime assembly rather than persisting them in `JobConfig`
 - validate through Pydantic model construction
 
 Must reuse existing UOW-001 models.

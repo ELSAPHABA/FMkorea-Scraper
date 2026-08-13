@@ -100,6 +100,7 @@
 - Blocking migration points should be handled by AI-DLC question gates instead of silent assumptions.
 - Confirmed exception: FMKorea original JSON schema omits `is_repost` and `repost`; common normalization may synthesize null/default values later.
 - Confirmed exception: user-provided cookie files are not supported. Server-set cookies may exist only in the current in-memory `HttpClient` lifecycle and must not be logged, persisted to outputs, or written to checkpoints.
+- Confirmed alignment: `JobConfig` follows the baseline scraper boundary and does not persist HTTP runtime inputs. CLI/container/MCP/library adapters map User-Agent, Proxy, and timeout inputs to `HttpRuntimeConfig` at execution time; legacy checkpoint `job_config.runtime_config` is dropped on load.
 
 ## Requirements Status
 - **Requirement Verification Questions**: Confirmed

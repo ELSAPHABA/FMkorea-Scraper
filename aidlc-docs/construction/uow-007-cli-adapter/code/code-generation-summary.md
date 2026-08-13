@@ -74,4 +74,4 @@ passed
 
 - `retry-parser-failures` validates command input but returns an unsupported message until UOW-009 implements execution.
 - Docker entrypoint, PostgreSQL checkpointing, MCP tools, and AWS CDK remain deferred to later units.
-- Cookie file handling is accepted into `RuntimeConfig` but raw cookie reading/application remains outside UOW-007.
+- User-provided cookie input is not accepted; server-set temporary cookies remain inside the HTTP runtime memory lifecycle.

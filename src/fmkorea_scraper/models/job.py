@@ -70,14 +70,6 @@ class WorkerConfig(MetadataModel):
     queue_max_size: int | None = Field(default=None, ge=1)
 
 
-class RuntimeConfig(MetadataModel):
-    user_agent_file: str | None = Field(default=None, max_length=4096)
-    user_agent_rotate_every: int = Field(default=10, ge=1)
-    proxy_enabled: bool = False
-    proxy_env_prefix: str = Field(default="FMKOREA_PROXY", min_length=1, max_length=100)
-    timeout_seconds: float = Field(default=30.0, gt=0)
-
-
 class S3StorageConfig(MetadataModel):
     endpoint_url: str = Field(min_length=1, max_length=4096)
     bucket: str = Field(min_length=1, max_length=255)
@@ -232,9 +224,16 @@ class JobConfig(MetadataModel):
     source: JobSource
     scrape_options: ScrapeOptions = Field(default_factory=ScrapeOptions)
     worker_config: WorkerConfig = Field(default_factory=WorkerConfig)
-    runtime_config: RuntimeConfig = Field(default_factory=RuntimeConfig)
     storage_config: StorageConfig = Field(default_factory=StorageConfig)
     created_at: datetime = Field(default_factory=utc_now)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _drop_legacy_runtime_config(cls, value: object) -> object:
+        if isinstance(value, dict) and "runtime_config" in value:
+            value = dict(value)
+            value.pop("runtime_config", None)
+        return value
 
     @model_validator(mode="after")
     def _validate_source_type(self) -> "JobConfig":

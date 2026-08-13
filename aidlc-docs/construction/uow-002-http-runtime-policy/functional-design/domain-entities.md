@@ -190,7 +190,7 @@ Outputs:
 Rules:
 
 - explicit option has priority over env mapping
-- no proxy is used when `proxy_enabled=false`
+- no proxy is used when neither explicit option nor env mapping provides a host
 - UOW-002 does not create or edit `.env`
 - raw proxy password is never logged, persisted, or exposed in `ErrorResult.details`
 
@@ -259,7 +259,6 @@ Excluded fields:
 
 UOW-002 consumes these existing UOW-001 contracts:
 
-- `RuntimeConfig`
 - `ScrapeOptions`
 - `ResponseKind`
 - `NetworkFailureError`

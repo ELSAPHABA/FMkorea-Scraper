@@ -119,7 +119,6 @@ Fields:
 - `source: JobSource`
 - `scrape_options: ScrapeOptions`
 - `worker_config: WorkerConfig`
-- `runtime_config: RuntimeConfig`
 - `storage_config: StorageConfig`
 - `created_at: datetime`
 - `metadata: dict[str, Any]`
@@ -129,8 +128,9 @@ Relationships:
 - owns exactly one `JobSource`
 - owns one `ScrapeOptions`
 - owns one `WorkerConfig`
-- owns one `RuntimeConfig`
 - owns one `StorageConfig`
+- does not persist HTTP runtime inputs such as User-Agent file path, proxy, or timeout; adapters map those inputs to `HttpRuntimeConfig` at execution time
+- drops legacy `runtime_config` when loading older checkpoint payloads
 
 ### JobSource
 
@@ -270,20 +270,6 @@ Fields:
 - `post_worker_count: int`
 - `media_worker_count: int`
 - `queue_max_size: int | None`
-- `metadata: dict[str, Any]`
-
-### RuntimeConfig
-
-Captures runtime policy inputs without implementing them.
-
-Fields:
-
-- `user_agent_file: str | None`
-- `user_agent_rotate_every: int`
-- `proxy_enabled: bool`
-- `proxy_env_prefix: str`
-- `cookie_file: str | None`
-- `timeout_seconds: float`
 - `metadata: dict[str, Any]`
 
 ### StorageConfig

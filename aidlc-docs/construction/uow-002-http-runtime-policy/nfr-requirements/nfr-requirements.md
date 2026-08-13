@@ -12,7 +12,7 @@ In scope:
 - Job-scoped async rate limiting
 - bounded connection pool configuration
 - User-Agent rotation behavior
-- proxy and static cookie secret handling
+- proxy secret handling and memory-only cookie handling
 - classified response body handling
 - safe structured HTTP logging
 - deterministic unit/property testing with no live network
@@ -33,7 +33,7 @@ Out of scope:
 
 UOW-002 must add `httpx>=0.27,<1` as the HTTP runtime dependency.
 
-User-Agent rotation, proxy config conversion, cookie header handling, retry predicates, and safe URL/log shaping must use stdlib plus httpx. New dependencies require explicit justification in a later plan.
+User-Agent rotation, proxy config conversion, memory-only server cookie handling, retry predicates, and safe URL/log shaping must use stdlib plus httpx. New dependencies require explicit justification in a later plan.
 
 Security mapping:
 
@@ -45,10 +45,10 @@ All external HTTP calls must have explicit timeouts.
 
 Defaults:
 
-- page/comment request timeout: `RuntimeConfig.timeout_seconds`, default 30 seconds
+- page/comment request timeout: adapter-provided `HttpRuntimeConfig.timeout`, default 30 seconds
 - media download timeout: default 120 seconds
 
-Both values must be overrideable through validated Job/runtime config.
+Both values must be overrideable through validated adapter/runtime config.
 
 Security and resiliency mapping:
 
@@ -108,7 +108,6 @@ Importing the HTTP package must not:
 - instantiate an `httpx.AsyncClient`
 - read `.env`
 - read `user-agents.txt`
-- read cookie files
 - open sockets
 - prompt terminal input
 - create output directories
@@ -282,7 +281,7 @@ UOW-002 must include example tests for:
 - retry for 429 and 5xx
 - retry for network exception/timeout
 - no retry for CAPTCHA/block/not found/login required
-- static cookie header attached only when enabled
+- server-set cookies stay memory-only and clear on User-Agent rotation/client close
 - proxy config masking
 - safe log event excludes query/cookie/proxy secret/body
 - import side-effect safety

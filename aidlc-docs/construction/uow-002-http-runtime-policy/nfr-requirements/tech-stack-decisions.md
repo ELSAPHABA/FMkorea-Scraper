@@ -16,7 +16,7 @@
 | HTTP dependency | `httpx>=0.27,<1` | Stable async HTTP client with test transport |
 | User-Agent dependency | none | File load and sequential rotation are simple stdlib logic |
 | Proxy dependency | none | httpx accepts proxy configuration directly |
-| Cookie dependency | none | Static Cookie header handling needs no cookie jar package |
+| Cookie dependency | none | httpx already keeps server-set cookies in memory |
 | Retry dependency | none | Retry predicate and backoff are simple local policy |
 | Test dependencies | pytest, Hypothesis | Existing test stack from UOW-001 |
 | Lock file | Required when resolver is available | SECURITY-10 reproducibility requirement |
@@ -26,7 +26,7 @@
 | Area | Selection |
 |---|---|
 | Client lifecycle | One `httpx.AsyncClient` per Job execution |
-| Page/comment timeout | `RuntimeConfig.timeout_seconds`, default 30 seconds |
+| Page/comment timeout | adapter-provided `HttpRuntimeConfig.timeout`, default 30 seconds |
 | Media timeout | default 120 seconds, overrideable |
 | Retry attempts | max 3 attempts by default |
 | Retry targets | network error, timeout, HTTP 429, HTTP 5xx |
@@ -44,8 +44,8 @@
 | Proxy source priority | explicit adapter values, then env mapping, then disabled | matches function specification |
 | Proxy storage | not owned by UOW-002 | `.env` creation/editing belongs to CLI/container adapters |
 | Proxy secrets | masked value such as `SecretStr` | prevents accidental log/repr exposure |
-| Cookie behavior | explicit static Cookie header only | avoids persistent tracking state |
-| Cookie jar | disabled | response `Set-Cookie` is ignored |
+| Cookie behavior | server-set in-memory cookies only | matches baseline scraper behavior without user cookie files |
+| Cookie jar | current `HttpClient` lifecycle only | cleared on User-Agent rotation and client close |
 
 ## Logging And Observability
 
@@ -83,7 +83,7 @@ Required example tests:
 - timeout/network retry
 - 429/5xx retry
 - CAPTCHA/block/not-found/login-required no-retry
-- static cookie header behavior
+- in-memory cookie lifecycle and User-Agent rotation reset
 - proxy masking
 - safe log event shape
 - import side-effect safety

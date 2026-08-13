@@ -38,7 +38,6 @@ from fmkorea_scraper.models.job import (
     RealtimeTermination,
     ResumeRequest,
     RetryRequest,
-    RuntimeConfig,
     ScrapeOptions,
     StorageConfig,
     WorkerConfig,
@@ -167,7 +166,6 @@ def build_job_config(command: Mapping[str, Any], *, env: Mapping[str, str] | Non
         source=source,
         scrape_options=_build_scrape_options(command),
         worker_config=_build_worker_config(command),
-        runtime_config=_build_runtime_config(command),
         storage_config=StorageConfig(base_output_path=_blank_none(command.get("output_path"))),
     )
 
@@ -303,18 +301,9 @@ def _build_worker_config(command: Mapping[str, Any]) -> WorkerConfig:
     return WorkerConfig(**data)
 
 
-def _build_runtime_config(command: Mapping[str, Any]) -> RuntimeConfig:
-    return RuntimeConfig(
-        user_agent_file=_blank_none(command.get("user_agent_file")),
-        user_agent_rotate_every=int(command.get("user_agent_rotate_every") or 10),
-        proxy_enabled=bool(_blank_none(command.get("proxy_host"))),
-        timeout_seconds=float(command.get("timeout_seconds") or 30.0),
-    )
-
-
 def build_local_runtime(config: JobConfig, *, run_id: str, command: Mapping[str, Any]) -> tuple[HttpClient, JobRunner]:
     execution_dir = Path.cwd()
-    runtime_config = config.runtime_config
+    timeout_seconds = float(command.get("timeout_seconds") or 30.0)
     proxy = None
     if command.get("proxy_host"):
         proxy = ProxyConfig.from_values(
@@ -326,15 +315,15 @@ def build_local_runtime(config: JobConfig, *, run_id: str, command: Mapping[str,
     http_config = HttpRuntimeConfig(
         request_interval_seconds=config.scrape_options.request_interval_seconds,
         timeout=TimeoutConfig(
-            connect_seconds=runtime_config.timeout_seconds,
-            read_seconds=runtime_config.timeout_seconds,
-            write_seconds=runtime_config.timeout_seconds,
-            pool_seconds=runtime_config.timeout_seconds,
+            connect_seconds=timeout_seconds,
+            read_seconds=timeout_seconds,
+            write_seconds=timeout_seconds,
+            pool_seconds=timeout_seconds,
         ),
         retry_policy=RetryPolicy(max_attempts=config.scrape_options.max_post_retries + 1),
         user_agent=UserAgentConfig(
-            explicit_file_path=runtime_config.user_agent_file,
-            rotation_interval_requests=runtime_config.user_agent_rotate_every,
+            explicit_file_path=_blank_none(command.get("user_agent_file")),
+            rotation_interval_requests=int(command.get("user_agent_rotate_every") or 10),
         ),
         proxy=proxy,
         proxy_env_path=execution_dir / ".env",

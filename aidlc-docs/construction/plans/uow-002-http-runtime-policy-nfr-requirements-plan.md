@@ -45,7 +45,7 @@ C) `aiohttp`로 HTTP runtime을 구현한다.
 
 기본 timeout 값은 어떻게 설정할까요?
 
-A) (권장) page/comment 요청 기본 timeout은 UOW-001 `RuntimeConfig.timeout_seconds`의 30초를 사용하고, media download는 별도 기본 120초를 둔다. 모든 timeout은 Job 설정에서 override 가능하게 한다.
+A) (권장) page/comment 요청 기본 timeout은 adapter가 만든 `HttpRuntimeConfig.timeout`의 30초를 사용하고, media download는 별도 기본 120초를 둔다. timeout은 CLI/container/MCP/library adapter 입력으로 override 가능하게 한다.
 
 추천 사유: 디시인사이드 스크래퍼의 명시 timeout 정책을 계승하면서, HTML 페이지와 대용량 미디어 다운로드의 특성을 분리할 수 있습니다.
 

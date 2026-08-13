@@ -19,7 +19,6 @@ UOW-007 reuses the UOW-001 through UOW-006 contracts below.
 | `RealtimeAllSource` | `models/job.py` | realtime all source built from environment variables |
 | `ScrapeOptions` | `models/job.py` | comments, media, attachment, delay, and retry options |
 | `WorkerConfig` | `models/job.py` | post worker count, media worker count, and queue max size |
-| `RuntimeConfig` | `models/job.py` | persisted job runtime options |
 | `StorageConfig` | `models/job.py` | output base path and storage backend selection |
 | `HttpRuntimeConfig` | `http/runtime.py` | request delay, timeout, retry, User-Agent, Proxy, and execution directory |
 | `UserAgentConfig` | `http/runtime.py` | User-Agent file and rotation settings |
@@ -206,7 +205,6 @@ Fields:
 - output path
 - User-Agent file and rotation interval
 - Proxy option values
-- cookie file path
 - scrape options
 - worker options
 - debug flag
@@ -225,7 +223,7 @@ Fields:
 
 - optional `job_id`
 - output path
-- User-Agent, Proxy, cookie, and worker/runtime options where applicable
+- User-Agent, Proxy, and worker/runtime options where applicable
 - debug flag
 
 Maps to:
@@ -314,7 +312,7 @@ Logical constants:
 
 - CLI command entities are adapter input shapes, not domain storage records.
 - `JobConfig` remains the canonical scrape request model.
-- `HttpRuntimeConfig` remains the canonical HTTP runtime model.
+- `HttpRuntimeConfig` remains the canonical HTTP runtime model; `JobConfig` does not persist adapter runtime inputs.
 - `StorageFactory` and `OutputRunLayout` remain the canonical output layout boundary.
 - Terminal output is operational feedback, not JSONL data.
-- Proxy credentials and cookie content are runtime input only and must not become domain data.
+- Proxy credentials and server-set temporary cookie content must not become domain data.
