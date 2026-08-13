@@ -1,44 +1,26 @@
-# Build Instructions - UOW-005 Job Runner And Checkpoint
+# Build Instructions - UOW-007 CLI Adapter
 
 ## Prerequisites
 
-- **Python**: 3.11 or newer
-- **Build backend**: hatchling via PEP 517
-- **Package manager**: pip
-- **Runtime dependencies**: `pydantic>=2,<3`, `httpx>=0.28,<1`, `python-dotenv>=1,<2`, `beautifulsoup4>=4,<5`
-- **Optional dependencies**: `boto3>=1.34,<2` for S3-compatible storage smoke, `polars>=1,<2` for analysis smoke
-- **Test dependencies**: `pytest>=8,<9`, `hypothesis>=6,<7`
-- **Environment variables**: none required for default tests
-
-UOW-005 must remain import-safe. Building or importing the runner package must not read environment variables, connect to FMKorea, create HTTP clients, open storage backends, prompt terminal input, create external queues, or create database connections.
+- **Build Tool**: `pip wheel` with hatchling PEP 517 backend
+- **Python**: 3.11+ required, validated on Python 3.13.9
+- **Dependencies**: project dependencies from `pyproject.toml`
+- **Required Environment Variables**: none for default build
+- **Optional Environment Variables**: live/S3/Polars smoke variables are not required for UOW-007 default gate
 
 ## Build Steps
 
-### 1. Install Dependencies
+### 1. Install Test Dependencies
 
 ```powershell
 python -m pip install -e ".[test]"
 ```
 
-Optional smoke dependencies:
-
-```powershell
-python -m pip install -e ".[test,s3,analysis]"
-```
-
-### 2. Check Installed Requirements
-
-```powershell
-python -m pip check
-```
-
-### 3. Build Wheel
+### 2. Build Wheel
 
 ```powershell
 python -m pip wheel . --no-deps -w dist
 ```
-
-### 4. Verify Build Success
 
 Expected artifact:
 
@@ -46,41 +28,47 @@ Expected artifact:
 dist/fmkorea_scraper-0.1.0-py3-none-any.whl
 ```
 
-Successful build output should include:
+### 3. Verify CLI Module Help
 
-```text
-Successfully built fmkorea-scraper
+```powershell
+$env:PYTHONPATH='src'
+python -m fmkorea_scraper.adapters.cli --help
 ```
 
-## Current Build Result
+Expected result:
 
-- **Command**: `python -m pip wheel . --no-deps -w dist`
+- command exits `0`
+- help lists `run`, `resume`, `retry-parser-failures`, `import-user-agents`, `configure-proxy`, and `wizard`
+
+## Latest Build Result
+
+- **Executed At**: 2026-08-13T01:26:37Z
+- **Build Command**: `python -m pip wheel . --no-deps -w dist`
 - **Status**: PASS
 - **Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
-- **Size**: 77301 bytes
-- **SHA256**: `5e886f522f8ec517f7886ed3e13ad3364bfab5e01588e2e3067a5fec201ece19`
-- **Dependency Check**: PASS
+- **Artifact Size**: 75751 bytes
+- **Artifact SHA256**: `294305329e7aa4fb2365c72c2419a89856a0b51d499083b2d50e6cdbf814794c`
 
 ## Troubleshooting
 
-### Build Fails With Missing Build Backend
+### Build Fails with Missing Hatchling
 
-Cause: pip cannot install `hatchling` into the isolated build environment.
+Cause: build isolation could not install the backend.
 
 Fix:
 
 ```powershell
-python -m pip install hatchling
+python -m pip install --upgrade pip
 python -m pip wheel . --no-deps -w dist
 ```
 
-### Tests Cannot Import Package
+### CLI Module Help Fails
 
-Cause: package is not installed and `PYTHONPATH` is not set.
+Cause: package source path is not visible to Python.
 
 Fix:
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m pytest tests
+python -m fmkorea_scraper.adapters.cli --help
 ```

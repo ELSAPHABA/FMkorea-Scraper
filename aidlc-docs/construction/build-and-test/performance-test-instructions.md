@@ -1,44 +1,42 @@
-# Performance Test Instructions - UOW-005 Job Runner And Checkpoint
+# Performance Test Instructions - UOW-007 CLI Adapter
 
-## Status
+## Scope
 
-Load and stress testing are not required for UOW-005.
+UOW-007 is a local CLI adapter. It has no standalone server, distributed worker service, database, or cloud runtime.
 
-## Reason
+Load/stress testing is not applicable in this unit.
 
-UOW-005 is an importable in-process JobRunner library. It does not own:
+## Default Performance Checks
 
-- process replica count
-- container sizing
-- external Job queue leases
-- SQS/DLQ throughput
-- live scraper smoke execution
-- cloud scheduler loops
-- Garage/S3/PostgreSQL provisioning
+The default gate uses lightweight substitutes:
 
-Those concerns belong to UOW-007, UOW-008, UOW-010, and later platform work.
+- import-safety subprocess test
+- parser construction test
+- fake-runner command execution
+- property-based command mapping tests
+- no-live-network default suite
 
-## Current Performance Guardrails
+Command:
 
-Default tests cover bounded and deterministic behavior:
+```powershell
+$env:PYTHONPATH='src'
+python -m pytest tests\test_cli_adapter.py tests\test_cli_properties.py -q --tb=short
+```
 
-- `post_worker_count` controls worker task count
-- `queue_max_size` creates bounded in-process queue backpressure
-- `media_worker_count` caps concurrent media downloads with a semaphore
-- completed-key skip avoids repeated detail fetches
-- checkpoint cadence is every 10 successful output writes
-- runner does not retain all parsed `PostResult` values after output write
-- property tests cover cadence and counter consistency
+Latest result:
 
-## Future Performance Tests
+```text
+21 passed
+```
 
-Add load/stress tests when CLI/container runtime exists.
+## Deferred Performance Work
 
-Suggested future targets:
+Later units may add:
 
-- post worker throughput under fake HTTP/parser/store
-- checkpoint save cadence under high candidate counts
-- media download concurrency behavior under realistic file sizes
-- S3-compatible output latency with Garage
-- resume dedupe cost with large completed-key sets
-- parser failure record readback cost for UOW-009 retry selection
+- container startup timing
+- queue-backed worker throughput
+- live smoke rate-limit validation
+- S3-compatible output throughput
+- PostgreSQL checkpoint latency
+
+Those are outside UOW-007.

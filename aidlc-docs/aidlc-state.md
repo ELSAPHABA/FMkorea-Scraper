@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Greenfield
 - **Start Date**: 2026-08-11T23:58:42Z
-- **Current Stage**: CONSTRUCTION - UOW-005 Build and Test Review
+- **Current Stage**: CONSTRUCTION - UOW-007 Build and Test Review
 
 ## Workspace State
 - **Existing Code**: No
@@ -77,16 +77,22 @@
 - [x] UOW-005 NFR Design - APPROVED
 - [x] UOW-005 Infrastructure Design - APPROVED
 - [x] UOW-005 Code Generation - APPROVED
-- [ ] UOW-005 Build and Test - REVIEW REQUIRED
+- [x] UOW-005 Build and Test - APPROVED
+- [x] UOW-007 Functional Design - APPROVED
+- [x] UOW-007 NFR Requirements - APPROVED
+- [x] UOW-007 NFR Design - APPROVED
+- [x] UOW-007 Infrastructure Design - APPROVED
+- [x] UOW-007 Code Generation - APPROVED
+- [ ] UOW-007 Build and Test - REVIEW REQUIRED
 
 ### OPERATIONS PHASE
 - [ ] Operations - PLACEHOLDER
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: UOW-005 Build and Test Review
-- **Next Step**: User reviews `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approves proceeding to UOW-007 Functional Design.
-- **Status**: UOW-005 Build and Test completed; review approval required before UOW-007 Functional Design.
+- **Current Stage**: UOW-007 Build and Test Review
+- **Next Step**: User reviews `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approves proceeding to UOW-008 Functional Design.
+- **Status**: UOW-007 Build and Test complete; review approval required before UOW-008.
 
 ## Migration Notes
 - DCinside-Scraper's feature surface, UOW sequence, runtime boundaries, storage contracts, container pattern, MCP adapter pattern, parser-failure retry unit, and CDK direction are the default baseline.
@@ -462,4 +468,65 @@
 - **Dependency Check**: `python -m pip check` -> No broken requirements found.
 - **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/build-instructions.md`, `aidlc-docs/construction/build-and-test/unit-test-instructions.md`, `aidlc-docs/construction/build-and-test/integration-test-instructions.md`, `aidlc-docs/construction/build-and-test/performance-test-instructions.md`, `aidlc-docs/construction/build-and-test/security-test-instructions.md`, `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
 - **Next Stage After Build and Test Approval**: UOW-007 Functional Design
+- **Build and Test Approved At**: 2026-08-13T00:13:31Z
+- **Status**: Complete
+
+## UOW-007 CLI Adapter Status
+- **Functional Design Plan Created At**: 2026-08-13T00:13:31Z
+- **Plan Artifact**: `aidlc-docs/construction/plans/uow-007-cli-adapter-functional-design-plan.md`
+- **Dependency Note**: UOW-007 starts after UOW-005 so the CLI can call the concrete JobRunner/checkpoint orchestration and UOW-006 storage ports.
+- **Functional Design Answers Confirmed At**: 2026-08-13T00:22:37Z
+- **Functional Design Answer Analysis**: Q1-Q13 were A. No ambiguity or conflicts found. CLI follows the baseline adapter shape with `fmkorea-scraper`, `FMKOREA_*` realtime/proxy env, terminal wizard, parser-failure retry command shell, and a backward-compatible runner `run_id` injection point for UOW-006 storage alignment.
+- **Functional Design Generated At**: 2026-08-13T00:22:37Z
+- **Artifacts**: `domain-entities.md`, `business-rules.md`, `business-logic-model.md`
+- **Next Stage After Approval**: UOW-007 NFR Requirements
+- **Functional Design Approved At**: 2026-08-13T00:27:14Z
+- **NFR Requirements Plan Created At**: 2026-08-13T00:27:14Z
+- **NFR Requirements Plan Artifact**: `aidlc-docs/construction/plans/uow-007-cli-adapter-nfr-requirements-plan.md`
+- **NFR Requirements Answers Confirmed At**: 2026-08-13T00:32:26Z
+- **NFR Requirements Answer Analysis**: Q1-Q11 were A. No ambiguity or conflicts found. UOW-007 uses standard library CLI primitives, debug-only traceback, safe Proxy/User-Agent/cookie file handling, graceful Ctrl+C stop via `JobRunner.stop`, deterministic run id injection for tests, and no live FMKorea default test gate.
+- **NFR Requirements Generated At**: 2026-08-13T00:32:26Z
+- **NFR Requirements Artifacts**: `nfr-requirements.md`, `tech-stack-decisions.md`
+- **Next Stage After NFR Requirements Approval**: UOW-007 NFR Design
+- **NFR Requirements Approved At**: 2026-08-13T00:35:48Z
+- **NFR Design Plan Created At**: 2026-08-13T00:35:48Z
+- **NFR Design Plan Artifact**: `aidlc-docs/construction/plans/uow-007-cli-adapter-nfr-design-plan.md`
+- **NFR Design Answers Confirmed At**: 2026-08-13T00:46:22Z
+- **NFR Design Answer Analysis**: Q1-Q11 were A. No ambiguity or conflicts found. UOW-007 keeps a single `fmkorea_scraper.adapters.cli` module, shared command dict builders, stream-injected wizard, debug-only traceback, atomic config file helpers, `JobRunner.stop` interrupt mapping, explicit run id alignment, and console script plus `python -m` entrypoints without root `main.py`.
+- **NFR Design Generated At**: 2026-08-13T00:46:22Z
+- **NFR Design Artifacts**: `nfr-design-patterns.md`, `logical-components.md`
+- **Next Stage After NFR Design Approval**: UOW-007 Infrastructure Design
+- **NFR Design Approved At**: 2026-08-13T00:49:49Z
+- **Infrastructure Design Plan Created At**: 2026-08-13T00:49:49Z
+- **Infrastructure Design Plan Artifact**: `aidlc-docs/construction/plans/uow-007-cli-adapter-infrastructure-design-plan.md`
+- **Infrastructure Design Answers Confirmed At**: 2026-08-13T00:53:52Z
+- **Infrastructure Design Answer Analysis**: Q1-Q9 were A. No ambiguity or conflicts found. UOW-007 remains a local package CLI adapter with console script and `python -m` entrypoints, current-working-directory config file boundary, one-shot foreground lifecycle, foreground Ctrl+C handling, fake/default test infrastructure, and no shared infrastructure artifact.
+- **Infrastructure Design Generated At**: 2026-08-13T00:53:52Z
+- **Infrastructure Design Artifacts**: `infrastructure-design.md`, `deployment-architecture.md`
+- **Next Stage After Infrastructure Design Approval**: UOW-007 Code Generation
+- **Infrastructure Design Approved At**: 2026-08-13T01:00:21Z
+- **Code Generation Plan Created At**: 2026-08-13T01:00:21Z
+- **Code Generation Plan Artifact**: `aidlc-docs/construction/plans/uow-007-cli-adapter-code-generation-plan.md`
+- **Next Stage After Code Generation Plan Approval**: UOW-007 Code Generation
+- **Code Generation Plan Approved At**: 2026-08-13T01:06:45Z
+- **Code Generated At**: 2026-08-13T01:20:08Z
+- **Code Artifacts**: `src/fmkorea_scraper/adapters/`, `src/fmkorea_scraper/core/api.py`, `src/fmkorea_scraper/runner/service.py`, `pyproject.toml`, `.gitignore`, `tests/test_cli_adapter.py`, `tests/test_cli_properties.py`, `tests/strategies/cli.py`
+- **Code Documentation Artifacts**: `aidlc-docs/construction/uow-007-cli-adapter/code/public-contracts.md`, `aidlc-docs/construction/uow-007-cli-adapter/code/code-generation-summary.md`
+- **Generation Validation**: `$env:PYTHONPATH='src'; python -m pytest tests\test_cli_adapter.py tests\test_cli_properties.py -q --tb=short` -> 21 passed; `$env:PYTHONPATH='src'; python -m pytest tests -q --tb=short` -> 118 passed, 2 skipped; `$env:PYTHONPATH='src'; python -m compileall -q src tests` -> passed
+- **Next Stage After Code Generation Approval**: Build and Test
+- **Code Generation Approved At**: 2026-08-13T01:26:37Z
+- **Build and Test Started At**: 2026-08-13T01:26:37Z
+- **Build Command**: `python -m pip wheel . --no-deps -w dist`
+- **Build Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
+- **Build Artifact Size**: 75751 bytes
+- **Build Artifact SHA256**: `294305329e7aa4fb2365c72c2419a89856a0b51d499083b2d50e6cdbf814794c`
+- **Test Command**: `$env:PYTHONPATH='src'; python -m pytest tests -q --tb=short`
+- **Test Result**: 118 passed, 2 skipped
+- **Focused CLI Test Command**: `$env:PYTHONPATH='src'; python -m pytest tests\test_cli_adapter.py tests\test_cli_properties.py -q --tb=short`
+- **Focused CLI Test Result**: 21 passed
+- **Compile Check**: `$env:PYTHONPATH='src'; python -m compileall -q src tests` -> passed
+- **Dependency Check**: `python -m pip check` -> No broken requirements found.
+- **CLI Help Smoke**: `$env:PYTHONPATH='src'; python -m fmkorea_scraper.adapters.cli --help` -> passed
+- **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/build-instructions.md`, `aidlc-docs/construction/build-and-test/unit-test-instructions.md`, `aidlc-docs/construction/build-and-test/integration-test-instructions.md`, `aidlc-docs/construction/build-and-test/performance-test-instructions.md`, `aidlc-docs/construction/build-and-test/security-test-instructions.md`, `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
+- **Next Stage After Build and Test Approval**: UOW-008 Functional Design
 - **Status**: Build and Test review required

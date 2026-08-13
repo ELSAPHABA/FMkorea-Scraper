@@ -1,67 +1,64 @@
-# Unit Test Execution - UOW-005 Job Runner And Checkpoint
+# Unit Test Execution - UOW-007 CLI Adapter
 
 ## Run Unit Tests
 
-### 1. Execute All Tests
+### Focused CLI Tests
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m pytest tests
+python -m pytest tests\test_cli_adapter.py tests\test_cli_properties.py -q --tb=short
 ```
 
-Expected current result:
+Latest result:
 
 ```text
-97 passed, 2 skipped
+21 passed
 ```
 
-### 2. Execute UOW-005 Tests Only
+### Full Default Suite
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m pytest tests\test_runner_service.py tests\test_runner_workers.py tests\test_runner_checkpointing.py tests\test_runner_policies.py tests\test_runner_properties.py
+python -m pytest tests -q --tb=short
 ```
 
-## Covered UOW-005 Test Areas
+Latest result:
 
-- normal JobRunner completion
-- final report writing
-- output store and failure store finalization
-- completed-key skip before detail fetch
-- resume from checkpoint with a new run result
-- `core.api.run_job` explicit runner delegation
-- CAPTCHA fail-closed stopped Job handling
-- stopped checkpoint reason persistence
-- media download semaphore limit
-- checkpoint load failure mapping
-- checkpoint save failure mapping
-- completed-key token stability
-- 10-success checkpoint cadence
-- stop reason mapping
-- parser failure retryability
-- property-based completed-key dedupe
-- property-based cadence behavior
-- property-based report counter consistency
-
-## Optional Smoke Tests
-
-UOW-005 has no live smoke test by default.
-
-Live Job smoke is deferred to the future CLI/container adapter because it requires concrete runtime option mapping and real storage wiring.
-
-Existing optional lower-level smoke tests remain available:
-
-```powershell
-$env:PYTHONPATH='src'
-python -m pytest tests\test_outputs_polars_smoke.py
+```text
+118 passed, 2 skipped in 20.71s
 ```
 
-```powershell
-$env:FMKOREA_S3_SMOKE_ENABLED='true'
-$env:FMKOREA_S3_ENDPOINT_URL='http://127.0.0.1:3900'
-$env:FMKOREA_S3_BUCKET='your-bucket'
-$env:FMKOREA_S3_ACCESS_KEY_ID='your-access-key'
-$env:FMKOREA_S3_SECRET_ACCESS_KEY='your-secret-key'
-$env:PYTHONPATH='src'
-python -m pytest tests\test_outputs_s3_smoke.py
-```
+## Covered UOW-007 Behavior
+
+- CLI parser accepts confirmed subcommands
+- CLI source options map to existing UOW-001 source models
+- realtime env validation enforces exactly one termination condition
+- `resume` and `retry-parser-failures` request builders validate input
+- fake runner execution avoids live network
+- CLI-generated `run_id` reaches the runner
+- runtime builder passes the same `run_id` to `StorageFactory`
+- `import-user-agents` rejects invalid input without overwriting
+- Proxy `.env` update preserves unrelated lines
+- wizard answers map to the same command dict shape as argparse
+- safe error output redacts unsafe details
+- Ctrl+C handler requests `JobRunner.stop(StopReason.MANUAL_STOP)`
+- importing `fmkorea_scraper.adapters.cli` has no runtime side effects
+
+## Property-Based Tests
+
+Tool: Hypothesis
+
+Covered properties:
+
+- direct-post command mapping preserves URL lists
+- realtime keyword env maps to duration termination source
+- source alias normalization accepts both hyphen and underscore forms
+
+## Failure Handling
+
+If tests fail:
+
+1. inspect the first failing test in pytest output
+2. fix the shared builder/runtime boundary instead of patching individual callers
+3. rerun focused CLI tests
+4. rerun the full default suite

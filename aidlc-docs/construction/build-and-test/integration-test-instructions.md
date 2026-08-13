@@ -1,57 +1,49 @@
-# Integration Test Instructions - UOW-005 Job Runner And Checkpoint
+# Integration Test Instructions - UOW-007 CLI Adapter
 
 ## Purpose
 
-Validate that UOW-005 coordinates UOW-001 models and UOW-002/UOW-003/UOW-004/UOW-006 ports through explicit dependencies without owning CLI, container, MCP, external queue, or storage infrastructure.
+Validate UOW-007 integration with the existing local package boundaries:
 
-## Current Integration Coverage
+- UOW-001 Pydantic models
+- UOW-002 HTTP runtime config objects
+- UOW-003 link collector service wiring
+- UOW-004 post detail parser service wiring
+- UOW-005 runner API
+- UOW-006 storage factory
 
-### UOW-001 Model And Port Integration
+## Default Integration Tests
 
-- `JobConfig`
-- `WorkerConfig`
-- `PostCandidate`
-- `PostKey`
-- `Checkpoint`
-- `FailureRecord`
-- `JobReport`
-- `StoredObjectRef`
-- `HttpPort`
-- `OutputStorePort`
-- `FailureStorePort`
-- `MediaStorePort`
-- `CheckpointStorePort`
-- `ClockPort`
-
-### UOW-003 Collector Boundary
-
-`JobRunner` consumes an injected collector with `collect(source)` and receives `PostCandidate` values only.
-
-### UOW-004 Detail Parser Boundary
-
-`JobRunner` calls an injected detail service with `parse(candidate)` and expects a `PostResult`.
-
-### UOW-006 Storage Boundary
-
-`JobRunner` uses injected output, failure, media, and checkpoint stores. Tests verify output-before-checkpoint ordering and final report writing through fake stores.
-
-## Run Integration-Relevant Tests
+Run:
 
 ```powershell
 $env:PYTHONPATH='src'
-python -m pytest tests\test_runner_service.py tests\test_runner_workers.py tests\test_runner_checkpointing.py tests\test_api_ports.py
+python -m pytest tests\test_cli_adapter.py -q --tb=short
 ```
 
-## Deferred Integration Tests
+Key scenarios:
 
-The following require later units:
+- `core.api.run_job(..., run_id=...)` forwards `run_id` to runners that support it
+- `build_local_runtime()` creates the existing collector/parser/storage/runner dependency graph
+- `StorageFactory.create()` receives the CLI-generated `run_id`
+- `python -m fmkorea_scraper.adapters.cli --help` works without installing the package
+- fake runner execution does not hit live FMKorea
 
-- UOW-007 CLI option and wizard wiring
-- UOW-008 container env injection
-- UOW-008 MCP adapter integration
-- UOW-008 PostgreSQL checkpoint adapter
-- UOW-009 parser-stage retry reprocessor
-- UOW-010 AWS CDK storage/checkpoint/queue resources
-- future SQS/DLQ platform worker integration
+## External Integration Tests
 
-No external service is required for current default integration tests.
+External live tests are not part of the default UOW-007 gate.
+
+Not required:
+
+- live FMKorea access
+- real Proxy
+- real cookie file
+- Garage/S3
+- PostgreSQL
+- Docker
+- MCP server
+
+These remain later-unit or optional smoke-test concerns.
+
+## Cleanup
+
+Default integration tests use `tmp_path` and fake dependencies. No manual cleanup is required.
