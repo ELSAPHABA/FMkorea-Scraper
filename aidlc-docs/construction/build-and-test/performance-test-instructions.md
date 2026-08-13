@@ -1,35 +1,38 @@
-# Performance Test Instructions - UOW-008 Container, MCP, And Test Harness
+# Performance Test Instructions - UOW-009 Parser Failure Retry Reprocessor
 
-## Status
+## Scope
 
-No dedicated performance benchmark is required for UOW-008.
+UOW-009 performance risk is bounded to retry selection over JSONL inputs.
 
-Reason:
+The design keeps:
 
-- the unit adds adapter boundaries, Docker packaging, S3/PostgreSQL storage adapters, MCP handler wrappers, and fixture checks
-- it does not add a parser hot path, scheduler, queue algorithm, or network pagination strategy
+- streaming failure input reads
+- key-only existing success index
+- no raw invalid-line storage
+- direct-post execution through existing worker/rate policy
 
-## Substitute Checks
+## Default Checks
 
-Use the default validation suite as the regression baseline:
+Property tests cover selector invariants:
 
 ```powershell
 $env:PYTHONPATH='src'
-py -3.12 -m pytest tests -q --tb=short
+py -3.12 -m pytest tests\test_parser_failure_retry_properties.py -q --tb=short
 ```
 
-UOW-008 result:
+Included in focused result:
 
 ```text
-142 passed, 3 skipped in 28.20s
+45 passed in 13.84s
 ```
 
-## Future Benchmarks
+## Deferred Checks
 
-Add targeted benchmarks only if later units introduce:
+Large-file benchmarks are deferred until real failure files show memory or runtime pressure.
 
-- high-volume parser-failure retry processing
-- queue consumers
-- multi-scraper orchestration
-- large S3 JSONL spool throughput requirements
-- PostgreSQL checkpoint contention
+Future benchmarks should measure:
+
+- 10k, 100k, and 1M failure line selection
+- existing success index memory use
+- S3/Garage object streaming latency
+- queue/DLQ retry throughput after platform queue work exists

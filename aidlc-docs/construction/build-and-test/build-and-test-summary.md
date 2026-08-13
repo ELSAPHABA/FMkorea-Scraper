@@ -1,4 +1,4 @@
-# Build and Test Summary - UOW-008 Container, MCP, And Test Harness
+# Build and Test Summary - UOW-009 Parser Failure Retry Reprocessor
 
 ## Build Status
 
@@ -7,38 +7,39 @@
 - **Build Status**: PASS
 - **Build Command**: `py -3.12 -m pip wheel . --no-deps -w dist`
 - **Build Artifact**: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
-- **Artifact Size**: 81648 bytes
-- **Artifact SHA256**: `77d72f19fb25a68597dee4cce293e54977ee335cc25b1fdea7154665fcafb800`
+- **Artifact Size**: 87472 bytes
+- **Artifact SHA256**: `B22590BA2332B664C36D5F1AEFA8C4557D50F2030BDC7FB97BAE23C548D00BCA`
 
 ## Docker Build Status
 
 - **Docker Version**: Docker 29.7.2
-- **Docker Build Command**: `docker build -t fmkorea-scraper:uow-008-build-test .`
+- **Docker Build Command**: `docker build -t fmkorea-scraper:uow-009-build-test .`
 - **Docker Build Status**: PASS
-- **Image ID**: `sha256:e49d413822544a7c1b5e237f5c7fdd0ad5f1c093ffdc5d7cd0383facc3e12025`
+- **Image ID**: `sha256:1dfa421b147a03ab3f360075e4b3e79b642c689e6fd89e46cd4e47d550c1b422`
 - **Entrypoint Inspect**: `["/app/docker-entrypoint.sh"]`
-- **Container Env Validation Smoke**: `docker run --rm fmkorea-scraper:uow-008-build-test run` -> `$LASTEXITCODE=2`
-- **Container Dependency Check**: `docker run --rm --entrypoint python fmkorea-scraper:uow-008-build-test -m pip check` -> `No broken requirements found.`
+- **Container Run Env Validation Smoke**: `docker run --rm fmkorea-scraper:uow-009-build-test run` -> `$LASTEXITCODE=2`
+- **Container Retry Env Validation Smoke**: `docker run --rm fmkorea-scraper:uow-009-build-test retry-parser-failures --failure-path s3://bucket/failures.jsonl` -> `$LASTEXITCODE=2`
+- **Container Dependency Check**: `docker run --rm --entrypoint python fmkorea-scraper:uow-009-build-test -m pip check` -> `No broken requirements found.`
 
 ## Test Execution Summary
 
-### Focused UOW-008 Tests
+### Focused UOW-009 Tests
 
-- **Command**: `$env:PYTHONPATH='src'; py -3.12 -m pytest tests\test_container_adapter.py tests\test_mcp_adapter.py tests\test_s3_output_and_postgres.py tests\test_quality_harness.py tests\test_outputs_storage.py -q --tb=short`
-- **Passed**: 25
-- **Skipped**: 1
+- **Command**: `$env:PYTHONPATH='src'; py -3.12 -m pytest tests\test_parser_failure_retry.py tests\test_parser_failure_retry_properties.py tests\test_cli_adapter.py tests\test_mcp_adapter.py tests\test_container_adapter.py -q --tb=short`
+- **Passed**: 45
+- **Skipped**: 0
 - **Failed**: 0
 - **Status**: PASS
-- **Result**: `25 passed, 1 skipped in 7.84s`
+- **Result**: `45 passed in 13.84s`
 
 ### Full Default Tests
 
 - **Command**: `$env:PYTHONPATH='src'; py -3.12 -m pytest tests -q --tb=short`
-- **Passed**: 142
+- **Passed**: 151
 - **Skipped**: 3
 - **Failed**: 0
 - **Status**: PASS
-- **Result**: `142 passed, 3 skipped in 28.20s`
+- **Result**: `151 passed, 3 skipped in 23.73s`
 
 ### Compile Check
 
@@ -47,8 +48,8 @@
 
 ### Import And Help Smoke
 
-- **Adapter Import Command**: `$env:PYTHONPATH='src'; py -3.12 -c "import fmkorea_scraper.adapters.container, fmkorea_scraper.adapters.mcp; print('ok')"`
-- **Adapter Import Status**: PASS
+- **Import Command**: `$env:PYTHONPATH='src'; py -3.12 -c "import fmkorea_scraper, fmkorea_scraper.retry, fmkorea_scraper.adapters.cli, fmkorea_scraper.adapters.container, fmkorea_scraper.adapters.mcp; print('ok')"`
+- **Import Status**: PASS, `ok`
 - **CLI Help Command**: `$env:PYTHONPATH='src'; py -3.12 -m fmkorea_scraper.adapters.cli --help`
 - **CLI Help Status**: PASS
 - **Container Local Validation Command**: `$env:PYTHONPATH='src'; py -3.12 -m fmkorea_scraper.adapters.container run`
@@ -57,29 +58,24 @@
 ## Dependency Checks
 
 - **Clean Docker Image**: PASS, `No broken requirements found.`
-- **Host Python 3.12 Global Environment**: unrelated environment issue found by `py -3.12 -m pip check`
-- **Host Issue Summary**: missing `protobuf`/`grpcio` for Google packages plus unrelated `selenium` and `update` version conflicts
-- **Project Assessment**: project dependencies pass in the clean Docker image built from this source
+- **Host pip notice**: pip reported an available update only; not a project failure.
 
 ## Security Checks
 
 - **Status**: PASS
-- **Covered**: container secret repr redaction, safe validation payloads, MCP safe error payloads, failure detail redaction, import side-effect safety
-- **Docker Context Check**: `.dockerignore` excludes local env/output/cache/docs/tests from image context
-- **Shell EOL Check**: `.gitattributes` keeps `*.sh` LF for Linux containers
+- **Covered**: safe retry summaries, no raw failure line output, no credential output in retry refs, MCP safe error payloads, import side-effect safety, container validation redaction
 
 ## Performance Tests
 
-- **Status**: N/A
-- **Reason**: UOW-008 is an adapter/storage/test-harness unit, not a performance-sensitive scraper parser or scheduler
-- **Substitute Checks**: fake S3/PostgreSQL tests, default suite runtime, Docker build smoke
+- **Status**: PASS by scoped substitute checks
+- **Covered**: selector property tests, streaming JSONL selection tests, key-only existing success skip tests
+- **Deferred**: large-file benchmark and queue/DLQ throughput tests remain future platform work
 
 ## Environment
 
 - **Platform**: Windows
-- **Default `python`**: 3.10.20, below project `requires-python >=3.11`
 - **Supported Python Used For Official Checks**: 3.12.10
-- **pip Used For Build**: 26.0.1
+- **Docker**: Docker 29.7.2
 - **Lockfile**: not generated in this stage
 
 ## Overall Status

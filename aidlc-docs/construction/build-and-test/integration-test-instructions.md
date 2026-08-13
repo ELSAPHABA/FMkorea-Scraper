@@ -1,72 +1,45 @@
-# Integration Test Instructions - UOW-008 Container, MCP, And Test Harness
+# Integration Test Instructions - UOW-009 Parser Failure Retry Reprocessor
 
-## Import Safety
+## Default Integration Boundary
+
+UOW-009 integration checks stay local and fake-backed by default.
+
+Covered by default tests:
+
+- CLI `retry-parser-failures` to `ParserFailureRetryService`
+- service to injected direct-post `JobRunner`
+- container argv acceptance for `retry-parser-failures`
+- MCP `retry_parser_failures` safe summary response
+- `RetryRequest` model validation
+- S3/Garage env validation boundary without live storage
+
+## Commands
 
 ```powershell
 $env:PYTHONPATH='src'
-py -3.12 -c "import fmkorea_scraper.adapters.container, fmkorea_scraper.adapters.mcp; print('ok')"
+py -3.12 -m pytest tests\test_parser_failure_retry.py tests\test_cli_adapter.py tests\test_container_adapter.py tests\test_mcp_adapter.py -q --tb=short
 ```
 
-Expected:
+The full default suite was also run:
+
+```powershell
+$env:PYTHONPATH='src'
+py -3.12 -m pytest tests -q --tb=short
+```
+
+Result:
 
 ```text
-ok
+151 passed, 3 skipped in 23.73s
 ```
 
-This confirms adapter imports do not read env, open network connections, connect to PostgreSQL/S3, or start an MCP server.
+## Optional External Smoke
 
-## CLI Help Smoke
+These remain opt-in:
 
-```powershell
-$env:PYTHONPATH='src'
-py -3.12 -m fmkorea_scraper.adapters.cli --help
-```
+- Garage/S3 input object read
+- PostgreSQL checkpoint integration
+- MCP runtime process
+- live FMKorea retry
 
-Expected:
-
-- command exits successfully
-- shows `run`, `resume`, `retry-parser-failures`, `import-user-agents`, `configure-proxy`, and `wizard`
-
-## Container Local Validation Smoke
-
-```powershell
-$env:PYTHONPATH='src'
-py -3.12 -m fmkorea_scraper.adapters.container run
-```
-
-Expected:
-
-- exits with code `2`
-- prints safe JSON validation error
-- does not include secret values
-
-## Docker Validation Smoke
-
-```powershell
-docker build -t fmkorea-scraper:uow-008-build-test .
-docker run --rm fmkorea-scraper:uow-008-build-test run
-Write-Output "LAST=$LASTEXITCODE"
-```
-
-Expected:
-
-- Docker build succeeds
-- Docker run exits with `LAST=2`
-- output is safe validation JSON for missing `DATABASE_URL`
-
-## Optional External Smoke Tests
-
-External checks are not default tests. Run only when endpoints are intentionally available:
-
-- Garage/S3-compatible object storage
-- PostgreSQL
-- MCP runtime package
-- live site network access
-
-Use pytest markers to gate those tests:
-
-```powershell
-py -3.12 -m pytest -m "docker or garage or postgres or mcp or live"
-```
-
-Do not run optional live/storage smoke checks during default CI unless the required env values are explicitly provided.
+Use project markers/env gates for those checks. They are not required for the default Build and Test gate.

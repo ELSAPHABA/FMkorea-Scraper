@@ -3,7 +3,7 @@
 ## Project Information
 - **Project Type**: Greenfield
 - **Start Date**: 2026-08-11T23:58:42Z
-- **Current Stage**: CONSTRUCTION - UOW-008 Build and Test Approval
+- **Current Stage**: CONSTRUCTION - UOW-010 Functional Design Question Review
 
 ## Workspace State
 - **Existing Code**: No
@@ -89,16 +89,28 @@
 - [x] UOW-008 NFR Design - APPROVED
 - [x] UOW-008 Infrastructure Design - APPROVED
 - [x] UOW-008 Code Generation - APPROVED
-- [ ] UOW-008 Build and Test - REVIEW REQUIRED
+- [x] UOW-008 Build and Test - APPROVED
+- [x] UOW-009 Functional Design - APPROVED
+- [x] UOW-009 NFR Requirements - APPROVED
+- [x] UOW-009 NFR Design - APPROVED
+- [x] UOW-009 Infrastructure Design - APPROVED
+- [x] UOW-009 Code Generation - APPROVED
+- [x] UOW-009 Build and Test - APPROVED
+- [ ] UOW-010 Functional Design - REVIEW REQUIRED
+- [ ] UOW-010 NFR Requirements
+- [ ] UOW-010 NFR Design
+- [ ] UOW-010 Infrastructure Design
+- [ ] UOW-010 Code Generation
+- [ ] UOW-010 Build and Test
 
 ### OPERATIONS PHASE
 - [ ] Operations - PLACEHOLDER
 
 ## Current Status
 - **Lifecycle Phase**: CONSTRUCTION
-- **Current Stage**: UOW-008 Build and Test Approval
-- **Next Step**: User reviews and approves UOW-008 Build and Test results.
-- **Status**: UOW-008 Build and Test executed; approval required before UOW-009 Functional Design.
+- **Current Stage**: UOW-010 Functional Design Question Review
+- **Next Step**: User completes/confirms UOW-010 Functional Design questionnaire.
+- **Status**: UOW-009 Build and Test approved; UOW-010 Functional Design questionnaire created.
 
 ## Migration Notes
 - DCinside-Scraper's feature surface, UOW sequence, runtime boundaries, storage contracts, container pattern, MCP adapter pattern, parser-failure retry unit, and CDK direction are the default baseline.
@@ -601,4 +613,67 @@
 - **Dependency Check**: clean Docker image `python -m pip check` -> No broken requirements found. Host global Python 3.12 has unrelated package conflicts and is not treated as project failure.
 - **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/build-instructions.md`, `aidlc-docs/construction/build-and-test/unit-test-instructions.md`, `aidlc-docs/construction/build-and-test/integration-test-instructions.md`, `aidlc-docs/construction/build-and-test/performance-test-instructions.md`, `aidlc-docs/construction/build-and-test/security-test-instructions.md`, `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
 - **Next Stage After Build and Test Approval**: UOW-009 Functional Design
-- **Status**: Build and Test executed; review required
+- **Build and Test Approved At**: 2026-08-13T11:57:39Z
+- **Status**: Complete
+
+## UOW-009 Parser Failure Retry Reprocessor Status
+- **Functional Design Plan Created At**: 2026-08-13T11:57:39Z
+- **Plan Artifact**: `aidlc-docs/construction/plans/uow-009-parser-failure-retry-reprocessor-functional-design-plan.md`
+- **Dependency Note**: UOW-009 starts after UOW-008 so parser-failure retry can reuse CLI retry command shape, MCP retry tool shape, local/S3 failure stores, JobRunner, output stores, and safe error boundaries.
+- **Functional Design Answers Confirmed At**: 2026-08-13T12:04:20Z
+- **Functional Design Answer Analysis**: Q1-Q12 were A. No ambiguity or conflicts found. The design follows the baseline retry unit while using FMKorea model keys and the current `RetryRequest`/`FailureInput` boundary.
+- **Functional Design Generated At**: 2026-08-13T12:04:20Z
+- **Artifacts**: `domain-entities.md`, `business-rules.md`, `business-logic-model.md`
+- **Next Stage After Approval**: UOW-009 NFR Requirements
+- **Functional Design Approved At**: 2026-08-13T12:05:51Z
+- **NFR Requirements Plan Created At**: 2026-08-13T12:05:51Z
+- **NFR Requirements Plan Artifact**: `aidlc-docs/construction/plans/uow-009-parser-failure-retry-reprocessor-nfr-requirements-plan.md`
+- **Next Stage After NFR Requirements Approval**: UOW-009 NFR Design
+- **NFR Requirements Answers Confirmed At**: 2026-08-13T12:13:56Z
+- **NFR Requirements Answer Analysis**: Q1-Q10 were A. No ambiguity or conflicts found. The requirements keep streaming input reads, reuse existing S3/Garage boundaries, preserve source failure inputs, require safe adapter output, and keep external smoke checks optional.
+- **NFR Requirements Generated At**: 2026-08-13T12:13:56Z
+- **NFR Requirements Artifacts**: `nfr-requirements.md`, `tech-stack-decisions.md`
+- **NFR Requirements Approved At**: 2026-08-13T12:15:29Z
+- **NFR Design Plan Created At**: 2026-08-13T12:15:29Z
+- **NFR Design Plan Artifact**: `aidlc-docs/construction/plans/uow-009-parser-failure-retry-reprocessor-nfr-design-plan.md`
+- **NFR Design Answers Confirmed At**: 2026-08-13T12:25:48Z
+- **NFR Design Answer Analysis**: Q1-Q10 were A. No ambiguity or conflicts found. The design keeps one focused retry module, stream-based local/S3 input readers, pure selector logic, key-only existing success index, adapter-side option restoration, existing `RetryReport` counters plus optional metadata, and direct-post execution through the existing `JobRunner`.
+- **NFR Design Generated At**: 2026-08-13T12:25:48Z
+- **NFR Design Artifacts**: `nfr-design-patterns.md`, `logical-components.md`
+- **Next Stage After NFR Design Approval**: UOW-009 Infrastructure Design
+- **NFR Design Approved At**: 2026-08-13T12:31:00Z
+- **Infrastructure Design Plan Created At**: 2026-08-13T12:31:00Z
+- **Infrastructure Design Plan Artifact**: `aidlc-docs/construction/plans/uow-009-parser-failure-retry-reprocessor-infrastructure-design-plan.md`
+- **Infrastructure Design Answers Confirmed At**: 2026-08-13T12:35:19Z
+- **Infrastructure Design Answer Analysis**: Q1-Q10 were A. No ambiguity or conflicts found. UOW-009 creates no new container image, entrypoint, queue, database schema, inbound port, or shared infrastructure; it reuses the existing worker container, CLI/MCP runtime, Garage/S3 storage config, PostgreSQL checkpoint store, explicit input refs, and optional smoke marker contract.
+- **Infrastructure Design Generated At**: 2026-08-13T12:35:19Z
+- **Infrastructure Design Artifacts**: `infrastructure-design.md`, `deployment-architecture.md`
+- **Shared Infrastructure Note**: No shared infrastructure change is required. Queue/DLQ, scheduler, S3 prefix discovery, and production cloud provisioning remain future platform work.
+- **Next Stage After Infrastructure Design Approval**: UOW-009 Code Generation
+- **Infrastructure Design Approved At**: 2026-08-13T12:40:53Z
+- **Code Generation Plan Created At**: 2026-08-13T12:40:53Z
+- **Code Generation Plan Artifact**: `aidlc-docs/construction/plans/uow-009-parser-failure-retry-reprocessor-code-generation-plan.md`
+- **Next Stage After Code Generation Plan Approval**: UOW-009 Code Generation
+- **Code Generation Plan Approved At**: 2026-08-13T12:58:22Z
+- **Code Generated At**: 2026-08-13T12:58:22Z
+- **Code Artifacts**: `src/fmkorea_scraper/retry/__init__.py`, `src/fmkorea_scraper/retry/parser_failures.py`, retry model/API/CLI/container/MCP wiring, `tests/test_parser_failure_retry.py`, `tests/test_parser_failure_retry_properties.py`
+- **Code Documentation Artifacts**: `aidlc-docs/construction/uow-009-parser-failure-retry-reprocessor/code/public-contracts.md`, `aidlc-docs/construction/uow-009-parser-failure-retry-reprocessor/code/code-generation-summary.md`
+- **Generation Validation**: focused retry tests -> 45 passed; full default tests -> 151 passed, 3 skipped; compile check -> passed; retry/CLI/container/MCP import check -> ok
+- **Next Stage After Code Generation Approval**: Build and Test
+- **Code Generation Approved At**: 2026-08-13T13:06:51Z
+- **Build and Test Executed At**: 2026-08-13T13:06:51Z
+- **Wheel Build**: `py -3.12 -m pip wheel . --no-deps -w dist` -> `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`, 87472 bytes, SHA256 `B22590BA2332B664C36D5F1AEFA8C4557D50F2030BDC7FB97BAE23C548D00BCA`
+- **Docker Build**: `docker build -t fmkorea-scraper:uow-009-build-test .` -> PASS, image `sha256:1dfa421b147a03ab3f360075e4b3e79b642c689e6fd89e46cd4e47d550c1b422`
+- **Test Results**: focused UOW-009 tests -> 45 passed; full default suite -> 151 passed, 3 skipped; compile check -> passed; import/help/container validation -> passed; Docker pip check -> `No broken requirements found.`
+- **Build and Test Artifacts**: `aidlc-docs/construction/build-and-test/build-instructions.md`, `aidlc-docs/construction/build-and-test/unit-test-instructions.md`, `aidlc-docs/construction/build-and-test/integration-test-instructions.md`, `aidlc-docs/construction/build-and-test/performance-test-instructions.md`, `aidlc-docs/construction/build-and-test/security-test-instructions.md`, `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
+- **Next Stage After Build and Test Approval**: UOW-010 Functional Design
+- **Build and Test Approved At**: 2026-08-13T13:14:21Z
+- **Status**: Complete
+
+## UOW-010 AWS CDK Infrastructure IaC Status
+- **Functional Design Plan Created At**: 2026-08-13T13:14:21Z
+- **Plan Artifact**: `aidlc-docs/construction/plans/uow-010-aws-cdk-infrastructure-iac-functional-design-plan.md`
+- **Dependency Note**: UOW-010 starts after UOW-009 so the AWS CDK design can wrap the completed worker container, S3-compatible output contract, PostgreSQL checkpoint contract, MCP/container boundary, and parser-failure retry entrypoint without changing scraper runtime behavior.
+- **Design Direction**: Shared infra stack plus reusable worker stack pattern; centralized multi-community platform, SQS queue workers, dashboards, and scraper-specific API/query/parser logic remain out of scope for this unit.
+- **Next Stage After Functional Design Questions**: UOW-010 Functional Design artifact generation
+- **Status**: Functional Design questionnaire created; answers required
