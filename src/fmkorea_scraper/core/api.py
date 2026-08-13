@@ -6,6 +6,7 @@ keep the library import-safe and establish stable type contracts for adapters.
 
 from __future__ import annotations
 
+import inspect
 from typing import Any
 
 from fmkorea_scraper.core.errors import UnsupportedSourceError
@@ -41,15 +42,15 @@ async def fetch_comments(request: CommentRequest, http_client: Any | None = None
     raise UnsupportedSourceError("fetch_comments is implemented in UOW-004", details={"stage": "comment"})
 
 
-async def run_job(config: JobConfig, *, runner: Any | None = None) -> JobReport:
+async def run_job(config: JobConfig, *, runner: Any | None = None, run_id: str | None = None) -> JobReport:
     if runner is not None:
-        return _report_from_result(await runner.run(config))
+        return _report_from_result(await _call_runner(runner.run, config, run_id=run_id))
     raise UnsupportedSourceError("run_job is implemented in UOW-005", details={"stage": "job"})
 
 
-async def resume_job(request: ResumeRequest, *, runner: Any | None = None) -> JobReport:
+async def resume_job(request: ResumeRequest, *, runner: Any | None = None, run_id: str | None = None) -> JobReport:
     if runner is not None:
-        return _report_from_result(await runner.resume(request))
+        return _report_from_result(await _call_runner(runner.resume, request, run_id=run_id))
     raise UnsupportedSourceError("resume_job is implemented in UOW-005", details={"stage": "job"})
 
 
@@ -66,3 +67,17 @@ def _report_from_result(result: Any) -> JobReport:
     if isinstance(report, JobReport):
         return report
     return result
+
+
+async def _call_runner(method: Any, payload: Any, *, run_id: str | None) -> Any:
+    if run_id is None or not _accepts_run_id(method):
+        return await method(payload)
+    return await method(payload, run_id=run_id)
+
+
+def _accepts_run_id(method: Any) -> bool:
+    try:
+        parameters = inspect.signature(method).parameters
+    except (TypeError, ValueError):
+        return False
+    return "run_id" in parameters or any(parameter.kind == parameter.VAR_KEYWORD for parameter in parameters.values())

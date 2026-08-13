@@ -38,15 +38,15 @@ class JobRunner:
         if self._stop_event is not None:
             self._stop_event.set()
 
-    async def run(self, config: JobConfig) -> JobRunResult:
-        return await self._run(config, resume_checkpoint=None)
+    async def run(self, config: JobConfig, *, run_id: str | None = None) -> JobRunResult:
+        return await self._run(config, resume_checkpoint=None, run_id=run_id)
 
-    async def resume(self, request: ResumeRequest) -> JobRunResult:
+    async def resume(self, request: ResumeRequest, *, run_id: str | None = None) -> JobRunResult:
         checkpoint = await CheckpointCoordinator(self.dependencies.checkpoint_store, self.clock).load_for_resume(request)
-        return await self._run(checkpoint.job_config, resume_checkpoint=checkpoint)
+        return await self._run(checkpoint.job_config, resume_checkpoint=checkpoint, run_id=run_id)
 
-    async def _run(self, config: JobConfig, *, resume_checkpoint: Checkpoint | None) -> JobRunResult:
-        run_id = _new_run_id()
+    async def _run(self, config: JobConfig, *, resume_checkpoint: Checkpoint | None, run_id: str | None = None) -> JobRunResult:
+        run_id = run_id or _new_run_id()
         counters = RunnerCounters()
         state = RunnerState(
             job_config=config,

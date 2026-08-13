@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Scraper runtime files
+outputs/
+Checkpoint.json
+user-agents.txt
