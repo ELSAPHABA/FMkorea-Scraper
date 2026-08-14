@@ -18,6 +18,7 @@ outputs/
 aidlc-docs/
 aidlc-workflows/
 docs/
+infra/cdk/cdk.out/
 tests/
 
 build/

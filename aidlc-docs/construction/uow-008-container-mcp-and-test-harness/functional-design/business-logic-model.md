@@ -11,7 +11,7 @@ This unit owns the one-shot worker container entrypoint, Docker build context fi
 | Area | Decision |
 |---|---|
 | Container entrypoint | root `docker-entrypoint.sh` called by Dockerfile `ENTRYPOINT`, delegating to `python -m fmkorea_scraper.adapters.container "$@"` |
-| Docker context | root `.dockerignore` excludes local state, cache, outputs, `.env` secret candidates, and documentation artifacts |
+| Docker context | root `.dockerignore` excludes local state, cache, outputs, `.env` secret candidates, documentation artifacts, and CDK synth artifacts |
 | New container jobs | reuse UOW-007 CLI command shape and `build_job_config` path |
 | Container resume | `RESUME=true` resumes by `JOB_ID` or latest PostgreSQL checkpoint |
 | Container storage | S3-compatible/Garage output plus PostgreSQL checkpoint by default |

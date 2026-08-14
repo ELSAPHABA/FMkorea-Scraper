@@ -48,7 +48,7 @@ Image contract:
 
 ```text
 Dockerfile
-  context: .dockerignore excludes local state, caches, outputs, docs, workflow artifacts, secret candidates
+  context: .dockerignore excludes local state, caches, outputs, docs, workflow artifacts, CDK synth artifacts, secret candidates
   base: python:3.11+ slim
   install: pip install .[s3,postgres]
   entrypoint: /app/docker-entrypoint.sh

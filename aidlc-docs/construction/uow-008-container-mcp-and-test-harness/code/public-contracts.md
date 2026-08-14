@@ -17,7 +17,7 @@ python -m fmkorea_scraper.adapters.container "$@"
 Contract:
 
 - root `Dockerfile` installs `.[s3,postgres]`
-- root `.dockerignore` excludes local outputs, caches, docs, tests, and local env files from image context
+- root `.dockerignore` excludes local outputs, caches, docs, tests, workflow artifacts, CDK synth artifacts, and local env files from image context
 - root `.gitattributes` keeps `*.sh` as LF for Linux containers
 - importing `fmkorea_scraper.adapters.container` has no env read, network call, database connection, or job start side effect
 
