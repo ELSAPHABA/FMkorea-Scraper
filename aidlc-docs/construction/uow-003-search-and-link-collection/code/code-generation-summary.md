@@ -17,6 +17,7 @@
 
 - `pyproject.toml`
 - `src/fmkorea_scraper/__init__.py`
+- `src/fmkorea_scraper/core/api.py`
 
 ## Created Tests
 
@@ -44,6 +45,7 @@
 - link collector service dispatch
 - board list/search collection
 - integrated search collection
+- public `core.api.search_board()` and `core.api.search_integrated()` one-page fetch/parser bridge
 - deep search seed board discovery and sequential per-board collection
 - no-keyword range collection
 - realtime keyword/all one-cycle collection

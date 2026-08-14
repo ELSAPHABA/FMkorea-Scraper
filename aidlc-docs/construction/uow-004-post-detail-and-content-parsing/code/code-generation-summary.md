@@ -19,6 +19,7 @@
 
 - `src/fmkorea_scraper/models/content.py`
 - `src/fmkorea_scraper/models/media.py`
+- `src/fmkorea_scraper/core/api.py`
 - `tests/snapshots/schema_versions.json`
 
 ## Created Tests
@@ -42,6 +43,7 @@
 - comment parsing with BEST status, badges, reactions, and score
 - bounded sequential extra comment page fetch through injected HTTP
 - duplicate comment ID suppression across comment pages
+- public `core.api.fetch_post()` and `core.api.fetch_comments()` parser bridge
 - safe parser warning collection and redaction
 - optional model extensions for media/attachment metadata
 - schema snapshot update for the extended `post` model

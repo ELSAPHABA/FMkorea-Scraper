@@ -34,6 +34,16 @@ class FakeRetryService:
         return RetryReport(job_id=request.failure_input.job_id or "retry", status=JobReportStatus.COMPLETED, selected_count=1)
 
 
+class FakeResponse:
+    def __init__(self, text: str) -> None:
+        self.text = text
+
+
+class FakeHttp:
+    async def get(self, url: str):
+        return FakeResponse('<div class="bd"><table><tbody><tr><td class="title"><a class="hx" href="/best/101">Title</a></td></tr></tbody></table></div>')
+
+
 def run(coro):
     return asyncio.run(coro)
 
@@ -87,17 +97,16 @@ def test_mcp_validation_error_is_safe() -> None:
     assert "secret" not in str(result["error"])
 
 
-def test_mcp_search_placeholder_returns_safe_unsupported() -> None:
+def test_mcp_search_board_returns_json_safe_payload() -> None:
     result = run(
         McpToolHandlers().search_board(
             {"board_id": "best", "keyword": "test", "search_target": "title_content"},
-            http_client=object(),
+            http_client=FakeHttp(),
         )
     )
 
-    assert result["ok"] is False
-    assert result["error"]["code"] == "unsupported_source"
-    assert result["error"]["safe_to_log"] is True
+    assert result["ok"] is True
+    assert result["data"]["candidates"][0]["document_id_raw"] == "101"
 
 
 def test_mcp_import_has_no_runtime_side_effects(tmp_path: Path) -> None:
