@@ -4,12 +4,15 @@ import asyncio
 from pathlib import Path
 
 import pytest
+from bs4 import BeautifulSoup
 
 from fmkorea_scraper.core.errors import ParseFailureError
 from fmkorea_scraper.models.content import FmkVideoBlock, ImageBlock, XBlock, YouTubeBlock
 from fmkorea_scraper.models.enums import CommentMode
 from fmkorea_scraper.models.job import PostCandidate
 from fmkorea_scraper.parse import ParserOptions, PostDetailService
+from fmkorea_scraper.parse.comments import CommentParser
+from fmkorea_scraper.parse.warnings import ParseWarningCollector
 
 FIXTURES = Path(__file__).parent / "fixtures" / "parse"
 
@@ -114,6 +117,25 @@ def test_parse_does_not_fetch_search_result_comment_links_as_extra_pages() -> No
 
     assert http.requested == [first_url]
     assert [comment.comment_srl for comment in post.comments] == [101]
+
+
+def test_comment_imagecon_content_uses_image_alt_not_buy_icon() -> None:
+    html = """
+    <ul class="fdb_lst_ul">
+      <li id="comment_10210776585">
+        <div class="xe_content">
+          <span class="imagecon-wrapper" data-ic-name="페페 주식 세트(한잔해)">
+            <img class="imagecon" alt="페페 주식 세트(한잔해)" src="/filesn/imagecon/sample.webp">
+            <span class="imagecon-buy-icon">✚</span>
+          </span>
+        </div>
+      </li>
+    </ul>
+    """
+
+    comments, _ = CommentParser().parse(BeautifulSoup(html, "html.parser"), ParseWarningCollector())
+
+    assert comments[0].content == "페페 주식 세트(한잔해)"
 
 
 def test_missing_required_metadata_raises_parse_failure() -> None:

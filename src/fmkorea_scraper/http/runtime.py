@@ -329,7 +329,14 @@ class HeaderBuilder:
 
 class ResponseClassifier:
     captcha_markers = ("captcha", "자동입력", "자동 입력", "보안문자")
-    blocked_markers = ("blocked", "abnormal access", "비정상적인 접근", "접근이 제한", "차단되었습니다")
+    blocked_markers = (
+        "blocked",
+        "abnormal access",
+        "비정상적인 접근",
+        "접근이 제한",
+        "차단되었습니다",
+        "에펨코리아 보안 시스템",
+    )
     unavailable_markers = (
         "deleted",
         "unavailable",
@@ -356,7 +363,7 @@ class ResponseClassifier:
         url = final_url.lower()
         if any(marker in sample for marker in self.captcha_markers) or "captcha" in url:
             return ResponseClassification(ClassificationKind.CAPTCHA, safe_reason="captcha detected")
-        if status_code == 403 or any(marker in sample for marker in self.blocked_markers):
+        if status_code in {403, 430} or any(marker in sample for marker in self.blocked_markers):
             return ResponseClassification(ClassificationKind.BLOCKED, safe_reason="blocked response")
         if status_code in {404, 410} or any(marker in sample for marker in self.unavailable_markers):
             return ResponseClassification(ClassificationKind.UNAVAILABLE, safe_reason="unavailable content")

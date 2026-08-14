@@ -7,7 +7,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from fmkorea_scraper.core.errors import CaptchaDetectedError, UnavailableContentError
+from fmkorea_scraper.core.errors import BlockedResponseError, CaptchaDetectedError, UnavailableContentError
 from fmkorea_scraper.http import (
     HttpClient,
     HttpRuntimeConfig,
@@ -156,6 +156,18 @@ def test_unavailable_response_does_not_close_shared_client() -> None:
 
     assert response.text == "ok"
     assert calls == 2
+
+
+def test_security_system_response_is_blocked_and_closes_client() -> None:
+    client = HttpClient(
+        HttpRuntimeConfig(request_interval_seconds=0),
+        transport=httpx.MockTransport(lambda request: httpx.Response(430, text="에펨코리아 보안 시스템")),
+    )
+
+    with pytest.raises(BlockedResponseError):
+        run(client.get("https://www.fmkorea.com/search.php?mid=stock"))
+
+    assert client.is_closed is True
 
 
 def test_cancelled_request_closes_client() -> None:

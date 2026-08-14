@@ -95,7 +95,13 @@ class CommentParser:
 
     def _content(self, item: Tag) -> str:
         node = item.select_one(".xe_content, .comment_content, .comment-content")
-        return node.get_text(" ", strip=True) if node else ""
+        if node is None:
+            return ""
+        for icon in node.select(".imagecon-buy-icon"):
+            icon.decompose()
+        image_alts = [str(img.get("alt", "")).strip() for img in node.select("img[alt]") if str(img.get("alt", "")).strip()]
+        parts = [node.get_text(" ", strip=True), *image_alts]
+        return " ".join(part for part in parts if part)
 
     def _reactions(self, item: Tag) -> tuple[int, int]:
         up_node = item.select_one('a[title="추천"] .voted_count, .voted_count')
