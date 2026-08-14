@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
-from urllib.parse import urljoin, urlsplit, urlunsplit
+from urllib.parse import parse_qs, urljoin, urlsplit, urlunsplit
 
 from bs4 import BeautifulSoup
 from bs4 import Tag
@@ -214,11 +214,11 @@ class PostDetailService:
         urls: list[str] = []
         seen: set[str] = set()
         current = self._without_fragment(context.source_url)
-        for link in soup.select("a[href]"):
+        for link in soup.select(".fdb_nav.comment_page a[href], .comment_page a[href], .comment-page a[href]"):
             if not self._is_comment_page_link(link):
                 continue
             url = self._without_fragment(urljoin(context.source_url, str(link.get("href"))))
-            if url == current or url in seen:
+            if url == current or url in seen or not self._same_document_url(url, context):
                 continue
             seen.add(url)
             urls.append(url)
@@ -229,7 +229,22 @@ class PostDetailService:
         if href.startswith("#"):
             return False
         text = " ".join([href, " ".join(link.get("class") or []), link.get_text(" ", strip=True)]).lower()
-        return any(marker in text for marker in ("cpage", "comment_page", "commentpage", "comment"))
+        return any(marker in text for marker in ("cpage", "comment_page", "commentpage"))
+
+    def _same_document_url(self, url: str, context: DetailParseContext) -> bool:
+        expected = context.document_id_hint
+        if not expected:
+            return True
+        actual = self._document_id_from_url(url)
+        return actual is None or actual == expected
+
+    def _document_id_from_url(self, url: str) -> str | None:
+        parts = urlsplit(url)
+        values = parse_qs(parts.query).get("document_srl")
+        if values:
+            return values[0]
+        path = parts.path.rstrip("/").rsplit("/", 1)[-1]
+        return path if path.isdigit() else None
 
     def _without_fragment(self, url: str) -> str:
         parts = urlsplit(url)

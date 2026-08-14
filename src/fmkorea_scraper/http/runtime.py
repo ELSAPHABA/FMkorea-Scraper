@@ -533,7 +533,8 @@ class HttpClient:
                 await self._retry_sleep(attempt, url=str(response.url), reason=classification.safe_reason)
                 continue
 
-            await self.close()
+            if classification.kind in {ClassificationKind.CAPTCHA, ClassificationKind.BLOCKED}:
+                await self.close()
             raise self._classified_exception(classification, response.status_code)
 
         await self.close()

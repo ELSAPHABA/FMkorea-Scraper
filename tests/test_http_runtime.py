@@ -7,7 +7,7 @@ from pathlib import Path
 import httpx
 import pytest
 
-from fmkorea_scraper.core.errors import CaptchaDetectedError
+from fmkorea_scraper.core.errors import CaptchaDetectedError, UnavailableContentError
 from fmkorea_scraper.http import (
     HttpClient,
     HttpRuntimeConfig,
@@ -135,6 +135,27 @@ def test_captcha_response_is_not_retried_and_closes_client() -> None:
 
     assert calls == 1
     assert client.is_closed is True
+
+
+def test_unavailable_response_does_not_close_shared_client() -> None:
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return httpx.Response(200, text="삭제된 게시글")
+        return httpx.Response(200, text="ok")
+
+    client = HttpClient(HttpRuntimeConfig(request_interval_seconds=0), transport=httpx.MockTransport(handler))
+
+    with pytest.raises(UnavailableContentError):
+        run(client.get("https://www.fmkorea.com/best/1"))
+    response = run(client.get("https://www.fmkorea.com/best/2"))
+    run(client.close())
+
+    assert response.text == "ok"
+    assert calls == 2
 
 
 def test_cancelled_request_closes_client() -> None:

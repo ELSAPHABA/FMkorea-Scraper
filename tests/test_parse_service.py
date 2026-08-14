@@ -95,6 +95,27 @@ def test_parse_fetches_bounded_extra_comment_pages_and_dedupes_comments() -> Non
     assert post.comments[1].reactions.score == 2
 
 
+def test_parse_does_not_fetch_search_result_comment_links_as_extra_pages() -> None:
+    first_url = "https://www.fmkorea.com/best/10195585295"
+    pagination = """    <div class="fdb_nav comment_page">
+      <a href="/best/10195585295?cpage=2#comment">2</a>
+    </div>"""
+    search_rows = """    <table>
+      <tr>
+        <td class="title">
+          <a class="hx" href="/index.php?mid=stock&document_srl=10210067516">other post</a>
+          <a class="replyNum" href="/index.php?mid=stock&document_srl=10210067516#10210067516_comment">5</a>
+        </td>
+      </tr>
+    </table>"""
+    http = FakeHttp({first_url: text("detail_full.html").replace(pagination, search_rows)})
+
+    post = asyncio.run(PostDetailService(http, options=ParserOptions(max_comment_pages=1)).parse(candidate()))
+
+    assert http.requested == [first_url]
+    assert [comment.comment_srl for comment in post.comments] == [101]
+
+
 def test_missing_required_metadata_raises_parse_failure() -> None:
     with pytest.raises(ParseFailureError):
         PostDetailService().parse_html(text("detail_missing_required.html"), candidate())
