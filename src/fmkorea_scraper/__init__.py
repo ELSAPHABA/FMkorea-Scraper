@@ -11,6 +11,7 @@ from fmkorea_scraper.core.api import (
     search_board,
     search_integrated,
 )
+from fmkorea_scraper.core.normalization import normalize_checkpoint, normalize_job_report
 from fmkorea_scraper.models.checkpoint import Checkpoint
 from fmkorea_scraper.models.comment import Comment
 from fmkorea_scraper.models.job import JobConfig
@@ -44,6 +45,8 @@ __all__ = [
     "run_job",
     "search_board",
     "search_integrated",
+    "normalize_checkpoint",
+    "normalize_job_report",
 ]
 
 __version__ = "0.1.0"
