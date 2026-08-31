@@ -14,7 +14,14 @@ from fmkorea_scraper.models.report import JobReport, StoredObjectRef
 
 @runtime_checkable
 class HttpPort(Protocol):
-    async def get(self, url: str, *, headers: dict[str, str] | None = None, params: dict[str, Any] | None = None) -> Any:
+    async def get(
+        self,
+        url: str,
+        *,
+        headers: dict[str, str] | None = None,
+        params: dict[str, Any] | None = None,
+        required_selector: str | None = None,
+    ) -> Any:
         ...
 
     async def post(self, url: str, *, data: Any = None, headers: dict[str, str] | None = None) -> Any:

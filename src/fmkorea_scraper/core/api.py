@@ -9,7 +9,12 @@ from __future__ import annotations
 import inspect
 from typing import Any
 
-from fmkorea_scraper.collect.parsers import BoardPageParser, IntegratedSearchParser
+from fmkorea_scraper.collect.parsers import (
+    BOARD_PAGE_REQUIRED_SELECTOR,
+    INTEGRATED_SEARCH_REQUIRED_SELECTOR,
+    BoardPageParser,
+    IntegratedSearchParser,
+)
 from fmkorea_scraper.collect.urls import BoardUrlBuilder, IntegratedSearchUrlBuilder
 from fmkorea_scraper.core.errors import UnsupportedSourceError, ValidationFailure
 from fmkorea_scraper.models.comment import Comment
@@ -40,7 +45,7 @@ async def search_board(request: BoardSearchRequest, http_client: Any | None = No
         else urls.build_list_url(request.board_id, request.page, request.category_id)
     )
     page, failures = BoardPageParser().parse(
-        _response_text(await http_client.get(url)),
+        _response_text(await http_client.get(url, required_selector=BOARD_PAGE_REQUIRED_SELECTOR)),
         board_id=request.board_id,
         request_url=url,
         page=request.page,
@@ -53,7 +58,7 @@ async def search_integrated(request: IntegratedSearchRequest, http_client: Any |
         raise ValidationFailure("http_client is required", details={"reason": "http_client_required"})
     url = IntegratedSearchUrlBuilder().build_search_url(request.keyword, request.search_target, request.page)
     page, boards, failures = IntegratedSearchParser().parse(
-        _response_text(await http_client.get(url)),
+        _response_text(await http_client.get(url, required_selector=INTEGRATED_SEARCH_REQUIRED_SELECTOR)),
         keyword=request.keyword,
         request_url=url,
         page=request.page,

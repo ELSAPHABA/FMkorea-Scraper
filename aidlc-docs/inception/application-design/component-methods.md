@@ -82,8 +82,8 @@
 | Method | Input | Output | Purpose |
 |---|---|---|---|
 | `parse` | `html: str, base_url: str` | `SearchPage` | 목록/검색 HTML 파싱 |
-| `parse_rows` | `soup: BeautifulSoup` | `list[PostCandidate]` | 게시글 후보 행 추출 |
-| `parse_paging` | `soup: BeautifulSoup` | `PagingInfo` | 다음 페이지/종료 상태 추출 |
+| `parse_rows` | `page: Selector` | `list[PostCandidate]` | 게시글 후보 행 추출 |
+| `parse_paging` | `page: Selector` | `PagingInfo` | 다음 페이지/종료 상태 추출 |
 | `parse_category_hint` | `row: Tag` | `CategoryInfo | None` | 후보 말머리 추출 |
 
 ### IntegratedSearchParser
@@ -91,9 +91,9 @@
 | Method | Input | Output | Purpose |
 |---|---|---|---|
 | `parse` | `html: str, base_url: str` | `IntegratedSearchPage` | 통합 검색 page 파싱 |
-| `parse_results` | `soup: BeautifulSoup` | `list[PostCandidate]` | 결과 게시글 후보 추출 |
+| `parse_results` | `page: Selector` | `list[PostCandidate]` | 결과 게시글 후보 추출 |
 | `extract_board_candidates` | `candidates: list[PostCandidate]` | `list[BoardCandidate]` | 심층검색용 게시판 후보 생성 |
-| `is_no_result` | `soup: BeautifulSoup` | `bool` | 검색 결과 없음 판단 |
+| `is_no_result` | `page: Selector` | `bool` | 검색 결과 없음 판단 |
 
 ### LinkCollector
 
@@ -114,9 +114,9 @@
 | Method | Input | Output | Purpose |
 |---|---|---|---|
 | `parse` | `html: str, url: str` | `PostMetadata` | 상세 HTML metadata 파싱 |
-| `parse_author` | `soup: BeautifulSoup` | `AuthorInfo` | 작성자 닉네임/member/level 추출 |
-| `parse_stats` | `soup: BeautifulSoup` | `PostStats` | 조회수/추천수/댓글 수 추출 |
-| `parse_attachments` | `soup: BeautifulSoup` | `list[Attachment]` | 첨부파일 metadata 추출 |
+| `parse_author` | `page: Selector` | `AuthorInfo` | 작성자 닉네임/member/level 추출 |
+| `parse_stats` | `page: Selector` | `PostStats` | 조회수/추천수/댓글 수 추출 |
+| `parse_attachments` | `page: Selector` | `list[Attachment]` | 첨부파일 metadata 추출 |
 | `classify_unavailable` | `html: str, status_code: int` | `UnavailableReason | None` | 삭제/로그인/CAPTCHA 등 분류 |
 
 ### ContentBlockParser

@@ -47,6 +47,10 @@ class NetworkFailureError(ScraperError):
     retryable = True
 
 
+class BrowserFallbackError(ScraperError):
+    code = "browser_fallback_failed"
+
+
 class ParseFailureError(ScraperError):
     code = "parse_failure"
 

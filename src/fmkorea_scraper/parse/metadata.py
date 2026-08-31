@@ -7,9 +7,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from urllib.parse import parse_qs, urlsplit
 
-from bs4 import BeautifulSoup, Tag
-
 from fmkorea_scraper.core.errors import ParseFailureError
+from fmkorea_scraper.dom import Node, attr, classes, first, text
 from fmkorea_scraper.models.comment import AuthorInfo, ReactionInfo
 from fmkorea_scraper.models.post import CategoryInfo
 from fmkorea_scraper.parse.media import normalize_url
@@ -39,13 +38,13 @@ class ParsedMetadata:
 
 
 class MetadataParser:
-    def parse(self, soup: BeautifulSoup, context: DetailParseContext, warnings: ParseWarningCollector) -> ParsedMetadata:
-        root = soup.select_one("#bd_capture")
+    def parse(self, page: Node, context: DetailParseContext, warnings: ParseWarningCollector) -> ParsedMetadata:
+        root = first(page, "#bd_capture")
         if root is None:
-            root = soup
+            root = page
             warnings.add(code="missing_detail_root", stage="metadata", selector="#bd_capture", reason="detail root missing")
 
-        canonical_url = self._canonical_url(soup, context)
+        canonical_url = self._canonical_url(page, context)
         document_srl = self._document_srl(canonical_url, context)
         document_id_raw = str(document_srl or context.document_id_hint or "")
         title = self._title(root)
@@ -54,7 +53,7 @@ class MetadataParser:
 
         return ParsedMetadata(
             board_id=self._board_id(canonical_url, context),
-            board_name=self._board_name(soup),
+            board_name=self._board_name(page),
             document_srl=document_srl,
             document_id_raw=document_id_raw,
             canonical_url=canonical_url,
@@ -68,9 +67,9 @@ class MetadataParser:
             comment_count=self._counter(root, "댓글"),
         )
 
-    def _canonical_url(self, soup: BeautifulSoup, context: DetailParseContext) -> str:
-        node = soup.select_one('link[rel="canonical"][href], .document_address a.a[href]')
-        return normalize_url(node.get("href") if node else context.source_url, context.base_url) or context.source_url
+    def _canonical_url(self, page: Node, context: DetailParseContext) -> str:
+        node = first(page, 'link[rel="canonical"][href], .document_address a.a[href]')
+        return normalize_url(attr(node, "href") or context.source_url, context.base_url) or context.source_url
 
     def _document_srl(self, url: str, context: DetailParseContext) -> int | None:
         query_value = parse_qs(urlsplit(url).query).get("document_srl")
@@ -87,33 +86,32 @@ class MetadataParser:
         query_value = parse_qs(urlsplit(url).query).get("mid")
         return query_value[0] if query_value else context.board_id_hint
 
-    def _board_name(self, soup: BeautifulSoup) -> str | None:
-        node = soup.select_one(".bd_name, .board_name, h1 a")
-        return node.get_text(" ", strip=True) if node else None
+    def _board_name(self, page: Node) -> str | None:
+        node = first(page, ".bd_name, .board_name, h1 a")
+        return text(node) or None
 
-    def _title(self, root: Tag) -> str:
-        node = root.select_one(".rd_hd h1 .np_18px_span") or root.select_one(".rd_hd h1")
-        return node.get_text(" ", strip=True) if node else ""
+    def _title(self, root: Node) -> str:
+        node = first(root, ".rd_hd h1 .np_18px_span") or first(root, ".rd_hd h1")
+        return text(node)
 
-    def _author(self, root: Tag) -> AuthorInfo:
-        node = root.select_one(".rd_hd .member_plate")
+    def _author(self, root: Node) -> AuthorInfo:
+        node = first(root, ".rd_hd .member_plate")
         if node is None:
             return AuthorInfo()
-        classes = " ".join(node.get("class") or [])
-        member = MEMBER_RE.search(classes)
-        level_img = node.select_one("img.level")
+        member = MEMBER_RE.search(" ".join(classes(node)))
+        level_img = first(node, "img.level")
         return AuthorInfo(
-            nickname=node.get_text(" ", strip=True),
+            nickname=text(node),
             member_srl=member.group(1) if member else None,
-            level=level_img.get("alt") or level_img.get("title") if level_img else None,
-            profile_url=normalize_url(node.get("href"), "https://www.fmkorea.com") if node.name == "a" else None,
+            level=(attr(level_img, "alt") or attr(level_img, "title")) if level_img else None,
+            profile_url=normalize_url(attr(node, "href"), "https://www.fmkorea.com") if node.tag == "a" else None,
         )
 
-    def _created_at_raw(self, root: Tag) -> str | None:
-        node = root.select_one(".date, .regdate, .rd_hd .btm_area")
-        return node.get_text(" ", strip=True) if node else None
+    def _created_at_raw(self, root: Node) -> str | None:
+        node = first(root, ".date, .regdate, .rd_hd .btm_area")
+        return text(node) or None
 
-    def _created_at(self, root: Tag) -> datetime | None:
+    def _created_at(self, root: Node) -> datetime | None:
         raw = self._created_at_raw(root)
         if not raw:
             return None
@@ -123,21 +121,21 @@ class MetadataParser:
         year, month, day, hour, minute = map(int, match.groups())
         return datetime(year, month, day, hour, minute)
 
-    def _counter(self, root: Tag, label: str) -> int | None:
-        for span in root.select(".rd_hd .btm_area .side.fr span, .btm_area span, span"):
-            text = span.get_text(" ", strip=True)
-            if label in text:
-                match = re.search(r"([\d,]+)", text)
+    def _counter(self, root: Node, label: str) -> int | None:
+        for span in root.css(".rd_hd .btm_area .side.fr span, .btm_area span, span"):
+            value = text(span)
+            if label in value:
+                match = re.search(r"([\d,]+)", value)
                 return int(match.group(1).replace(",", "")) if match else None
         return None
 
-    def _category(self, root: Tag) -> CategoryInfo | None:
-        node = root.select_one('a.category[href*="category="]')
+    def _category(self, root: Node) -> CategoryInfo | None:
+        node = first(root, 'a.category[href*="category="]')
         if node is None:
             return None
-        href = normalize_url(node.get("href"), "https://www.fmkorea.com")
+        href = normalize_url(attr(node, "href"), "https://www.fmkorea.com")
         category_id = None
         if href:
             values = parse_qs(urlsplit(href).query).get("category")
             category_id = values[0] if values else None
-        return CategoryInfo(category_id=category_id, name=node.get_text(" ", strip=True) or None, url=href)
+        return CategoryInfo(category_id=category_id, name=text(node) or None, url=href)

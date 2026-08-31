@@ -13,7 +13,7 @@ dependencies = [
   "pydantic>=2,<3",
   "httpx>=0.28,<1",
   "python-dotenv>=1,<2",
-  "beautifulsoup4>=4,<5",
+  "scrapling>=0.4.15,<0.5",
 ]
 
 [project.optional-dependencies]
@@ -28,6 +28,9 @@ mcp = [
 ]
 analysis = [
   "polars>=1,<2",
+]
+browser = [
+  "scrapling[fetchers]>=0.4.15,<0.5",
 ]
 test = [
   "hypothesis>=6,<7",

@@ -7,9 +7,10 @@ from pathlib import Path
 import httpx
 import pytest
 
-from fmkorea_scraper.core.errors import BlockedResponseError, CaptchaDetectedError, UnavailableContentError
+from fmkorea_scraper.core.errors import BrowserFallbackError, BlockedResponseError, CaptchaDetectedError, UnavailableContentError
 from fmkorea_scraper.http import (
     HttpClient,
+    HttpResponse,
     HttpRuntimeConfig,
     ProxyConfig,
     RetryPolicy,
@@ -166,6 +167,94 @@ def test_security_system_response_is_blocked_and_closes_client() -> None:
 
     with pytest.raises(BlockedResponseError):
         run(client.get("https://www.fmkorea.com/search.php?mid=stock"))
+
+    assert client.is_closed is True
+
+
+def test_missing_required_dom_uses_browser_fallback() -> None:
+    calls = []
+
+    async def browser_fetcher(url: str, **kwargs) -> HttpResponse:
+        calls.append((url, kwargs["required_selector"]))
+        html = '<main id="bd_capture">rendered</main>'
+        return HttpResponse(200, url, {}, html, html.encode(), 0.0)
+
+    client = HttpClient(
+        HttpRuntimeConfig(request_interval_seconds=0, browser_fallback_enabled=True),
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, text="<main>loading</main>")),
+        browser_fetcher=browser_fetcher,
+    )
+
+    response = run(client.get("https://www.fmkorea.com/best/1", required_selector="#bd_capture"))
+    run(client.close())
+
+    assert "rendered" in response.text
+    assert calls == [("https://www.fmkorea.com/best/1", "#bd_capture")]
+
+
+def test_browser_fallback_is_serialized_per_client() -> None:
+    active = 0
+    max_active = 0
+
+    async def browser_fetcher(url: str, **kwargs) -> HttpResponse:
+        nonlocal active, max_active
+        active += 1
+        max_active = max(max_active, active)
+        await asyncio.sleep(0.01)
+        active -= 1
+        html = '<main id="bd_capture">rendered</main>'
+        return HttpResponse(200, url, {}, html, html.encode(), 0.0)
+
+    async def scenario() -> None:
+        async with HttpClient(
+            HttpRuntimeConfig(request_interval_seconds=0, browser_fallback_enabled=True),
+            transport=httpx.MockTransport(lambda request: httpx.Response(200, text="<main>loading</main>")),
+            browser_fetcher=browser_fetcher,
+        ) as client:
+            responses = await asyncio.gather(
+                client.get("https://www.fmkorea.com/best/1", required_selector="#bd_capture"),
+                client.get("https://www.fmkorea.com/best/2", required_selector="#bd_capture"),
+            )
+            assert [response.status_code for response in responses] == [200, 200]
+
+    run(scenario())
+
+    assert max_active == 1
+
+
+def test_blocked_response_never_uses_browser_fallback() -> None:
+    calls = []
+
+    async def browser_fetcher(url: str, **kwargs) -> HttpResponse:
+        calls.append((url, kwargs))
+        raise AssertionError("browser must not run for a blocked response")
+
+    client = HttpClient(
+        HttpRuntimeConfig(request_interval_seconds=0, browser_fallback_enabled=True),
+        transport=httpx.MockTransport(lambda request: httpx.Response(430, text="에펨코리아 보안 시스템")),
+        browser_fetcher=browser_fetcher,
+    )
+
+    with pytest.raises(BlockedResponseError):
+        run(client.get("https://www.fmkorea.com/best/1", required_selector="#bd_capture"))
+
+    assert calls == []
+
+
+def test_browser_fallback_missing_required_dom_is_terminal_error() -> None:
+    async def browser_fetcher(url: str, **kwargs) -> HttpResponse:
+        _ = kwargs
+        html = "<main>still loading</main>"
+        return HttpResponse(200, url, {}, html, html.encode(), 0.0)
+
+    client = HttpClient(
+        HttpRuntimeConfig(request_interval_seconds=0, browser_fallback_enabled=True),
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, text="<main>loading</main>")),
+        browser_fetcher=browser_fetcher,
+    )
+
+    with pytest.raises(BrowserFallbackError):
+        run(client.get("https://www.fmkorea.com/best/1", required_selector="#bd_capture"))
 
     assert client.is_closed is True
 

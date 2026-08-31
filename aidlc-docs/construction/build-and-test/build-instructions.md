@@ -68,6 +68,8 @@ Run from the repository root:
 docker build -t fmkorea-scraper:uow-010-build-test .
 ```
 
+The worker image installs the `browser` extra and runs `scrapling install`; Chromium is present but starts only when browser fallback is enabled and a successful list/search/detail response lacks the required DOM. Container fallback is enabled by default and can be disabled with `FMKOREA_BROWSER_FALLBACK=false`.
+
 Verified image:
 
 ```text

@@ -20,6 +20,7 @@ FMKorea-specific URL/query/parser는 UOW-003과 UOW-004에서 구현하고, 공�
 | UOW-008 | Container, MCP, And Test Harness | one-shot container contract, PostgreSQL checkpoint adapter, MCP tools, fixture tests, PBT, smoke test wiring | adapters/tests |
 | UOW-009 | Parser Failure Retry Reprocessor | parser-stage failure records ingestion, direct-post retry batch creation, retry output/report generation, optional existing-success skip | retry/adapters |
 | UOW-010 | AWS CDK Infrastructure IaC | AWS CDK app/stacks for deployable scraper infrastructure, environment configuration, synth/deploy documentation | infrastructure |
+| UOW-011 | Scrapling Runtime Refactor | BeautifulSoup parser replacement, optional browser fallback boundary, external Job Queue orchestration boundary, validation/documentation catch-up | runtime/parser/adapters |
 
 ## Code Organization Strategy
 
@@ -93,6 +94,7 @@ tests/
 8. UOW-008 Container, MCP, And Test Harness
 9. UOW-009 Parser Failure Retry Reprocessor
 10. UOW-010 AWS CDK Infrastructure IaC
+11. UOW-011 Scrapling Runtime Refactor Documentation Catch-up
 
 Storage is implemented before `JobRunner` integration so result writes and checkpoint commits have concrete ports available.
 
@@ -186,6 +188,15 @@ Storage is implemented before `JobRunner` integration so result writes and check
 - Final AWS resource choices are decided in UOW-010 Functional Design and Infrastructure Design.
 - Must avoid embedding secrets in source code and must document environment-specific deployment flow.
 
+### UOW-011. Scrapling Runtime Refactor
+
+- Documents the post-completion refactor that replaced BeautifulSoup source parsing with Scrapling `Selector`.
+- Keeps `httpx` as the normal request path.
+- Adds browser rendering fallback only when a successful list/search/detail response lacks its required DOM.
+- Preserves fail-closed CAPTCHA/block handling and terminal checkpoint behavior.
+- Keeps RabbitMQ and other Job Queue consumers outside this scraper; future platform orchestrators consume Job queues and start one-shot worker containers.
+- Records Scrapling Spider migration as a future AI-DLC unit because it would replace the current runner/checkpoint execution engine.
+
 ## Boundary Rules
 
 - Parser components do not perform network or storage I/O.
@@ -196,3 +207,4 @@ Storage is implemented before `JobRunner` integration so result writes and check
 - UOW-004 owns filling BEST comment fields; UOW-006 only serializes the model.
 - UOW-009 must not duplicate post parsing, HTTP policy, or storage logic.
 - UOW-010 must not change scraper runtime behavior; it only provisions and documents infrastructure around the existing container/core contracts.
+- UOW-011 must not change scraper behavior again unless its questionnaire produces a concrete decision that differs from the current implementation.

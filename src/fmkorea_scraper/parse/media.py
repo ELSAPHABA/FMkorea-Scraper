@@ -5,8 +5,7 @@ from __future__ import annotations
 import re
 from urllib.parse import parse_qs, urljoin, urlsplit
 
-from bs4 import Tag
-
+from fmkorea_scraper.dom import Node, attr, classes, find_ancestor, first, text
 from fmkorea_scraper.models.content import FmkVideoBlock, ImageBlock, XBlock, YouTubeBlock
 from fmkorea_scraper.models.media import Attachment
 
@@ -34,23 +33,23 @@ def _int_or_none(value: str | None) -> int | None:
 
 
 class AttachmentParser:
-    def parse(self, root: Tag, *, base_url: str = "https://www.fmkorea.com") -> list[Attachment]:
+    def parse(self, root: Node, *, base_url: str = "https://www.fmkorea.com") -> list[Attachment]:
         attachments: list[Attachment] = []
-        for link in root.select(".rd_file a[data-href]"):
-            href = normalize_url(link.get("data-href") or link.get("href"), base_url)
+        for link in root.css(".rd_file a[data-href]"):
+            href = normalize_url(attr(link, "data-href") or attr(link, "href"), base_url)
             if not href:
                 continue
             query = parse_qs(urlsplit(href).query)
             file_srl = _first(query, "file_srl")
             attachments.append(
                 Attachment(
-                    file_name=link.get_text(" ", strip=True) or link.get("title"),
+                    file_name=text(link) or attr(link, "title"),
                     url=href,
-                    size_text=link.get("title"),
+                    size_text=attr(link, "title"),
                     file_srl=file_srl,
                     sid=_first(query, "sid"),
                     mid=_first(query, "mid"),
-                    download_text=link.get("title"),
+                    download_text=attr(link, "title"),
                 )
             )
         return attachments
@@ -81,44 +80,44 @@ class MediaBlockParser:
 
     def parse_image(
         self,
-        img: Tag,
+        img: Node,
         *,
         order: int,
         attachments_by_file_srl: dict[str, Attachment] | None = None,
     ) -> ImageBlock | None:
-        if "mejs__poster-img" in (img.get("class") or []):
+        if "mejs__poster-img" in classes(img):
             return None
-        parent_link = img.find_parent("a", class_="highslide")
-        original_url = normalize_url(parent_link.get("href") if parent_link else None, self.base_url)
-        url = original_url or normalize_url(img.get("src"), self.base_url)
+        parent_link = find_ancestor(img, tag="a", class_name="highslide")
+        original_url = normalize_url(attr(parent_link, "href"), self.base_url)
+        url = original_url or normalize_url(attr(img, "src"), self.base_url)
         if not url:
             return None
-        file_srl = img.get("data-file-srl") or img.get("file_srl")
+        file_srl = attr(img, "data-file-srl") or attr(img, "file_srl")
         attachment = (attachments_by_file_srl or {}).get(file_srl or "")
         return ImageBlock(
             order=order,
             url=url,
             original_url=original_url,
-            alt=img.get("alt"),
+            alt=attr(img, "alt"),
             file_srl=file_srl,
-            width=_int_or_none(img.get("width")),
-            height=_int_or_none(img.get("height")),
+            width=_int_or_none(attr(img, "width")),
+            height=_int_or_none(attr(img, "height")),
             download_url=attachment.url if attachment else None,
         )
 
-    def parse_video(self, video: Tag, *, order: int) -> FmkVideoBlock | None:
-        source = video.select_one("source[src]")
-        video_url = normalize_url(source.get("src") if source else video.get("src"), self.base_url)
+    def parse_video(self, video: Node, *, order: int) -> FmkVideoBlock | None:
+        source = first(video, "source[src]")
+        video_url = normalize_url(attr(source, "src") or attr(video, "src"), self.base_url)
         if not video_url:
             return None
-        parent = video.parent if isinstance(video.parent, Tag) else video
-        description_node = parent.select_one(".video_infobox .box div") if isinstance(parent, Tag) else None
+        parent = video.parent or video
+        description_node = first(parent, ".video_infobox .box div")
         return FmkVideoBlock(
             order=order,
             video_url=video_url,
-            poster_url=normalize_url(video.get("poster"), self.base_url),
-            description=description_node.get_text(" ", strip=True) if description_node else None,
-            file_srl=video.get("data-file-srl"),
+            poster_url=normalize_url(attr(video, "poster"), self.base_url),
+            description=text(description_node) or None,
+            file_srl=attr(video, "data-file-srl"),
             download_url=video_url,
             name=_meta_content(parent, "name"),
             upload_date=_meta_content(parent, "uploadDate"),
@@ -169,6 +168,5 @@ def _first(query: dict[str, list[str]], key: str) -> str | None:
     return values[0] if values else None
 
 
-def _meta_content(root: Tag, itemprop: str) -> str | None:
-    node = root.select_one(f'meta[itemprop="{itemprop}"][content]')
-    return node.get("content") if node else None
+def _meta_content(root: Node, itemprop: str) -> str | None:
+    return attr(first(root, f'meta[itemprop="{itemprop}"][content]'), "content")

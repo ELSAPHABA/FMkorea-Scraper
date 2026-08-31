@@ -4,7 +4,7 @@
 
 로컬 CLI 프로그램으로 단독 실행할 수 있고, 컨테이너 워커로 실행해 S3 호환 저장소와 PostgreSQL 체크포인트 저장소를 사용할 수 있습니다. AWS CDK 기반 ECS Fargate 배포 경로도 포함합니다. 핵심 기능은 라이브러리로 import 할 수 있으며, MCP 도구 서버로 연결할 수 있도록 어댑터도 포함합니다.
 
-현재 구현은 BeautifulSoup 기반 HTML 파싱과 `httpx.AsyncClient` 기반 비동기 요청을 사용합니다. Playwright 같은 브라우저 자동화는 런타임 의존성이 아닙니다.
+현재 구현은 Scrapling `Selector` 기반 HTML 파싱과 `httpx.AsyncClient` 기반 비동기 요청을 사용합니다. CLI/Docker 실행은 일반 Playwright 기반 `DynamicFetcher` fallback이 기본 활성화되어 있으며, 정상 응답에서 목록/검색/상세 필수 DOM이 누락된 경우에만 사용합니다.
 
 주의: 기본 수집은 게시글/댓글/콘텐츠 메타데이터와 미디어 URL 중심입니다. `--media-mode download`를 사용하면 수집 Job 안에서 이미지와 에펨코리아 동영상 `MediaItem` 파일까지 저장합니다.
 
@@ -25,6 +25,8 @@
 - 속도 조절: 요청 간격, 게시글 워커 수, 미디어 다운로드 동시성, 큐 크기, 댓글/본문 최대 수집량을 조절합니다.
 - 중단 및 재개: 체크포인트를 저장하고 `resume` 명령으로 중단 지점부터 재개합니다.
 - CAPTCHA/차단 감지: CAPTCHA 또는 차단 신호가 보이면 자동 우회를 시도하지 않고 작업을 중단하며 체크포인트를 남깁니다.
+- 브라우저 렌더링 fallback: CLI/Docker에서 기본 활성화되며, 정상 HTTP 응답에 목록/검색/상세 필수 DOM이 없을 때만 일반 Playwright로 다시 렌더링합니다. CAPTCHA/430/명확한 차단 응답에는 실행하지 않습니다.
+- 외부 Job Queue 연동 경계: 향후 통합 플랫폼의 오케스트레이터가 RabbitMQ 같은 큐를 소비한 뒤 one-shot worker 컨테이너를 실행합니다.
 - 파서 실패 재처리: `failures.jsonl`에서 parser-stage 실패만 골라 direct-post 경로로 재수집합니다.
 - 로컬/컨테이너 저장: 로컬 JSONL 파일 또는 컨테이너 환경의 S3 호환 저장소와 PostgreSQL을 사용할 수 있습니다.
 - AWS CDK 배포: `infra/cdk`에서 ECS Fargate 워커, AWS S3 출력 bucket, RDS PostgreSQL 체크포인트 저장소를 정의합니다.
@@ -58,7 +60,8 @@
 │   ├── http/                       # httpx 기반 요청 런타임, UA/Proxy/Rate 정책
 │   ├── models/                     # Pydantic 데이터 모델
 │   ├── outputs/                    # 로컬/S3/PostgreSQL 출력과 체크포인트
-│   ├── parse/                      # 게시글/댓글/본문 파서와 서비스
+│   ├── parse/                      # Scrapling 기반 게시글/댓글/본문 파서와 서비스
+│   ├── dom.py                      # Scrapling Selector 공통 DOM 헬퍼
 │   ├── retry/                      # parser-stage 실패 재처리
 │   └── runner/                     # JobRunner, 체크포인트, 출력 orchestration
 └── tests/                          # 단위/계약/선택적 smoke 테스트
@@ -71,9 +74,9 @@
 | UOW | 이름 | 역할 |
 | --- | --- | --- |
 | UOW-001 | Core Models and Config | Pydantic 모델, enum, 작업 설정, 저장 설정, 출력 스키마 정의 |
-| UOW-002 | HTTP Runtime Policy | `httpx.AsyncClient`, 요청 간격, 재시도, User-Agent 교체, Proxy, CAPTCHA/차단 감지 |
-| UOW-003 | Search and Link Collection | direct URL, 게시판 목록/검색, 통합 검색, 노키워드 범위 검색, 심층 검색, 실시간 후보 링크 수집 |
-| UOW-004 | Post Detail and Content Parsing | 게시글 메타데이터, 본문 콘텐츠 블록, 댓글/답글, BEST 댓글, 미디어/첨부파일 파싱 |
+| UOW-002 | HTTP Runtime Policy | `httpx.AsyncClient`, 요청 간격, 재시도, User-Agent 교체, Proxy, CAPTCHA/차단 감지, 선택적 일반 브라우저 렌더링 fallback |
+| UOW-003 | Search and Link Collection | Scrapling 기반 direct URL, 게시판 목록/검색, 통합 검색, 노키워드 범위 검색, 심층 검색, 실시간 후보 링크 수집 |
+| UOW-004 | Post Detail and Content Parsing | Scrapling 기반 게시글 메타데이터, 본문 콘텐츠 블록, 댓글/답글, BEST 댓글, 미디어/첨부파일 파싱 |
 | UOW-005 | Job Runner and Checkpoint | 단일 링크 수집 워커와 다중 게시글 워커, 큐, 중단/재개, 체크포인트 |
 | UOW-006 | Output and Storage | 로컬 JSONL/리포트/실패 파일, 로컬 체크포인트, S3 호환 저장소, PostgreSQL 체크포인트 |
 | UOW-007 | CLI Adapter | `run`, `resume`, User-Agent import, Proxy 설정, 터미널 마법사 |
@@ -116,8 +119,13 @@ python -m pip install -e ".[mcp]"
 # Polars 분석
 python -m pip install -e ".[analysis]"
 
+# 일반 Playwright 렌더링 fallback
+python -m pip install -e ".[browser]"
+scrapling install
+
 # 전부 설치
-python -m pip install -e ".[test,s3,postgres,mcp,analysis]"
+python -m pip install -e ".[test,s3,postgres,mcp,analysis,browser]"
+scrapling install
 ```
 
 AWS CDK 인프라 작업은 별도 디렉터리에서 의존성을 설치합니다.
@@ -472,6 +480,8 @@ fmkorea-scraper run `
 | `--proxy-host` | `.env` 자동 탐색 | 요청에 사용할 프록시 host |
 | `--proxy-id` | `.env` 자동 탐색 | 프록시 사용자 ID |
 | `--proxy-pw` | `.env` 자동 탐색 | 프록시 비밀번호 |
+| `--browser-fallback` | 활성 | 정상 HTTP 응답에 목록/검색/상세 필수 DOM이 없을 때 일반 Playwright 렌더링을 한 번 사용 |
+| `--no-browser-fallback` | 비활성 | 기본 활성화된 일반 Playwright fallback을 끔 |
 
 ## User-Agent 설정
 
@@ -676,6 +686,8 @@ BEST 댓글도 같은 `comments` 배열에 저장합니다. 분석 단계에서�
 
 CAPTCHA는 자동 우회하지 않습니다. 감지되면 작업을 중단하고 체크포인트를 저장하는 것이 기본 정책입니다.
 
+`--browser-fallback`은 차단 우회 기능이 아닙니다. HTTP 응답이 성공으로 분류됐지만 목록/검색/상세 필수 DOM이 없는 경우에만 적용합니다. CLI/Docker에서는 기본 활성화되어 있고, CLI에서는 `--no-browser-fallback`, Docker에서는 `FMKOREA_BROWSER_FALLBACK=false`로 끌 수 있습니다. 브라우저 응답에서도 필수 DOM을 얻지 못하거나 실행 오류가 발생하면 작업 전체를 종료하고 terminal checkpoint를 저장합니다.
+
 게시글 하나의 파싱 실패는 가능한 경우 `failures.jsonl`에 기록하고 다음 게시글로 진행합니다. 작업 전체 중단이 필요한 오류는 `report.json`과 체크포인트에 반영됩니다.
 
 파싱 실패한 게시글만 별도로 재시도하려면 `retry-parser-failures`를 사용합니다. 원본 `failures.jsonl`은 수정하지 않고, 재시도 결과는 새 run의 `posts.jsonl`, `failures.jsonl`, `report.json`으로 저장됩니다.
@@ -730,6 +742,7 @@ docker build -t fmkorea-scraper-worker .
 | `FMKOREA_PROXY_HOST` | Proxy host |
 | `FMKOREA_PROXY_ID` | Proxy ID |
 | `FMKOREA_PROXY_PW` | Proxy password |
+| `FMKOREA_BROWSER_FALLBACK` | 기본 `true`; `false`이면 일반 Playwright fallback 비활성화 |
 | `FMKOREA_REALTIME_*` | 실시간 수집 설정 |
 
 예시 `.env.container`:
@@ -778,6 +791,15 @@ docker run --rm `
 ```
 
 저장소 컨테이너와 스크래퍼 컨테이너는 반드시 하나의 Docker Compose 파일에 강하게 묶을 필요가 없습니다. 향후 여러 커뮤니티 스크래퍼를 함께 운영할 계획이라면 Garage/PostgreSQL은 공유 인프라로 별도 운영하고, 각 스크래퍼 워커는 환경 변수로 접속 정보를 주입하는 구성이 더 적합합니다.
+
+## 외부 Job Queue 연동
+
+이 저장소는 RabbitMQ consumer를 직접 구현하지 않습니다. 향후 통합 플랫폼의 외부 오케스트레이터가 RabbitMQ 같은 Job Queue를 소비하고, 메시지의 `JobConfig`를 환경 변수나 실행 인자로 변환해 one-shot worker 컨테이너를 띄우는 구조를 사용합니다.
+
+- 큐 메시지 단위는 게시글 링크가 아니라 Job 단위입니다.
+- 스크래퍼 컨테이너는 전달받은 Job 하나를 실행하고 종료합니다.
+- Job 내부 게시글 링크 병렬 처리는 기존 `asyncio.Queue`와 `PostWorkerPool`이 담당합니다.
+- RabbitMQ broker, consumer, DLQ, lease, scheduler, autoscaler는 통합 플랫폼 저장소에서 소유합니다.
 
 ## AWS CDK 배포
 

@@ -1055,3 +1055,157 @@
 **Context**: Post-AI-DLC baseline alignment after Construction completion.
 
 ---
+## 2026-08-31 Scrapling Runtime Refactor
+
+**User Input**: "Scrapling 기반으로 리팩토링하고, 일반 Playwright fallback과 향후 통합 플랫폼용 RabbitMQ 어댑터를 추가해 달라."
+
+**AI Response**: Replaced BeautifulSoup parsing with Scrapling Selector, added opt-in DynamicFetcher rendering only for successful detail responses missing required DOM, preserved fail-closed CAPTCHA/block checkpoint behavior, and initially added a one-shot JobConfig RabbitMQ adapter without broker infrastructure.
+
+---
+
+## UOW-011 Scrapling Runtime Refactor Documentation Catch-up
+
+**Timestamp**: 2026-08-31
+**User Input**: "리팩토링을 해버려 순서가 뒤바뀌어 버렸는데, AI-DLC 과정을 통해 문서를 생성합시다. 이후 문서 질문지에 의한 변경 사항 부분만 코드를 수정하도록 합시다. 다만, 너무 당연한 요소는 질문지로 만들지 말고, 확실히 애매해서 고민해 고려할 요소만 질문지로 만들어 주세요. 그리고 Spider 사용으로의 리팩토링도 향후 진행으로 계획해 주세요."
+**AI Response**: Created UOW-011 as a documentation catch-up unit, added a focused functional-design questionnaire for only ambiguous choices, recorded that future code changes are limited to answer/code deltas, and documented Scrapling Spider migration as future separate AI-DLC work.
+**Context**: Post-completion refactor documentation alignment; no code change requested in this step.
+
+---
+
+## UOW-011 RabbitMQ Adapter Removal
+
+**Timestamp**: 2026-08-31
+**User Input**: "RabbitMQ는 외부 오케스트레이터가 Job 큐를 소비하여 스크래핑 Worker를 띄우는 방식으로 하겠습니다. 이번 리팩토링에서 RabbitMQ 구현은 제거해 주세요."
+**AI Response**: Removed the internal RabbitMQ adapter, removed the `rabbitmq` optional dependency, deleted its tests, and updated docs so Job Queue consumption belongs to the future external orchestration platform.
+**Context**: UOW-011 answer/code delta after queue ownership decision changed.
+
+---
+
+## UOW-011 Functional Design Answer Validation Blocked
+
+**Timestamp**: 2026-08-31
+**User Input**: "질문지의 답변들을 확정하였습니다. 다음 단계를 진행해 주세요."
+**AI Response**: Validated the UOW-011 questionnaire, found that Q2=C conflicts with the fixed no CAPTCHA/block bypass and fail-closed requirements, recorded the block in the plan/state, and made no code changes.
+**Context**: UOW-011 Functional Design answer validation; Q2 must be reselected before code deltas are applied.
+
+---
+
+## UOW-011 Functional Design Answer Validation And Generation
+
+**Timestamp**: 2026-08-31
+**User Input**: "질문지의 답변들을 확정하였습니다. 다음 단계를 진행해 주세요."
+**AI Response**: Validated revised UOW-011 answers, accepted Q1=C, Q2=B, Q3=A, Q4=A, Q5=A with no remaining conflicts, applied only the Q1/Q2 code deltas, generated UOW-011 Functional Design artifacts, and moved UOW-011 to Functional Design review required.
+**Approval Prompt**: Review `aidlc-docs/construction/uow-011-scrapling-runtime-refactor/functional-design/` and approve proceeding to UOW-011 NFR Requirements.
+**Context**: UOW-011 Functional Design Part 2 artifact generation after answer correction.
+
+---
+
+## UOW-011 Functional Design Approval And NFR Requirements Plan
+
+**Timestamp**: 2026-08-31
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: Recorded UOW-011 Functional Design approval, created the UOW-011 NFR Requirements questionnaire, and moved the project state to UOW-011 NFR Requirements Questions.
+**Approval Recorded**: UOW-011 Functional Design approved.
+**Next Gate**: User completes `aidlc-docs/construction/plans/uow-011-scrapling-runtime-refactor-nfr-requirements-plan.md`.
+**Context**: Construction transition from UOW-011 Functional Design Review to UOW-011 NFR Requirements question collection.
+
+---
+
+## UOW-011 NFR Requirements Answer Validation And Generation
+
+**Timestamp**: 2026-08-31
+**User Input**: "질문지의 답변들을 확정하였습니다. 다음 단계를 진행해 주세요."
+**AI Response**: Validated UOW-011 NFR Requirements answers, confirmed Q1-Q8 were A and Q9 was B with no ambiguity or conflict, generated `nfr-requirements.md` and `tech-stack-decisions.md`, and moved UOW-011 NFR Requirements to review required.
+**Approval Prompt**: Review `aidlc-docs/construction/uow-011-scrapling-runtime-refactor/nfr-requirements/` and approve proceeding to UOW-011 NFR Design.
+**Context**: UOW-011 NFR Requirements Part 2 artifact generation; Q2 creates a later Code Generation delta for serialized browser fallback, and Q9 schedules Spider PoC/planning as a future separate UOW after UOW-011.
+
+---
+
+## UOW-011 NFR Requirements Approval And NFR Design Plan
+
+**Timestamp**: 2026-08-31
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: Recorded UOW-011 NFR Requirements approval, created the UOW-011 NFR Design questionnaire, and moved the project state to UOW-011 NFR Design Questions.
+**Approval Recorded**: UOW-011 NFR Requirements approved.
+**Next Gate**: User completes `aidlc-docs/construction/plans/uow-011-scrapling-runtime-refactor-nfr-design-plan.md`.
+**Context**: Construction transition from UOW-011 NFR Requirements Review to UOW-011 NFR Design question collection.
+
+---
+
+## UOW-011 NFR Design Answer Validation And Generation
+
+**Timestamp**: 2026-08-31
+**User Input**: "질문지의 답변들을 확정하였습니다. 다음 단계를 진행해 주세요."
+**AI Response**: Validated UOW-011 NFR Design answers, confirmed Q1-Q7 were A with no ambiguity or conflict, generated `nfr-design-patterns.md` and `logical-components.md`, and moved UOW-011 NFR Design to review required.
+**Approval Prompt**: Review `aidlc-docs/construction/uow-011-scrapling-runtime-refactor/nfr-design/` and approve proceeding to UOW-011 Infrastructure Design.
+**Context**: UOW-011 NFR Design Part 2 artifact generation; code changes remain deferred to UOW-011 Code Generation.
+
+---
+
+## UOW-011 NFR Design Approval And Infrastructure Design Plan
+
+**Timestamp**: 2026-08-31
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: Recorded UOW-011 NFR Design approval, created the UOW-011 Infrastructure Design questionnaire, and moved the project state to UOW-011 Infrastructure Design Questions.
+**Approval Recorded**: UOW-011 NFR Design approved.
+**Next Gate**: User completes `aidlc-docs/construction/plans/uow-011-scrapling-runtime-refactor-infrastructure-design-plan.md`.
+**Context**: Construction transition from UOW-011 NFR Design Review to UOW-011 Infrastructure Design question collection.
+
+---
+
+## UOW-011 Infrastructure Design Answer Validation And Generation
+
+**Timestamp**: 2026-08-31
+**User Input**: "질문지의 답변들을 확정하였습니다. 다음 단계를 진행해 주세요."
+**AI Response**: Validated UOW-011 Infrastructure Design answers, defaulted blank Q1 to recommended A based on the user's confirmation, confirmed Q2-Q8 were A with no ambiguity or conflict, generated `infrastructure-design.md` and `deployment-architecture.md`, confirmed no shared infrastructure artifact change is required, and moved UOW-011 Infrastructure Design to review required.
+**Approval Prompt**: Review `aidlc-docs/construction/uow-011-scrapling-runtime-refactor/infrastructure-design/` and approve proceeding to UOW-011 Code Generation.
+**Context**: UOW-011 Infrastructure Design Part 2 artifact generation; code changes remain deferred to UOW-011 Code Generation.
+
+---
+
+## UOW-011 Infrastructure Design Approval And Code Generation Plan
+
+**Timestamp**: 2026-08-31
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: Recorded UOW-011 Infrastructure Design approval, created the UOW-011 Code Generation plan, and moved the project state to UOW-011 Code Generation Plan Review.
+**Approval Recorded**: UOW-011 Infrastructure Design approved.
+**Approval Prompt**: Review `aidlc-docs/construction/plans/uow-011-scrapling-runtime-refactor-code-generation-plan.md` and approve executing UOW-011 Code Generation.
+**Context**: Construction transition from UOW-011 Infrastructure Design Review to Code Generation Part 1 planning gate.
+
+---
+
+## UOW-011 Code Generation Plan Approval And Generation
+
+**Timestamp**: 2026-08-31
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: Recorded UOW-011 Code Generation plan approval, added per-`HttpClient` browser fallback serialization with `asyncio.Lock`, added a fake async browser-fetcher concurrency test, generated UOW-011 code documentation, ran focused verification with Python 3.12, and moved UOW-011 Code Generation to review required.
+**Approval Recorded**: UOW-011 Code Generation plan approved.
+**Verification**: `py -3.12 -m pytest tests/test_http_runtime.py tests/test_cli_adapter.py tests/test_container_adapter.py -q` passed with 46 passed and 8 warnings; `py -3.12 -m compileall -q src tests` passed. Initial active `python` was 3.10.20 and failed dependency collection because the project requires Python `>=3.11`.
+**Approval Prompt**: Review generated code and `aidlc-docs/construction/uow-011-scrapling-runtime-refactor/code/`, then approve proceeding to Build and Test.
+**Context**: UOW-011 Code Generation Part 2 implementation and review gate.
+
+---
+
+## UOW-011 Code Generation Approval And Build/Test
+
+**Timestamp**: 2026-08-31
+**User Input**: "승인합니다. 다음 단계를 진행해 주세요."
+**AI Response**: Recorded UOW-011 Code Generation approval, ran full Build and Test verification with Python 3.12, updated the build/test summary, and moved UOW-011 Build and Test to review required.
+**Approval Recorded**: UOW-011 Code Generation approved.
+**Build Status**: PASS
+**Test Status**: PASS
+**Verification**: `py -3.12 -m pytest tests -q --tb=short` passed with 168 passed, 3 skipped, and 31 warnings; `py -3.12 -m compileall -q src tests` passed; `py -3.12 -m pip wheel . --no-deps -w dist` produced `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`, 117644 bytes, SHA256 `AD249BDED2F83E21D840AA593FE3B39CB7AAC3660FD9E695A709D0E803B45FB1`; clean temporary Python 3.12 venv `pip check` passed.
+**Note**: Host Python 3.12 `pip check` reported unrelated global package conflicts, so clean venv `pip check` is the project dependency result.
+**Approval Prompt**: Review `aidlc-docs/construction/build-and-test/build-and-test-summary.md` and approve completing UOW-011.
+**Context**: UOW-011 Build and Test stage.
+
+---
+
+## UOW-011 Build/Test Approval And Completion
+
+**Timestamp**: 2026-08-31
+**User Input**: "승인합니다. UOW-012 Scrapling Spider PoC/planning 시작 전까지 진행해 주세요."
+**AI Response**: Recorded UOW-011 Build and Test approval, marked UOW-011 complete, and stopped before starting UOW-012 Scrapling Spider PoC/planning.
+**Approval Recorded**: UOW-011 Build and Test approved.
+**Next Gate**: UOW-012 Scrapling Spider PoC/planning is not started and requires explicit user instruction.
+**Context**: UOW-011 completion handoff before the optional Spider PoC/planning unit.

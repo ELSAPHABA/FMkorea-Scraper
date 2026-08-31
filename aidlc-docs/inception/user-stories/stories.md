@@ -13,7 +13,7 @@
 - 모든 스토리는 공개 콘텐츠 수집만 다룹니다.
 - CAPTCHA 우회, 자동 로그인, 계정 생성 자동화, 삭제글 복구는 제외합니다.
 - 사용자 제공 cookie 파일은 지원하지 않습니다. 서버가 내려준 임시 cookie는 현재 `HttpClient` 생명주기 안에서만 메모리로 유지하고, raw cookie는 로그, output, checkpoint, report, failure record에 저장하지 않습니다.
-- 런타임 스크래핑은 `httpx`, `asyncio`, BeautifulSoup, 표준 `json` 기반입니다.
+- 런타임 스크래핑은 `httpx`, `asyncio`, Scrapling `Selector`, 표준 `json` 기반이며, 목록/검색/상세 필수 DOM 누락 시에만 일반 Playwright fallback을 사용합니다.
 - Playwright 또는 브라우저 자동화는 조사 도구로만 사용할 수 있으며, 스크래퍼 런타임 의존성으로 포함하지 않습니다.
 - CLI, 라이브러리, 워커 컨테이너, MCP는 같은 core library 함수를 공유합니다.
 - FMKorea 원본 JSON 스키마에는 `is_repost`, `repost` 필드를 저장하지 않습니다.

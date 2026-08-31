@@ -13,7 +13,12 @@ from fmkorea_scraper.collect.models import (
     RangeDecisionKind,
     SearchTraversalState,
 )
-from fmkorea_scraper.collect.parsers import BoardPageParser, IntegratedSearchParser
+from fmkorea_scraper.collect.parsers import (
+    BOARD_PAGE_REQUIRED_SELECTOR,
+    INTEGRATED_SEARCH_REQUIRED_SELECTOR,
+    BoardPageParser,
+    IntegratedSearchParser,
+)
 from fmkorea_scraper.collect.policies import BoardCandidateDeduper, CandidateDeduper, RangeFilterEvaluator
 from fmkorea_scraper.collect.urls import BoardUrlBuilder, DirectPostUrlNormalizer, IntegratedSearchUrlBuilder
 from fmkorea_scraper.core.errors import UnsupportedSourceError, ValidationFailure
@@ -29,7 +34,6 @@ from fmkorea_scraper.models.job import (
     RealtimeAllSource,
     RealtimeKeywordSource,
 )
-
 
 def _response_text(response: Any) -> str:
     if isinstance(response, str):
@@ -250,7 +254,7 @@ class LinkCollectorService:
                 break
             url = build_url(current_page)
             page_model, page_failures = self.board_parser.parse(
-                _response_text(await self.http.get(url)),
+                _response_text(await self.http.get(url, required_selector=BOARD_PAGE_REQUIRED_SELECTOR)),
                 board_id=board_id,
                 request_url=url,
                 page=current_page,
@@ -322,7 +326,7 @@ class LinkCollectorService:
         while current_page <= (page_end or 1000):
             url = self.integrated_urls.build_search_url(keyword, search_target, current_page)
             page_model, boards, page_failures = self.integrated_parser.parse(
-                _response_text(await self.http.get(url)),
+                _response_text(await self.http.get(url, required_selector=INTEGRATED_SEARCH_REQUIRED_SELECTOR)),
                 keyword=keyword,
                 request_url=url,
                 page=current_page,

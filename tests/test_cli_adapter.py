@@ -298,6 +298,7 @@ def test_build_local_runtime_uses_command_runtime_options(monkeypatch, tmp_path:
         "timeout_seconds": 7,
         "user_agent_file": str(user_agent_file),
         "user_agent_rotate_every": 3,
+        "browser_fallback": True,
     }
     config = cli.build_job_config(command, env={})
 
@@ -307,6 +308,43 @@ def test_build_local_runtime_uses_command_runtime_options(monkeypatch, tmp_path:
     assert client.config.timeout.connect_seconds == 7
     assert client.config.user_agent.explicit_file_path == str(user_agent_file)
     assert client.config.user_agent.rotation_interval_requests == 3
+    assert client.config.browser_fallback_enabled is True
+
+
+def test_build_local_runtime_enables_browser_fallback_by_default(monkeypatch, tmp_path: Path) -> None:
+    def fake_create(config, *, job_id, run_id, s3_client=None):
+        store = SimpleNamespace()
+        return SimpleNamespace(output_store=store, failure_store=store, media_store=store, checkpoint_store=store, layout=None)
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(cli.StorageFactory, "create", staticmethod(fake_create))
+    config = cli.build_job_config(
+        {"subcommand": "run", "source": "direct-post", "job_id": "job-1", "urls": ["https://www.fmkorea.com/best/101"]},
+        env={},
+    )
+
+    client, _runner = cli.build_local_runtime(config, run_id="run-fixed", command={})
+    asyncio.run(client.close())
+
+    assert client.config.browser_fallback_enabled is True
+
+
+def test_no_browser_fallback_option_disables_default() -> None:
+    parser = cli.build_parser()
+    command = cli.normalize_command(
+        parser.parse_args(
+            [
+                "run",
+                "--source",
+                "direct-post",
+                "--url",
+                "https://www.fmkorea.com/best/101",
+                "--no-browser-fallback",
+            ]
+        )
+    )
+
+    assert command["browser_fallback"] is False
 
 
 def test_build_local_runtime_uses_persisted_parser_guardrails(monkeypatch, tmp_path: Path) -> None:

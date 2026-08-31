@@ -76,6 +76,6 @@ Garage is the default S3-compatible object store. SeaweedFS can replace it later
 
 - FMKorea parser logic is site-specific and lives in `search` and `post_detail`.
 - Cross-community sharing is limited to schema concepts, storage contracts, checkpoint contracts, and adapter shape.
-- No runtime Playwright dependency is introduced.
+- Scrapling is the parser runtime; optional `DynamicFetcher`/Playwright is isolated behind list/search/detail required-DOM fallback and is never used for confirmed CAPTCHA/block responses.
 - No CAPTCHA auto-bypass component is introduced.
 - No community plugin framework is introduced in this phase.

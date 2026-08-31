@@ -47,7 +47,8 @@ class FakeHttp:
         self.text = text
         self.urls: list[str] = []
 
-    async def get(self, url: str):
+    async def get(self, url: str, **kwargs):
+        _ = kwargs
         self.urls.append(url)
         return FakeResponse(self.text)
 

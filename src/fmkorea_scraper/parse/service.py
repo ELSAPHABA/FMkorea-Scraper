@@ -5,9 +5,7 @@ from __future__ import annotations
 from typing import Any
 from urllib.parse import parse_qs, urljoin, urlsplit, urlunsplit
 
-from bs4 import BeautifulSoup
-from bs4 import Tag
-
+from fmkorea_scraper.dom import Node, attr, classes, parse_html, text
 from fmkorea_scraper.models.content import FmkVideoBlock, ImageBlock, XBlock, YouTubeBlock
 from fmkorea_scraper.models.comment import Comment
 from fmkorea_scraper.models.enums import CommentMode, ContentBlockType
@@ -53,14 +51,14 @@ class PostDetailService:
         if self.http is None:
             raise TypeError("http client is required for parse()")
         url = self._source_url(candidate_or_request)
-        html = _response_text(await self.http.get(url))
+        html = _response_text(await self.http.get(url, required_selector="#bd_capture"))
         post = self.parse_html(html, candidate_or_request)
         if self.options.comment_mode == CommentMode.NONE or self.options.max_comment_pages is None:
             return post
 
         context = self._context(candidate_or_request)
-        soup = BeautifulSoup(html, "html.parser")
-        comments, warnings = await self._fetch_extra_comments(soup, context, post.comments)
+        page = parse_html(html, url=url)
+        comments, warnings = await self._fetch_extra_comments(page, context, post.comments)
         if not comments and not warnings:
             return post
 
@@ -73,12 +71,12 @@ class PostDetailService:
     def parse_html(self, html: str, candidate_or_request: PostCandidate | PostRequest) -> PostResult:
         context = self._context(candidate_or_request)
         warnings = ParseWarningCollector()
-        soup = BeautifulSoup(html, "html.parser")
+        page = parse_html(html, url=context.source_url)
 
-        metadata = self.metadata_parser.parse(soup, context, warnings)
-        attachments = self.attachment_parser.parse(soup, base_url=context.base_url)
-        content = self.content_parser.parse(soup, attachments, warnings, options=self.options)
-        comments = self._parse_comments(soup, warnings)
+        metadata = self.metadata_parser.parse(page, context, warnings)
+        attachments = self.attachment_parser.parse(page, base_url=context.base_url)
+        content = self.content_parser.parse(page, attachments, warnings, options=self.options)
+        comments = self._parse_comments(page, warnings)
         media = self._media_summary(content.blocks)
         post_metadata = {}
         if len(warnings):
@@ -105,10 +103,10 @@ class PostDetailService:
             metadata=post_metadata,
         )
 
-    def _parse_comments(self, soup: BeautifulSoup, warnings: ParseWarningCollector) -> list[Comment]:
+    def _parse_comments(self, page: Node, warnings: ParseWarningCollector) -> list[Comment]:
         if self.options.comment_mode == CommentMode.NONE:
             return []
-        comments, _ = self.comment_parser.parse(soup, warnings, max_comments=self.options.max_comments)
+        comments, _ = self.comment_parser.parse(page, warnings, max_comments=self.options.max_comments)
         return self._filter_comments(comments)
 
     def _filter_comments(self, comments: list[Comment]) -> list[Comment]:
@@ -186,15 +184,15 @@ class PostDetailService:
 
     async def _fetch_extra_comments(
         self,
-        soup: BeautifulSoup,
+        page: Node,
         context: DetailParseContext,
         existing: list[Comment],
     ) -> tuple[list[Comment], list[dict]]:
         warnings = ParseWarningCollector()
         comments: list[Comment] = []
         order = len(existing)
-        for page, url in enumerate(self._comment_page_urls(soup, context), start=1):
-            if self.options.max_comment_pages is not None and page > self.options.max_comment_pages:
+        for page_number, url in enumerate(self._comment_page_urls(page, context), start=1):
+            if self.options.max_comment_pages is not None and page_number > self.options.max_comment_pages:
                 warnings.add(
                     code="max_comment_pages_exceeded",
                     stage="comments",
@@ -205,31 +203,31 @@ class PostDetailService:
             if remaining is not None and remaining <= 0:
                 warnings.add(code="max_comments_exceeded", stage="comments", reason="comment guardrail exceeded", order=order)
                 break
-            page_soup = BeautifulSoup(_response_text(await self.http.get(url)), "html.parser")
-            parsed, order = self.comment_parser.parse(page_soup, warnings, start_order=order, max_comments=remaining)
+            comment_page = parse_html(_response_text(await self.http.get(url)), url=url)
+            parsed, order = self.comment_parser.parse(comment_page, warnings, start_order=order, max_comments=remaining)
             comments.extend(parsed)
         return comments, warnings.to_metadata()
 
-    def _comment_page_urls(self, soup: BeautifulSoup, context: DetailParseContext) -> list[str]:
+    def _comment_page_urls(self, page: Node, context: DetailParseContext) -> list[str]:
         urls: list[str] = []
         seen: set[str] = set()
         current = self._without_fragment(context.source_url)
-        for link in soup.select(".fdb_nav.comment_page a[href], .comment_page a[href], .comment-page a[href]"):
+        for link in page.css(".fdb_nav.comment_page a[href], .comment_page a[href], .comment-page a[href]"):
             if not self._is_comment_page_link(link):
                 continue
-            url = self._without_fragment(urljoin(context.source_url, str(link.get("href"))))
+            url = self._without_fragment(urljoin(context.source_url, attr(link, "href") or ""))
             if url == current or url in seen or not self._same_document_url(url, context):
                 continue
             seen.add(url)
             urls.append(url)
         return urls
 
-    def _is_comment_page_link(self, link: Tag) -> bool:
-        href = str(link.get("href") or "")
+    def _is_comment_page_link(self, link: Node) -> bool:
+        href = attr(link, "href") or ""
         if href.startswith("#"):
             return False
-        text = " ".join([href, " ".join(link.get("class") or []), link.get_text(" ", strip=True)]).lower()
-        return any(marker in text for marker in ("cpage", "comment_page", "commentpage"))
+        value = " ".join([href, " ".join(classes(link)), text(link)]).lower()
+        return any(marker in value for marker in ("cpage", "comment_page", "commentpage"))
 
     def _same_document_url(self, url: str, context: DetailParseContext) -> bool:
         expected = context.document_id_hint

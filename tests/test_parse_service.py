@@ -4,9 +4,8 @@ import asyncio
 from pathlib import Path
 
 import pytest
-from bs4 import BeautifulSoup
-
 from fmkorea_scraper.core.errors import ParseFailureError
+from fmkorea_scraper.dom import parse_html
 from fmkorea_scraper.models.content import FmkVideoBlock, ImageBlock, XBlock, YouTubeBlock
 from fmkorea_scraper.models.enums import CommentMode
 from fmkorea_scraper.models.job import PostCandidate
@@ -22,7 +21,8 @@ class FakeHttp:
         self.html = html
         self.requested: list[str] = []
 
-    async def get(self, url: str):
+    async def get(self, url: str, **kwargs):
+        _ = kwargs
         self.requested.append(url)
         if isinstance(self.html, dict):
             return self.html[url]
@@ -133,7 +133,7 @@ def test_comment_imagecon_content_uses_image_alt_not_buy_icon() -> None:
     </ul>
     """
 
-    comments, _ = CommentParser().parse(BeautifulSoup(html, "html.parser"), ParseWarningCollector())
+    comments, _ = CommentParser().parse(parse_html(html), ParseWarningCollector())
 
     assert comments[0].content == "페페 주식 세트(한잔해)"
 

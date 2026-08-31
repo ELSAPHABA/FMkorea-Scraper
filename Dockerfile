@@ -7,6 +7,7 @@ COPY pyproject.toml README.md docker-entrypoint.sh ./
 COPY src ./src
 
 RUN chmod +x /app/docker-entrypoint.sh \
-    && pip install --no-cache-dir ".[s3,postgres]"
+    && pip install --no-cache-dir ".[s3,postgres,browser]" \
+    && scrapling install
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

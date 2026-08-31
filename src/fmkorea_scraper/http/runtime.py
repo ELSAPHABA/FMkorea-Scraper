@@ -16,12 +16,14 @@ from dotenv import dotenv_values
 
 from fmkorea_scraper.core.errors import (
     BlockedResponseError,
+    BrowserFallbackError,
     CaptchaDetectedError,
     NetworkFailureError,
     ScraperError,
     UnavailableContentError,
 )
 from fmkorea_scraper.core.ports import LoggerPort
+from fmkorea_scraper.dom import parse_html
 
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -32,6 +34,7 @@ BODY_SAMPLE_BYTES = 4096
 
 Clock = Callable[[], float]
 Sleeper = Callable[[float], Awaitable[None]]
+BrowserFetcher = Callable[..., Awaitable[Any]]
 
 
 @dataclass(frozen=True)
@@ -143,6 +146,17 @@ class ProxyConfig:
             netloc += f":{parts.port}"
         return urlunsplit((parts.scheme or "http", netloc, "", "", ""))
 
+    def to_browser_proxy(self) -> str | dict[str, str] | None:
+        if not self.enabled or not self.host:
+            return None
+        server = _ensure_scheme(self.host)
+        if not self.username:
+            return server
+        proxy = {"server": server, "username": self.username}
+        if self.password is not None:
+            proxy["password"] = self.password
+        return proxy
+
 
 @dataclass(frozen=True)
 class HttpRuntimeConfig:
@@ -154,6 +168,7 @@ class HttpRuntimeConfig:
     proxy_env_path: str | Path | None = None
     execution_dir: str | Path | None = None
     default_headers: Mapping[str, str] = field(default_factory=dict)
+    browser_fallback_enabled: bool = False
 
     def __post_init__(self) -> None:
         if self.request_interval_seconds < 0:
@@ -417,6 +432,7 @@ class HttpClient:
         *,
         logger: LoggerPort | None = None,
         transport: httpx.AsyncBaseTransport | None = None,
+        browser_fetcher: BrowserFetcher | None = None,
         clock: Clock = time.monotonic,
         sleeper: Sleeper = asyncio.sleep,
     ) -> None:
@@ -432,6 +448,8 @@ class HttpClient:
         self.backoff = BackoffCalculator(self.config.retry_policy)
         self.classifier = ResponseClassifier(self.config.retry_policy.retry_status_codes)
         self._sleeper = sleeper
+        self._browser_fetcher = browser_fetcher
+        self._browser_fallback_lock = asyncio.Lock()
         self._client = httpx.AsyncClient(
             timeout=self.config.timeout.to_httpx_timeout(),
             proxy=self.proxy.to_httpx_proxy(),
@@ -457,8 +475,16 @@ class HttpClient:
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
         referer: str | None = None,
+        required_selector: str | None = None,
     ) -> HttpResponse:
-        return await self.request("GET", url, headers=headers, params=params, referer=referer)
+        response = await self.request("GET", url, headers=headers, params=params, referer=referer)
+        if (
+            self.config.browser_fallback_enabled
+            and required_selector
+            and parse_html(response.text, url=response.url).css(required_selector).first is None
+        ):
+            return await self._render_with_browser(url, required_selector=required_selector, headers=headers)
+        return response
 
     async def post(
         self,
@@ -552,6 +578,96 @@ class HttpClient:
 
     async def close(self) -> None:
         await self._client.aclose()
+
+    async def _render_with_browser(
+        self,
+        url: str,
+        *,
+        required_selector: str,
+        headers: dict[str, str] | None,
+    ) -> HttpResponse:
+        async with self._browser_fallback_lock:
+            await self.limiter.wait()
+            self._log("info", "browser_fallback_start", url=url, required_selector=required_selector)
+            try:
+                if self._browser_fetcher is not None:
+                    rendered = await self._browser_fetcher(url, required_selector=required_selector, headers=headers)
+                else:
+                    rendered = await self._dynamic_browser_fetch(
+                        url,
+                        required_selector=required_selector,
+                        headers=headers,
+                    )
+                response = rendered if isinstance(rendered, HttpResponse) else self._from_scrapling_response(rendered)
+            except asyncio.CancelledError:
+                await self.close()
+                raise
+            except Exception as exc:
+                await self.close()
+                if isinstance(exc, ScraperError):
+                    raise
+                raise BrowserFallbackError(
+                    "browser fallback failed",
+                    details={"reason": exc.__class__.__name__, "stage": "browser_fallback"},
+                ) from exc
+
+            classification = self.classifier.classify_response(
+                status_code=response.status_code,
+                final_url=response.url,
+                headers=response.headers,
+                body_sample=response.text[:BODY_SAMPLE_BYTES],
+            )
+            if classification.kind != ClassificationKind.SUCCESS:
+                await self.close()
+                raise self._classified_exception(classification, response.status_code)
+            if parse_html(response.text, url=response.url).css(required_selector).first is None:
+                await self.close()
+                raise BrowserFallbackError(
+                    "browser fallback did not produce required content",
+                    details={"reason": "required_selector_missing", "stage": "browser_fallback"},
+                )
+            self._log("info", "browser_fallback_end", url=response.url, status_code=response.status_code)
+            return response
+
+    async def _dynamic_browser_fetch(
+        self,
+        url: str,
+        *,
+        required_selector: str,
+        headers: dict[str, str] | None,
+    ) -> Any:
+        try:
+            from scrapling.fetchers import DynamicFetcher
+        except ImportError as exc:
+            raise BrowserFallbackError(
+                "browser fallback dependencies are not installed",
+                details={"reason": "browser_dependency_missing", "stage": "browser_fallback"},
+            ) from exc
+        kwargs: dict[str, Any] = {
+            "headless": True,
+            "google_search": False,
+            "load_dom": True,
+            "wait_selector": required_selector,
+            "timeout": int(self.config.timeout.read_seconds * 1000),
+        }
+        if headers:
+            kwargs["extra_headers"] = headers
+        if proxy := self.proxy.to_browser_proxy():
+            kwargs["proxy"] = proxy
+        return await DynamicFetcher.async_fetch(url, **kwargs)
+
+    @staticmethod
+    def _from_scrapling_response(response: Any) -> HttpResponse:
+        body = bytes(getattr(response, "body", b""))
+        html = str(getattr(response, "html_content", ""))
+        return HttpResponse(
+            status_code=int(getattr(response, "status", 0)),
+            url=str(getattr(response, "url", "")),
+            headers=dict(getattr(response, "headers", {}) or {}),
+            text=html,
+            content=body or html.encode("utf-8"),
+            elapsed_seconds=0.0,
+        )
 
     async def _retry_sleep(self, failed_attempt: int, *, url: str, reason: str) -> None:
         delay = self.backoff.delay_for_attempt(failed_attempt)

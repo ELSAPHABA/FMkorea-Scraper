@@ -142,6 +142,8 @@ def _add_runtime_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--proxy-host")
     parser.add_argument("--proxy-id")
     parser.add_argument("--proxy-pw")
+    parser.add_argument("--browser-fallback", dest="browser_fallback", action="store_true", default=None)
+    parser.add_argument("--no-browser-fallback", dest="browser_fallback", action="store_false")
 
 
 def normalize_command(value: argparse.Namespace | Mapping[str, Any]) -> dict[str, Any]:
@@ -348,6 +350,7 @@ def build_local_runtime(config: JobConfig, *, run_id: str, command: Mapping[str,
         proxy=proxy,
         proxy_env_path=execution_dir / ".env",
         execution_dir=execution_dir,
+        browser_fallback_enabled=bool(command.get("browser_fallback", True)),
     )
     client = HttpClient(http_config)
     bundle = StorageFactory.create(config.storage_config, job_id=config.job_id, run_id=run_id)

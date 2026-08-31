@@ -102,3 +102,26 @@
 - `aidlc-docs/construction/build-and-test/performance-test-instructions.md`
 - `aidlc-docs/construction/build-and-test/security-test-instructions.md`
 - `aidlc-docs/construction/build-and-test/build-and-test-summary.md`
+## 2026-08-31 Scrapling Refactor Verification
+
+- Default suite: `167 passed, 3 skipped`
+- Compile check: `python -m compileall -q src tests` passed
+- Wheel: `fmkorea_scraper-0.1.0-py3-none-any.whl`, 117608 bytes, SHA256 `e4db32935311eff2b8f552e9445f279aa85a2c05771611e66ebd7cfa110a504f`
+- Dependency check: `python -m pip check` passed
+- Browser check: Scrapling `DynamicFetcher` loaded the local detail fixture through Chromium and returned HTTP 200 with `#bd_capture`
+- Docker build: `docker build -t fmkorea-scraper:scrapling-refactor .` passed, image `sha256:a02e0fea73f597315dc609453705c810bafcf27e7eed479a232f6ca08f0db7b8`
+- Docker runtime checks: container console-script help passed, container `pip check` passed, and container fallback-default check returned `True`
+
+## 2026-08-31 UOW-011 Build And Test
+
+- Python Used: Python 3.12.10 via `py -3.12`
+- Full Default Tests: `py -3.12 -m pytest tests -q --tb=short` -> `168 passed, 3 skipped, 31 warnings in 31.26s`
+- Compile Check: `py -3.12 -m compileall -q src tests` passed
+- Wheel Build: `py -3.12 -m pip wheel . --no-deps -w dist` passed
+- Wheel Artifact: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
+- Wheel Size: 117644 bytes
+- Wheel SHA256: `AD249BDED2F83E21D840AA593FE3B39CB7AAC3660FD9E695A709D0E803B45FB1`
+- Clean Venv Dependency Check: temporary Python 3.12 venv `pip check` -> `No broken requirements found.`
+- Host Dependency Check Note: host Python 3.12 `pip check` reported unrelated global package conflicts and one host `lxml` mismatch; clean venv check is the project result.
+- Docker/Live Smoke: not rerun in this UOW-011 gate because the code change did not alter Docker packaging or live scraping behavior. Previous Scrapling refactor Docker/Chromium smoke remains recorded above.
+- Overall Status: PASS

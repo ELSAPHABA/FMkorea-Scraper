@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
-from fmkorea_scraper.core.errors import CaptchaDetectedError
+from fmkorea_scraper.core.errors import BrowserFallbackError, CaptchaDetectedError
 from fmkorea_scraper.models.comment import AuthorInfo
 from fmkorea_scraper.models.enums import ContentBlockType, JobReportStatus, JobType, MediaMode, StopReason
 from fmkorea_scraper.models.job import JobConfig, PostCandidate, ScrapeOptions, WorkerConfig
@@ -46,6 +46,11 @@ class CaptchaDetailService:
         raise CaptchaDetectedError("captcha", details={"stage": "post"})
 
 
+class BrowserFallbackFailureDetailService:
+    async def parse(self, item: PostCandidate) -> PostResult:
+        raise BrowserFallbackError("browser fallback failed", details={"stage": "browser_fallback"})
+
+
 class MediaDetailService:
     async def parse(self, item: PostCandidate) -> PostResult:
         return media_post(item.document_id_raw)
@@ -85,6 +90,26 @@ def test_captcha_failure_stops_job_and_saves_stopped_checkpoint() -> None:
     assert output.posts == []
     assert failure.failures[0].stage == "post"
     assert checkpoints.saved[-1].reason == StopReason.CAPTCHA
+
+
+def test_browser_fallback_failure_stops_job_and_saves_terminal_checkpoint() -> None:
+    output = FakeOutputStore()
+    failure = FakeFailureStore()
+    checkpoints = FakeCheckpointStore()
+    deps = JobRunDependencies(
+        collector=FakeCollector([candidate("101")]),
+        detail_service=BrowserFallbackFailureDetailService(),
+        output_store=output,
+        failure_store=failure,
+        media_store=FakeMediaStore(),
+        checkpoint_store=checkpoints,
+    )
+
+    result = run(JobRunner(deps).run(JobConfig(job_id="job-1", job_type=JobType.BOARD_LIST, source={"type": "board_list", "board_id": "best"})))
+
+    assert result.status == JobReportStatus.FAILED
+    assert result.reason == StopReason.ERROR
+    assert checkpoints.saved[-1].reason == StopReason.ERROR
 
 
 def test_media_downloads_are_limited_by_media_worker_count() -> None:

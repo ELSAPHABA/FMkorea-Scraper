@@ -78,11 +78,12 @@ GUI 또는 Web UI는 1차 구현 범위가 아닙니다.
 스크래퍼는 다음을 사용해야 합니다.
 
 - 비동기 HTTP 요청과 멀티 워커 수집을 위한 `httpx`와 `asyncio`
-- HTML 파싱을 위한 BeautifulSoup
+- HTML 파싱을 위한 Scrapling `Selector`
+- 정상 HTTP 응답에서 목록/검색/상세 필수 DOM이 누락될 때만 사용하는 일반 Playwright 기반 `DynamicFetcher`
 - JSON/JSONL 저장을 위한 표준 `json`
 - JSONL 가공 및 검증을 위한 Polars
 
-스크래퍼 런타임은 Playwright에 의존하면 안 됩니다.
+정상 HTTP 응답에 필수 DOM이 존재하면 Playwright를 실행하면 안 됩니다. 브라우저 fallback은 CLI/Docker에서 기본 활성화하되 비활성화 옵션을 제공하고, CAPTCHA/430/명백한 차단 응답에는 실행하지 않아야 합니다.
 
 ### FR-006. 게시글 후보 수집
 
@@ -668,8 +669,54 @@ FMKorea 원본 JSONL 필수 top-level 필드에는 `is_repost`, `repost`를 포�
 - 삭제글 복구
 - 1차 구현에서 GUI/Web UI
 - 1차 구현에서 중앙 Job Queue/통합 운영 UI 구현
-- Playwright 의존 스크래퍼 런타임
+- 기본 HTTP 요청마다 실행되는 Playwright 런타임
+- Scrapling `StealthyFetcher` 또는 CAPTCHA/차단 자동 우회
+- 현재 리팩토링 범위에서 Scrapling Spider 기반 실행 엔진 교체
 - FMKorea 원본 JSON 스키마의 `is_repost`, `repost` 필드
+
+## 사후 리팩토링 요구사항
+
+### FR-034. Scrapling 기반 파서 런타임
+
+스크래퍼는 목록, 검색, 상세, 댓글, 본문, 미디어 파싱에 Scrapling `Selector` 기반 DOM 접근을 사용해야 합니다.
+
+수용 기준:
+
+- BeautifulSoup은 신규 파서 런타임으로 사용하지 않습니다.
+- 파서는 네트워크와 저장소 I/O를 직접 수행하지 않습니다.
+- 본문 콘텐츠 블록은 DOM 순서를 보존해야 합니다.
+
+### FR-035. 선택적 브라우저 렌더링 fallback
+
+스크래퍼는 기본적으로 `httpx` 요청과 Scrapling 정적 파싱을 먼저 사용해야 하며, CLI/Docker 실행에서는 일반 Playwright 기반 Scrapling `DynamicFetcher` fallback을 기본 활성화해야 합니다.
+
+수용 기준:
+
+- HTTP 응답이 성공으로 분류됐지만 목록/검색/상세 필수 DOM이 누락된 경우에만 fallback을 실행합니다.
+- CLI는 `--no-browser-fallback`, Docker는 `FMKOREA_BROWSER_FALLBACK=false`로 fallback을 비활성화할 수 있어야 합니다.
+- CAPTCHA, HTTP 430, 명확한 차단 응답에는 fallback을 실행하지 않습니다.
+- fallback 실패 또는 fallback 후 필수 DOM 누락은 terminal checkpoint 저장 후 Job 실패로 처리합니다.
+
+### FR-036. 외부 Job Queue 오케스트레이션 경계
+
+통합 플랫폼을 대비한 RabbitMQ 같은 Job Queue 소비는 스크래퍼 내부가 아니라 외부 오케스트레이터 책임으로 둡니다.
+
+수용 기준:
+
+- 메시지 단위는 게시글 링크가 아니라 `JobConfig`입니다.
+- 스크래퍼는 RabbitMQ consumer, broker, DLQ, lease, scheduler를 구현하지 않습니다.
+- 외부 오케스트레이터가 큐를 소비하고 `JobConfig`를 환경 변수 또는 실행 인자로 변환해 one-shot worker 컨테이너를 실행합니다.
+- 실제 Job 내부의 게시글 링크 큐는 기존 프로세스 내부 큐를 사용합니다.
+
+### FR-037. Scrapling Spider 향후 검토
+
+Scrapling Spider 기반 실행 엔진 전환은 향후 별도 AI-DLC 단위로 검토합니다.
+
+수용 기준:
+
+- 현재 리팩토링에서는 Spider를 사용하지 않습니다.
+- Spider 전환은 `JobRunner`, checkpoint, retry, report, worker queue를 함께 재설계하는 별도 작업으로 취급합니다.
+- Spider 도입 여부는 실제 크롤링 엔진 표준화 필요가 생겼을 때 결정합니다.
 
 ## 추적성
 

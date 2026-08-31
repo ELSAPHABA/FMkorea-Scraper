@@ -12,10 +12,10 @@ FIXTURES = Path(__file__).parent / "fixtures" / "collect"
 class FakeHttp:
     def __init__(self, responses: dict[str, str]) -> None:
         self.responses = responses
-        self.requested: list[str] = []
+        self.requested: list[tuple[str, str | None]] = []
 
-    async def get(self, url: str):
-        self.requested.append(url)
+    async def get(self, url: str, **kwargs):
+        self.requested.append((url, kwargs.get("required_selector")))
         return self.responses[url]
 
 
@@ -29,7 +29,8 @@ def text(name: str) -> str:
 
 def test_board_list_collector_uses_injected_http_and_returns_summary() -> None:
     url = "https://www.fmkorea.com/best?page=1"
-    service = LinkCollectorService(FakeHttp({url: text("board_list.html")}))
+    http = FakeHttp({url: text("board_list.html")})
+    service = LinkCollectorService(http)
 
     result = run(service.collect_with_summary(BoardListSource(board_id="best", page_end=1)))
 
@@ -37,11 +38,13 @@ def test_board_list_collector_uses_injected_http_and_returns_summary() -> None:
     assert result.summary.visited_pages == 1
     assert result.summary.final_state is not None
     assert result.summary.final_state.stop_reason == "page_end"
+    assert http.requested == [(url, "div.bd")]
 
 
 def test_integrated_collector_extracts_candidates() -> None:
     url = "https://www.fmkorea.com/search.php?act=IS&is_keyword=%EA%B2%80%EC%83%89&where=document&search_target=title_content&page=1"
-    service = LinkCollectorService(FakeHttp({url: text("integrated_search.html")}))
+    http = FakeHttp({url: text("integrated_search.html")})
+    service = LinkCollectorService(http)
 
     result = run(
         service.collect_with_summary(
@@ -51,6 +54,7 @@ def test_integrated_collector_extracts_candidates() -> None:
 
     assert [candidate.board_id for candidate in result.candidates] == ["football_world", "lol"]
     assert result.summary.board_candidate_count == 2
+    assert http.requested == [(url, ".searchResult, .search_result")]
 
 
 def test_deep_search_uses_seed_boards_then_board_search() -> None:

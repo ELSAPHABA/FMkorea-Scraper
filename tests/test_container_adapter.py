@@ -117,8 +117,15 @@ def test_container_env_config_maps_storage_and_redacts_secrets() -> None:
     assert storage.s3 is not None
     assert storage.s3.prefix == "fmkorea"
     assert storage.postgres is not None
+    assert config.browser_fallback_enabled is True
     assert "secret" not in repr(config)
     assert "postgresql://user:pass" not in repr(config)
+
+
+def test_container_env_can_disable_default_browser_fallback() -> None:
+    config = ContainerEnvConfig.from_env({**container_env(), "FMKOREA_BROWSER_FALLBACK": "false"})
+
+    assert config.browser_fallback_enabled is False
 
 
 def test_container_missing_env_returns_validation_exit() -> None:

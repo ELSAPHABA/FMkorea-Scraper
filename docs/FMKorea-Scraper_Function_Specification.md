@@ -7,8 +7,8 @@
   - 에펨코리아 게시판/검색/게시글/댓글을 수집해 게시글 단위 JSONL로 저장
   - 게시판 검색, 통합 검색, 심층검색, 실시간 수집, 실패 재처리 기능 제공
   - 향후 통합 커뮤니티 스크래핑 시스템에서 개별 커뮤니티 워커로 재사용
-- **기술 스택**: `beautifulsoup`, `httpx`, `user-agents`, `json`, `polars`
-  - **스크래핑**: BeautifulSoup + httpx 기반 비동기 요청
+- **기술 스택**: `scrapling`, `httpx`, `playwright`(선택적 fallback), `user-agents`, `json`, `polars`
+  - **스크래핑**: Scrapling `Selector` + httpx 기반 비동기 요청, 목록/검색/상세 필수 DOM 누락 시 일반 Playwright 렌더링 fallback
   - **데이터 저장**: 로컬 JSONL/미디어 파일, 컨테이너 환경의 S3 호환 객체 저장소, PostgreSQL 체크포인트
   - **운영 보조**: `.env` Proxy, `user-agents.txt`, 요청 속도 제어, parser-stage 실패 재처리
 
@@ -22,7 +22,7 @@
   - CLI/Docker/MCP는 같은 core service를 호출하고, 입출력 어댑터만 분리
 - 워커 컨테이너
   - 향후 통합 커뮤니티 스크래핑 시스템에서 에펨코리아 전용 수집 워커로 실행
-  - 외부 Job Queue로부터 수집 요청을 받아 처리
+  - 외부 오케스트레이터가 RabbitMQ 같은 Job Queue를 소비한 뒤 `JobConfig`를 환경 변수 또는 실행 인자로 전달해 one-shot worker 컨테이너 실행
   - JSONL/미디어는 S3 호환 저장소에 저장하고 체크포인트는 PostgreSQL에 저장
 - MCP 도구
   - 외부 에이전트/자동화 시스템이 에펨코리아 검색, 게시글 수집, 댓글 수집 기능을 호출할 수 있도록 제공
@@ -259,7 +259,7 @@
   - 2순위: `#bd_capture .rd_body .xe_content`
   - 전역 `.xe_content`는 광고/목록 영역에도 다수 존재할 수 있으므로 단독 기준으로 사용하지 않는다.
 - 파싱 원칙
-  - BeautifulSoup으로 기준 컨테이너의 하위 노드를 DOM 순서대로 순회하여 `content.blocks` 배열에 저장한다.
+  - Scrapling `Selector`로 기준 컨테이너의 하위 노드를 DOM 순서대로 순회하여 `content.blocks` 배열에 저장한다.
   - 빈 `<p>`, 빈 `<div>`, `<br>`만 있는 노드는 저장하지 않는다.
   - `<!-- __LAZY__ -->`, `BeforeDocument`, `AfterDocument`, 플레이어 UI 텍스트, 첨부파일 표 텍스트는 본문 텍스트로 저장하지 않는다.
   - 각 블록은 공통으로 `order`, `type` 값을 가진다.
@@ -281,7 +281,7 @@
     - `download`
 - `type="fmk_video"`
   - 펨코 자체 업로드 동영상 후보: `.auto_media_wrapper`, `video.mediaelement_video`, `video > source[type="video/mp4"]`
-  - 정적 HTML에 `source src`, `poster`, schema.org `meta itemprop` 값이 포함되므로 BeautifulSoup만으로 수집 가능하다.
+  - 정적 HTML에 `source src`, `poster`, schema.org `meta itemprop` 값이 포함되므로 기본 Scrapling 파서만으로 수집 가능하다.
   - 저장 필드
     - `video_url`: `source[src]` 또는 `meta[itemprop="contentURL"]`
     - `poster_url`: `video[poster]` 또는 `meta[itemprop="thumbnailUrl"]`
@@ -298,7 +298,7 @@
     - 본문 텍스트/링크의 `youtube.com/watch`, `youtu.be/<video_id>`
   - 렌더링 후 후보
     - `iframe[src*="youtube.com/embed"]`
-  - BeautifulSoup 기본 구현은 정적 HTML의 YouTube URL을 파싱해 `embed_url`을 직접 생성한다.
+  - Scrapling 기본 구현은 정적 HTML의 YouTube URL을 파싱해 `embed_url`을 직접 생성한다.
   - 저장 필드
     - `provider="youtube"`
     - `video_id`
@@ -312,7 +312,7 @@
     - `https://twitter.com/<user>/status/<tweet_id>`
   - 렌더링 후 후보
     - `iframe[src*="platform.twitter.com/embed/Tweet.html"]`
-  - BeautifulSoup 기본 구현은 정적 HTML에 남아 있는 X URL을 우선 수집한다.
+  - Scrapling 기본 구현은 정적 HTML에 남아 있는 X URL을 우선 수집한다.
   - 렌더링된 iframe을 참고할 수 있는 환경에서는 `embed_url`도 저장한다.
   - 저장 필드
     - `provider="x"`
@@ -588,6 +588,7 @@
   - `JobConfig`는 수집 대상, 수집 옵션, 워커 옵션, 저장소 옵션만 저장한다.
   - `ScrapeOptions`에는 댓글/미디어 모드, 첨부파일 포함 여부, 요청 간격, 게시글 재시도 횟수, 파서 제한값(`max_comment_pages`, `max_comments`, `max_content_blocks`)을 저장한다.
   - User-Agent 파일 경로, User-Agent 교체 주기, Proxy, timeout 같은 HTTP 실행값은 `JobConfig`에 저장하지 않는다.
+  - 일반 Playwright fallback 활성화 여부도 실행 환경 값이며 `JobConfig`에 저장하지 않는다.
   - 위 HTTP 실행값은 CLI, 터미널 마법사, 컨테이너, MCP, 라이브러리 adapter가 실행 시점에 `HttpRuntimeConfig`로 조립한다.
   - 과거 체크포인트에 `job_config.runtime_config`가 남아 있으면 로드 시 해당 legacy 필드만 버리고 재개한다.
 
@@ -596,6 +597,16 @@
   - CAPTCHA 또는 명백한 차단 페이지를 감지하면 자동 우회를 시도하지 않는다.
   - 현재 작업을 중단하고 체크포인트와 중단 사유를 저장한다.
   - 체크포인트 저장 후 터미널과 로그에 저장된 `job_id`를 출력한다.
+- Scrapling 및 브라우저 렌더링 fallback
+  - 목록, 검색, 상세 HTML은 Scrapling `Selector`로 파싱한다.
+  - 기본 요청 경로는 `httpx.AsyncClient`이며 브라우저를 실행하지 않는다.
+  - CLI/Docker 실행에서는 기본 활성화한다.
+  - CLI에서는 `--no-browser-fallback`, 컨테이너에서는 `FMKOREA_BROWSER_FALLBACK=false`로 비활성화할 수 있다.
+  - HTTP 응답이 성공으로 분류됐지만 목록/검색/상세 필수 DOM이 없을 때만 일반 Playwright 기반 Scrapling `DynamicFetcher`를 한 번 사용한다.
+  - 목록/게시판 검색 필수 DOM은 `div.bd`, 통합 검색 필수 DOM은 `.searchResult, .search_result`, 게시글 상세 필수 DOM은 `#bd_capture`를 기준으로 한다.
+  - CAPTCHA, HTTP 430, 보안 시스템 문구, 명백한 차단 응답에는 브라우저 fallback을 실행하지 않고 즉시 체크포인트를 저장한 뒤 중단한다.
+  - 브라우저 응답에서도 필수 DOM이 없거나 브라우저 실행이 실패하면 `browser_fallback_failed`로 기록하고 terminal checkpoint를 저장한 뒤 Job을 종료한다.
+  - Scrapling `StealthyFetcher`와 CAPTCHA/차단 자동 우회 기능은 사용하지 않는다.
 - User-Agent Mixer
   - 차단 완화를 위해 요청 시 사용할 User-Agent를 주기적으로 교체한다.
   - User-Agent 목록 파일명은 `user-agents.txt`로 통일한다.
@@ -666,8 +677,9 @@
 - Proxy를 통한 httpx 요청 전송
 - `.env` 파일 기반 Proxy 환경변수 로드
 - 서버가 내려준 임시 cookie는 `HttpClient` 생명주기 안에서만 메모리로 유지하고, User-Agent 교체 또는 client 종료 시 reset
-- BeautifulSoup 기반 HTML 파싱
+- Scrapling `Selector` 기반 HTML 파싱
 - httpx 기반 동기/비동기 HTTP 요청
+- 정상 HTTP 응답의 목록/검색/상세 필수 DOM 누락 시에만 Scrapling `DynamicFetcher`의 일반 Playwright 렌더링을 사용
 - asyncio 기반 링크 수집 워커 + 게시글 수집 워커 분리
 - json 기반 JSONL 저장
 - Polars 기반 JSONL 가공 및 분석
@@ -759,11 +771,26 @@ FMKorea-Scraper/
 - 단일 스크래퍼의 AWS 배포는 `infra/cdk`의 CDK 구성으로 관리 가능
 - CDK는 VPC, S3 output bucket, RDS PostgreSQL, ECS cluster, Fargate worker task, CloudWatch Logs/EventBridge 기반 실패 감지를 구성
 - CDK는 중앙 Job Queue, 통합 운영 UI, Docker image build, EKS 배포를 포함하지 않음
+- RabbitMQ 같은 Job Queue는 스크래퍼 내부가 아니라 외부 오케스트레이터가 소비
+- Queue 메시지는 게시글 링크 단위가 아니라 Job 단위이며, 외부 오케스트레이터가 `JobConfig`를 worker 컨테이너 환경 변수 또는 실행 인자로 변환
+- Worker 컨테이너는 전달받은 Job 하나를 실행하고 종료하며, Job 내부 링크 큐는 기존 프로세스 내부 `asyncio.Queue`를 사용
+- RabbitMQ broker, consumer, ack/nack, DLQ, lease, 중앙 retry/scheduler는 통합 플랫폼 단계에서 구현
 - 향후 통합 플랫폼에서 마스터 컨테이너 - 워커 컨테이너 구조 기반으로 여러 커뮤니티 스크래퍼를 관리
 - 작업 컨테이너 스케줄링 및 모니터링 기능
 - 작업 상태 시각화 및 알림 기능
 - 작업 실패 시 재시도 및 오류 로그 관리
 - SQS 기반 작업 큐, lease 갱신, lease 만료 시 `reason="lease_expired"` 체크포인트 저장
+
+### 6.4.1. Scrapling Spider 기반 실행 엔진 검토
+- 현재 구현은 Scrapling `Selector`를 파서 런타임으로 사용하지만, Scrapling Spider는 사용하지 않는다.
+- Spider 전환은 단순 파서 교체가 아니라 현재 `JobRunner`, 내부 게시글 큐, checkpoint, failure report, parser-failure retry, CLI/Docker/MCP 실행 경계를 바꾸는 실행 엔진 교체로 본다.
+- 향후 여러 커뮤니티 스크래퍼의 크롤링 엔진을 하나의 Spider 표준으로 통일할 필요가 생길 경우, 별도 AI-DLC 단위에서 다음 항목을 검토한다.
+  - Spider request scheduling과 기존 Job 단위 실행 모델의 매핑
+  - Spider pause/resume과 PostgreSQL checkpoint의 매핑
+  - Spider callback 실패와 `failures.jsonl`/parser retry의 매핑
+  - HTTP 차단 감지 및 선택적 browser fallback 정책의 연결
+  - 기존 CLI/Docker/MCP public contract 유지 여부
+- 현 단계에서는 Spider 리팩토링을 구현하지 않고 향후 계획으로만 기록한다.
 
 ### 6.5. 커뮤니티 통합 스크래퍼
 - 통합 스크래핑 시스템의 에펨코리아용 워커 컨테이너로 스케줄링 및 스케일링

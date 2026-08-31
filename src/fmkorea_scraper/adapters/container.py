@@ -60,6 +60,7 @@ class ContainerEnvConfig:
     proxy_host: str | None = None
     proxy_id: str | None = None
     proxy_pw: str | None = field(default=None, repr=False)
+    browser_fallback_enabled: bool = True
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> "ContainerEnvConfig":
@@ -79,6 +80,7 @@ class ContainerEnvConfig:
             proxy_host=_blank_none(env.get("FMKOREA_PROXY_HOST")),
             proxy_id=_blank_none(env.get("FMKOREA_PROXY_ID")),
             proxy_pw=_blank_none(env.get("FMKOREA_PROXY_PW")),
+            browser_fallback_enabled=_env_bool(env, "FMKOREA_BROWSER_FALLBACK", default=True),
         )
 
     def storage_config(self, *, base_output_path: str | None = None, prefix: str | None = None) -> StorageConfig:
@@ -305,6 +307,7 @@ def _build_http_client(config: JobConfig, env_config: ContainerEnvConfig) -> Htt
             ),
             proxy=proxy,
             execution_dir=os.getcwd(),
+            browser_fallback_enabled=env_config.browser_fallback_enabled,
         )
     )
 

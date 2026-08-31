@@ -9,7 +9,7 @@
 - Greenfield Python project
 - 기준 패키지: `fmkorea_scraper`
 - 1차 실행 방식: CLI, 터미널 마법사, Python library API, worker container, MCP tool
-- 핵심 런타임: `httpx`, `asyncio`, BeautifulSoup, 표준 `json`, Polars
+- 핵심 런타임: `httpx`, `asyncio`, Scrapling `Selector`, 표준 `json`, Polars, 선택적 일반 Playwright fallback
 - 핵심 흐름: Job 설정, 검색/링크 수집, 게시글 상세 수집, 댓글/답글 수집, JSONL 저장, checkpoint 재개, parser-stage 실패 재처리
 - 주요 제약: Playwright 런타임 의존 금지, CAPTCHA 우회 금지, 공개 콘텐츠만 수집
 - 상속 기준: `DCinside-Scraper`의 UOW, storage, checkpoint, CLI/container/MCP/CDK 구조를 최대한 계승하고 FMKorea URL/query/parser만 교체

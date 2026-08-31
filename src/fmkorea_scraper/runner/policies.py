@@ -6,6 +6,7 @@ from typing import Any
 
 from fmkorea_scraper.core.errors import (
     BlockedResponseError,
+    BrowserFallbackError,
     CaptchaDetectedError,
     CheckpointFailureError,
     ParseFailureError,
@@ -68,6 +69,8 @@ def stop_reason_for_exception(exc: BaseException) -> StopReason | None:
         return StopReason.CAPTCHA
     if isinstance(exc, BlockedResponseError):
         return StopReason.BLOCKED
+    if isinstance(exc, BrowserFallbackError):
+        return StopReason.ERROR
     if isinstance(exc, CheckpointFailureError):
         return StopReason.ERROR
     return None

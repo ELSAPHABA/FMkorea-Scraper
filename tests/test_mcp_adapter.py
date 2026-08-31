@@ -40,7 +40,8 @@ class FakeResponse:
 
 
 class FakeHttp:
-    async def get(self, url: str):
+    async def get(self, url: str, **kwargs):
+        _ = url, kwargs
         return FakeResponse('<div class="bd"><table><tbody><tr><td class="title"><a class="hx" href="/best/101">Title</a></td></tr></tbody></table></div>')
 
 

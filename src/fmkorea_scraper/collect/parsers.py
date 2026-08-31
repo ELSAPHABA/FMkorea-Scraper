@@ -1,12 +1,10 @@
-"""BeautifulSoup parsers for list and search result pages."""
+"""Scrapling parsers for list and search result pages."""
 
 from __future__ import annotations
 
 import re
 from datetime import datetime
 from urllib.parse import parse_qs, urljoin, urlsplit
-
-from bs4 import BeautifulSoup, Tag
 
 from fmkorea_scraper.collect.models import BoardCandidate, CollectorFailure
 from fmkorea_scraper.collect.urls import (
@@ -15,6 +13,7 @@ from fmkorea_scraper.collect.urls import (
     extract_document_from_url,
     safe_url_label,
 )
+from fmkorea_scraper.dom import Node, attr, classes, first, parse_html, text
 from fmkorea_scraper.models.job import IntegratedSearchPage, PostCandidate, SearchPage
 
 _DATE_PATTERNS = (
@@ -23,6 +22,8 @@ _DATE_PATTERNS = (
     ("%Y.%m.%d", re.compile(r"\b\d{4}\.\d{1,2}\.\d{1,2}\b")),
     ("%Y-%m-%d", re.compile(r"\b\d{4}-\d{1,2}-\d{1,2}\b")),
 )
+BOARD_PAGE_REQUIRED_SELECTOR = "div.bd"
+INTEGRATED_SEARCH_REQUIRED_SELECTOR = ".searchResult, .search_result"
 
 
 def parse_candidate_date(text: str) -> datetime | None:
@@ -37,21 +38,17 @@ def parse_candidate_date(text: str) -> datetime | None:
     return None
 
 
-def _text(node: Tag) -> str:
-    return " ".join(node.get_text(" ", strip=True).split())
-
-
-def _looks_ignored_row(row: Tag) -> bool:
-    classes = " ".join(row.get("class", []))
-    text = _text(row).lower()
-    return any(marker in classes.lower() for marker in ("notice", "ad", "power")) or any(
-        marker in text for marker in ("공지", "광고")
+def _looks_ignored_row(row: Node) -> bool:
+    class_text = " ".join(classes(row)).lower()
+    row_text = text(row).lower()
+    return any(marker in class_text for marker in ("notice", "ad", "power")) or any(
+        marker in row_text for marker in ("공지", "광고")
     )
 
 
-def _has_next_page(soup: BeautifulSoup, current_page: int) -> bool:
-    for link in soup.select("a[href*='page=']"):
-        query = parse_qs(urlsplit(str(link.get("href", ""))).query)
+def _has_next_page(page_root: Node, current_page: int) -> bool:
+    for link in page_root.css("a[href*='page=']"):
+        query = parse_qs(urlsplit(attr(link, "href") or "").query)
         try:
             page = int(query.get("page", ["0"])[0])
         except ValueError:
@@ -71,15 +68,15 @@ class BoardPageParser:
         request_url: str = FMKOREA_BASE_URL,
         page: int = 1,
     ) -> tuple[SearchPage, list[CollectorFailure]]:
-        soup = BeautifulSoup(html, "html.parser")
+        page_root = parse_html(html, url=request_url)
         candidates: list[PostCandidate] = []
         failures: list[CollectorFailure] = []
-        rows = soup.select("div.bd table tbody tr") or soup.select("tbody tr")
+        rows = page_root.css("div.bd table tbody tr") or page_root.css("tbody tr")
 
         for row in rows:
             if _looks_ignored_row(row):
                 continue
-            link = row.select_one("a.hx[href]") or row.select_one("td.title a[href]") or row.select_one("a[href]")
+            link = first(row, "a.hx[href]") or first(row, "td.title a[href]") or first(row, "a[href]")
             if link is None:
                 continue
             try:
@@ -97,11 +94,11 @@ class BoardPageParser:
                 continue
             candidates.append(candidate)
 
-        has_next = _has_next_page(soup, page)
+        has_next = _has_next_page(page_root, page)
         return SearchPage(board_id=board_id, page=page, candidates=candidates, has_next=has_next), failures
 
-    def _candidate_from_link(self, link: Tag, row: Tag, *, board_id: str | None, base_url: str) -> PostCandidate:
-        href = str(link["href"])
+    def _candidate_from_link(self, link: Node, row: Node, *, board_id: str | None, base_url: str) -> PostCandidate:
+        href = attr(link, "href") or ""
         absolute = urljoin(base_url, href)
         parsed_document = extract_document_from_url(absolute)
         if parsed_document is None:
@@ -110,15 +107,15 @@ class BoardPageParser:
         resolved_board_id = extract_board_id_from_url(absolute) or board_id
         metadata = {
             "source": "board_page",
-            "candidate_text": _text(row)[:1000],
+            "candidate_text": text(row)[:1000],
         }
         return PostCandidate(
             board_id=resolved_board_id,
             document_srl=document_srl,
             document_id_raw=document_id_raw,
             url=absolute,
-            candidate_title=_text(link) or None,
-            candidate_created_at=parse_candidate_date(_text(row)),
+            candidate_title=text(link) or None,
+            candidate_created_at=parse_candidate_date(text(row)),
             metadata=metadata,
         )
 
@@ -133,11 +130,11 @@ class IntegratedSearchParser:
         request_url: str = FMKOREA_BASE_URL,
         page: int = 1,
     ) -> tuple[IntegratedSearchPage, list[BoardCandidate], list[CollectorFailure]]:
-        soup = BeautifulSoup(html, "html.parser")
+        page_root = parse_html(html, url=request_url)
         candidates: list[PostCandidate] = []
         boards: list[BoardCandidate] = []
         failures: list[CollectorFailure] = []
-        items = soup.select(".searchResult li, .search_result li, ul li") or soup.select("article, tr")
+        items = page_root.css(".searchResult li, .search_result li, ul li") or page_root.css("article, tr")
 
         for item in items:
             link = self._document_link(item)
@@ -161,7 +158,7 @@ class IntegratedSearchParser:
                 boards.append(board)
 
         board_ids = [board.board_id for board in boards]
-        has_next = _has_next_page(soup, page)
+        has_next = _has_next_page(page_root, page)
         page_model = IntegratedSearchPage(
             keyword=keyword,
             page=page,
@@ -171,15 +168,15 @@ class IntegratedSearchParser:
         )
         return page_model, boards, failures
 
-    def _document_link(self, item: Tag) -> Tag | None:
-        for link in item.select("a[href]"):
-            href = str(link.get("href", ""))
+    def _document_link(self, item: Node) -> Node | None:
+        for link in item.css("a[href]"):
+            href = attr(link, "href") or ""
             if extract_document_from_url(href):
                 return link
         return None
 
-    def _candidate_from_item(self, link: Tag, item: Tag, *, base_url: str) -> PostCandidate:
-        absolute = urljoin(base_url, str(link["href"]))
+    def _candidate_from_item(self, link: Node, item: Node, *, base_url: str) -> PostCandidate:
+        absolute = urljoin(base_url, attr(link, "href") or "")
         parsed_document = extract_document_from_url(absolute)
         if parsed_document is None:
             raise ValueError("missing document_srl")
@@ -190,21 +187,21 @@ class IntegratedSearchParser:
             document_srl=document_srl,
             document_id_raw=document_id_raw,
             url=absolute,
-            candidate_title=_text(link) or None,
-            candidate_created_at=parse_candidate_date(_text(item)),
-            metadata={"source": "integrated_search", "candidate_text": _text(item)[:1000]},
+            candidate_title=text(link) or None,
+            candidate_created_at=parse_candidate_date(text(item)),
+            metadata={"source": "integrated_search", "candidate_text": text(item)[:1000]},
         )
 
-    def _board_candidate(self, item: Tag, fallback_board_id: str | None, *, base_url: str) -> BoardCandidate | None:
-        board_link: Tag | None = None
-        for link in item.select("a[href]"):
-            href = str(link.get("href", ""))
+    def _board_candidate(self, item: Node, fallback_board_id: str | None, *, base_url: str) -> BoardCandidate | None:
+        board_link: Node | None = None
+        for link in item.css("a[href]"):
+            href = attr(link, "href") or ""
             board_id = extract_board_id_from_url(href)
             if board_id and not extract_document_from_url(href):
                 board_link = link
                 break
-        board_id = extract_board_id_from_url(str(board_link.get("href"))) if board_link else fallback_board_id
+        board_id = extract_board_id_from_url(attr(board_link, "href") or "") if board_link else fallback_board_id
         if not board_id:
             return None
-        board_url = urljoin(base_url, str(board_link.get("href"))) if board_link else None
-        return BoardCandidate(board_id=board_id, board_name=_text(board_link) if board_link else None, board_url=board_url)
+        board_url = urljoin(base_url, attr(board_link, "href") or "") if board_link else None
+        return BoardCandidate(board_id=board_id, board_name=text(board_link) if board_link else None, board_url=board_url)
