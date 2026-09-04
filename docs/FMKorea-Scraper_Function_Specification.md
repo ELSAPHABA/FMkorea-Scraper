@@ -59,6 +59,7 @@
   - CAPTCHA 자동 우회, stealth/anti-detect 모드
   - 사용자 cookie 파일 입력/저장/재사용
   - 스크래퍼 내부 RabbitMQ/SQS consumer
+  - 장기 실행 실시간 polling loop
   - production Scrapling Spider 실행 엔진
   - fallback 전용 저장소, dashboard, custom metric
 - 구현 기준 패키지 구조
@@ -144,17 +145,20 @@
     - 없는 말머리이거나 해당 게시판에서 유효하지 않으면 실패 처리
   - 특정 기간 수집
     - 링크 수집 중 후보 작성일을 확인해 지정 기간 밖으로 벗어나면 수집 종료
-    - 상세 페이지에서 최종 작성일을 다시 확인한다.
+    - 현재 구현 기준 필터링은 목록/검색 단계에서 파싱한 후보 작성일과 후보 `document_srl`을 기준으로 수행한다.
+    - 상세 페이지의 최종 작성일은 JSON 저장값으로 다시 파싱하지만, 상세 파싱 후 기간 범위를 재검증해 제외하는 후처리 필터는 아직 적용하지 않는다.
   - 특정 글번호 범위 수집
     - `document_srl` 범위로 필터링
   - 노키워드 기간/글번호 범위 수집
     - 검색 키워드 없이 게시판 목록을 페이지 단위로 순회하며 기간/글번호 조건으로 필터링
   - 실시간 키워드 수집
     - 환경변수로 활성화
-    - 지정 키워드의 최신 검색 결과를 반복 확인해 새 게시글만 수집
+    - `RealtimeKeywordSource`, `RealtimeTermination` 모델과 환경변수 조립 계약은 존재한다.
+    - 현재 구현의 `JobRunner`는 전달받은 collector를 1회 실행하는 one-shot 구조이므로, 지정 키워드의 최신 검색 결과를 장기 반복 확인하는 polling loop는 아직 production 구현이 아니다.
   - 실시간 전체 수집
     - 환경변수로 활성화
-    - 지정 게시판 최신 목록을 반복 확인해 새 게시글만 수집
+    - `RealtimeAllSource`, `RealtimeTermination` 모델과 환경변수 조립 계약은 존재한다.
+    - 현재 구현의 `JobRunner`는 지정 게시판 최신 목록을 장기 반복 확인하지 않고 collector 1회 실행 후 종료하는 구조다.
   - 심층검색
     - 통합 검색으로 키워드가 발견되는 게시판 목록을 먼저 만들고, 각 게시판에서 게시판 내 키워드 검색을 수행
     - 통합 검색 페이지 제한을 보완하기 위한 수집 모드
@@ -176,6 +180,8 @@
   - 이미지/동영상 URL 및 파일 모두 저장
   - YouTube, X 등 외부 임베드는 다운로드하지 않고 URL, provider, id, embed_url만 저장
 - 실시간 종료 조건
+  - 아래 값은 현재 모델/CLI/Docker 환경변수 조립 계약이다.
+  - 실제 장기 실행 polling loop와 종료 조건 도달 시점까지의 반복 실행 제어는 향후 구현 대상이다.
   - 환경변수
     - `FMKOREA_REALTIME_ENABLED=true`
     - `FMKOREA_REALTIME_MODE=keyword|all`
@@ -191,7 +197,8 @@
 
 #### 2.1.4. 수집 주기
 - 수집 주기는 사용자가 설정 가능하다.
-- 실시간 모드는 지정 interval마다 최신 목록/검색 결과를 확인한다.
+- 현재 구현된 수집 주기 제어는 HTTP 요청 사이의 `request_interval_seconds`, retry/backoff, worker 동시성 제한이다.
+- 실시간 모드가 지정 interval마다 최신 목록/검색 결과를 계속 확인하는 동작은 설계 계약으로 남겨두며, 현재 production runner는 one-shot Job을 실행한다.
 - 새 게시글만 상세 수집하도록 `(site_id, board_id, document_srl)` 기준 중복을 제거한다.
 
 ### 2.2. 사이트 API
@@ -266,6 +273,8 @@
   - 정렬 옵션: `sph_sort=<sort>`
     - 날짜순: `date`
     - 정확도순: `relevance`
+    - 현재 `IntegratedSearchUrlBuilder` 내부 확장 인자로만 존재하며, `IntegratedSearchSource`, CLI `run --source integrated-search`, Python public request 모델의 공식 입력 옵션으로는 노출하지 않는다.
+    - 따라서 현 구현 재현 시 `sph_sort`는 내부 확장 여지 또는 향후 옵션으로 취급하고, 기본 public 계약에는 포함하지 않는다.
 - 페이지 번호
   - 시작값: 1
   - 최대값: 1000
@@ -323,6 +332,7 @@
   - URL 우선순위: 부모 `a.highslide[href]` -> `src`
   - 저장 필드
     - `url`: 정규화된 이미지 URL
+    - `original_url`: 부모 `a.highslide[href]`가 있을 경우 원본 이미지 URL
     - `file_srl`: `data-file-srl`
     - `alt`
     - `width`, `height`
@@ -377,14 +387,31 @@
   - 저장 필드
     - `text`
     - `url`
+    - `title`: 링크 미리보기 또는 링크 노드에서 확인 가능한 제목. 없으면 `null`
+- `type="attachment"`
+  - 첨부파일 목록의 파일을 본문 흐름 안에서 보존해야 할 때 사용하는 block 타입이다.
+  - 현재 첨부파일의 기본 저장 위치는 top-level `attachments[]`이며, 본문 DOM 순서에 파일 링크가 명확히 등장하는 경우에만 `AttachmentBlock`으로 표현한다.
+  - 저장 필드
+    - `attachment`: `file_name`, `url`, `size_text`, `file_srl`, `sid`, `mid`, `download_text`, `file_path`, `object_key`를 가진 `Attachment` 객체
+- `type="unknown_embed"`
+  - YouTube, X, 펨코 자체 영상, 일반 링크로 분류하지 못한 외부 임베드를 보존하기 위한 fallback block 타입이다.
+  - 임베드 내용을 억지로 텍스트로 병합하지 않고, 추후 파서 보강이 가능하도록 안전한 범위의 정보만 저장한다.
+  - 저장 필드
+    - `provider`: 식별 가능한 provider 명. 모르면 `null`
+    - `url`: iframe, embed, object, 링크 등에서 추출 가능한 대표 URL. 없으면 `null`
+    - `safe_text`: 스크립트, 광고, UI 문구를 제외하고 안전하게 보존 가능한 대체 텍스트. 없으면 `null`
 - `content.text`
   - `content.blocks` 중 텍스트성 블록을 합쳐 저장한다.
   - 포함 대상: `text`, `link.text`, 텍스트만 있는 bare URL
   - 제외 대상: 조회수/추천수/댓글 수/첨부파일 목록/플레이어 UI/광고 텍스트
 - top-level `media`
   - `content.blocks`의 `image`, `fmk_video`, `youtube`, `x` 블록만 뽑은 호환/요약 필드로 취급한다.
+  - `link`, `attachment`, `unknown_embed`는 기본적으로 top-level `media[]`로 승격하지 않는다.
+  - `MediaItem` 필드는 `media_id`, `media_type`, `source_block_order`, `url`, `file_path`, `object_key`, `description`, `provider`, `embed_url`, `file_srl`이다.
 - 미디어 파일명
-  - `media/fmkorea/<board_id>/<document_srl>/<order>_<type>.<ext>`
+  - 로컬/S3 공통 상대 경로는 `media/<board_id>/<document_srl>/<media_type>/<order>-<filename_from_url>` 형태를 사용한다.
+  - 저장소 전체 기준 로컬 경로는 `<base_output_path>/outputs/<job_id>/<run_id>/media/<board_id>/<document_srl>/<media_type>/<order>-<filename_from_url>`이다.
+  - S3 object key는 `<S3_PREFIX>/<job_id>/<run_id>/media/<board_id>/<document_srl>/<media_type>/<order>-<filename_from_url>`이다.
 
 #### 2.3.3. 댓글 수집
 - 기준 컨테이너: `.fdb_lst_ul`
@@ -455,6 +482,14 @@
   - `<S3_PREFIX>/<job_id>/<run_id>/report.json`
   - `<S3_PREFIX>/<job_id>/<run_id>/media/...`
   - `S3_PREFIX`가 없으면 `fmkorea` prefix를 기본 운영 예시로 사용한다.
+- 경로 및 object key 정규화 규칙
+  - `job_id`, `run_id`, `board_id`, `document_srl`, `media_type`, 파일명, `S3_PREFIX`의 각 세그먼트는 파일 시스템과 S3 key에서 안전하게 사용할 수 있도록 정규화한다.
+  - 허용 문자는 영문 대소문자, 숫자, `.`, `_`, `-`이며, 그 외 문자는 `_`로 치환한다.
+  - 세그먼트 앞뒤의 `.`, `_`, 공백은 제거한다.
+  - 빈 문자열, `.`, `..`은 fallback 값으로 대체한다.
+  - 세그먼트 길이는 기본 160자, 파일명은 220자 이내로 제한한다.
+  - 로컬 저장 시 최종 경로가 `base_output_path` 밖으로 벗어나면 저장소 오류로 처리해 path traversal을 차단한다.
+  - URL에서 파일명을 얻지 못하면 `media.bin`을 fallback 파일명으로 사용한다.
 - S3 JSONL 저장 동작
   - `S3OutputStore`는 로컬 임시 spool 파일에 `posts.jsonl`과 `failures.jsonl`을 append한 뒤, append 시점마다 같은 object key로 다시 업로드한다.
   - S3 object append API에 의존하지 않는다.
@@ -853,6 +888,13 @@
   - CAPTCHA 또는 명백한 차단 페이지를 감지하면 자동 우회를 시도하지 않는다.
   - 현재 작업을 중단하고 체크포인트와 중단 사유를 저장한다.
   - 체크포인트 저장 후 터미널과 로그에 저장된 `job_id`를 출력한다.
+  - HTTP 응답 본문 판정은 앞부분 4096 byte 샘플을 기준으로 수행한다.
+  - CAPTCHA 판정 문자열은 `captcha`, `자동입력`, `자동 입력`, `보안문자`이며, 최종 URL에 `captcha`가 포함되어도 CAPTCHA로 본다.
+  - 차단 판정 status code는 `403`, `430`이다.
+  - 차단 판정 문자열은 `blocked`, `abnormal access`, `비정상적인 접근`, `접근이 제한`, `차단되었습니다`, `에펨코리아 보안 시스템`이다.
+  - 삭제/비공개/권한 없음 판정 status code는 `404`, `410`이다.
+  - 삭제/비공개/권한 없음 판정 문자열은 `deleted`, `unavailable`, `삭제된 게시글`, `삭제된 게시물`, `존재하지 않는 게시글`, `존재하지 않는 게시물`, `권한이 없습니다`, `열람할 수 없습니다`이다.
+  - retry 대상 status code는 기본 `{429,500,502,503,504}`다.
 - Scrapling 및 브라우저 렌더링 fallback
   - 목록, 검색, 상세 HTML은 Scrapling `Selector`로 파싱한다.
   - 기본 요청 경로는 `httpx.AsyncClient`이며 브라우저를 실행하지 않는다.
@@ -862,6 +904,8 @@
   - Docker image는 `.[s3,postgres,browser]`를 설치하고 `scrapling install`을 수행하므로 브라우저 fallback 실행 준비를 image build 단계에서 끝낸다.
   - HTTP 응답이 성공으로 분류됐지만 목록/검색/상세 필수 DOM이 없을 때만 일반 Playwright 기반 Scrapling `DynamicFetcher`를 한 번 사용한다.
   - 목록/게시판 검색 필수 DOM은 `div.bd`, 통합 검색 필수 DOM은 `.searchResult, .search_result`, 게시글 상세 필수 DOM은 `#bd_capture`를 기준으로 한다.
+  - `DynamicFetcher` 호출은 `headless=true`, `google_search=false`, `load_dom=true`, `wait_selector=<required_selector>`, `timeout=<read_timeout_ms>`로 수행한다.
+  - 호출자 header가 있으면 `extra_headers`로 넘기고, Proxy가 활성화되어 있으면 브라우저 proxy 설정에도 전달한다.
   - CAPTCHA, HTTP 430, 보안 시스템 문구, 명백한 차단 응답에는 브라우저 fallback을 실행하지 않고 즉시 체크포인트를 저장한 뒤 중단한다.
   - 브라우저 의존성이 설치되지 않은 환경에서 fallback이 필요해지면 `browser_dependency_missing` 사유의 `BrowserFallbackError`로 처리한다.
   - 브라우저 응답에서도 필수 DOM이 없거나 브라우저 실행이 실패하면 `browser_fallback_failed`로 기록하고 terminal checkpoint를 저장한 뒤 Job을 종료한다.
@@ -885,6 +929,8 @@
   - 컨테이너 간 User-Agent 교체 카운터는 공유하지 않는다.
 - Proxy
   - Proxy를 통해 httpx 요청을 전송한다.
+  - `httpx.AsyncClient`는 `trust_env=False`로 생성하므로 운영체제/쉘의 `HTTP_PROXY`, `HTTPS_PROXY` 같은 시스템 환경변수는 자동 사용하지 않는다.
+  - Proxy는 CLI/마법사에서 명시 입력한 값 또는 실행 위치의 `.env` 파일 값만 사용한다.
   - Proxy 설정은 실행 파일과 같은 위치의 `.env` 파일에 저장한다.
   - `.env`는 사용자가 직접 편집할 수 있도록 비인코딩 평문으로 저장한다.
   - 저장 변수
@@ -988,10 +1034,23 @@
   - `run_job(config, runner=..., run_id=None)`
   - `resume_job(request, runner=..., run_id=None)`
   - `retry_parser_failures(request, retry_service=None)`
+  - `search_board`, `search_integrated`, `fetch_post`, `fetch_comments`는 호출자가 `http_client`를 주입해야 한다. MCP wrapper는 필요 시 기본 `HttpClient(HttpRuntimeConfig())`를 생성해 호출한다.
+  - `fetch_comments`의 public `CommentRequest`는 `url`, `board_id`, `document_srl`, `comment_mode`만 받는다. `max_comment_pages`를 직접 받지 않으므로 기본 호출은 상세 HTML에 포함된 댓글 중심으로 반환한다.
+  - 추가 댓글 페이지까지 포함하려면 `fetch_post(PostRequest(..., scrape_options=ScrapeOptions(max_comment_pages=N)))` 또는 Job 실행 경로를 사용한다.
+  - `run_job`, `resume_job`는 core API 자체가 runner를 생성하지 않는다. CLI/Docker adapter 또는 library caller가 `JobRunner`와 저장소/HTTP/parser dependency를 조립해 `runner`로 주입해야 한다.
+  - `retry_parser_failures`는 `retry_service`를 주입하지 않으면 기본 `ParserFailureRetryService`를 사용한다.
 - CLI 진입점
   - `python main.py ...`
   - `python -m fmkorea_scraper.adapters.cli ...`
   - 설치 후 `fmkorea-scraper ...`
+- CLI 공통 옵션
+  - 범위 옵션: `--date-from`, `--date-to`, `--min-document-srl`, `--max-document-srl`
+  - 글번호 alias: `--min-post-number`는 `--min-document-srl`, `--max-post-number`는 `--max-document-srl`로 처리한다.
+  - 저장 위치: `--output-path`
+  - 수집 옵션: `--comment-mode`, `--media-mode`, `--include-attachments`, `--no-attachments`, `--max-comment-pages`, `--max-comments`, `--max-content-blocks`
+  - 실행 옵션: `--request-interval-seconds`, `--max-post-retries`, `--post-worker-count`, `--media-worker-count`, `--queue-max-size`, `--timeout-seconds`
+  - User-Agent/Proxy 옵션: `--user-agent-file`, `--user-agent-rotate-every`, `--proxy-host`, `--proxy-id`, `--proxy-pw`
+  - browser fallback 옵션: `--browser-fallback`, `--no-browser-fallback`
 - CLI subcommand
   - `run`
   - `resume`
@@ -1006,6 +1065,19 @@
   - `integrated-search`
   - `deep-search`
   - `no-keyword-range`
+- `run` source별 주요 옵션
+  - `direct-post`: `--url`을 1회 이상 입력한다.
+  - `board-list`: `--board-id`, `--category-id`, `--page-start`, `--page-end`, 범위 옵션을 사용한다.
+  - `board-search`: `--board-id`, `--keyword`, `--search-target`, `--category-id`, `--page-start`, `--page-end`, 범위 옵션을 사용한다.
+  - `integrated-search`: `--keyword`, `--search-target`, `--page-start`, `--page-end`, 범위 옵션을 사용한다.
+  - `deep-search`: `--keyword`, `--search-target`, `--seed-page-limit`, `--board-candidate`, 범위 옵션을 사용한다. `--board-candidate`는 통합 검색 seed에서 발견한 게시판 외에 사용자가 직접 추가할 게시판 ID를 반복 입력하는 옵션이다.
+  - `no-keyword-range`: `--board-id`, `--category-id`, 범위 옵션을 사용한다.
+- `retry-parser-failures` 주요 옵션
+  - 필수: `--failure-path`
+  - 선택: `--existing-success-path`, `--from-report`, `--from-checkpoint`, `--retry-job-id`, `--job-id`, `--stage`
+  - `--stage`를 생략하면 `post` stage만 재처리 대상으로 삼는다.
+  - 기본값은 `--skip-existing-success`이며, `--no-skip-existing-success`로 기존 성공 결과 중복 제외를 끌 수 있다.
+  - `--from-report`와 `--from-checkpoint`는 동시에 사용할 수 없다.
 - MCP tool
   - `search_board`
   - `search_integrated`
@@ -1014,6 +1086,9 @@
   - `run_job`
   - `resume_job`
   - `retry_parser_failures`
+  - 모든 MCP tool은 성공 시 `{"ok": true, "data": ...}`를 반환한다.
+  - 실패 시 `{"ok": false, "error": <safe_error_payload>}`를 반환한다.
+  - MCP error payload에는 stage, reason, retryable 여부, safe message만 포함하고 secret, cookie, raw header, raw body는 포함하지 않는다.
 - 컨테이너 계약
   - Docker entrypoint는 `docker-entrypoint.sh`다.
   - entrypoint는 전달받은 argv를 유지해 `python -m fmkorea_scraper.adapters.container "$@"`를 실행한다.
@@ -1048,6 +1123,7 @@
   - `deep_search`와 `no_keyword_range`는 기간 또는 글번호 범위 중 하나 이상을 요구한다.
   - realtime source의 `poll_interval_seconds` 기본값은 30.0초다.
   - realtime source의 종료 조건은 `duration_seconds` 또는 `end_at` 중 정확히 하나다.
+  - realtime source 모델은 현재 환경변수 입력과 향후 polling runner 계약을 보존하기 위한 모델이다. 현재 production `JobRunner`는 source를 1회 collect하는 one-shot 실행 구조다.
 - 실행 옵션 모델
   - `ScrapeOptions` 기본값: `comment_mode="all"`, `media_mode="url_only"`, `include_attachments=true`, `request_interval_seconds=1.0`, `max_post_retries=3`
   - `ScrapeOptions` 제한값: `max_comment_pages`, `max_content_blocks`, `max_comments`
