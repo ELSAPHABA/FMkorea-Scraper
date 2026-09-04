@@ -2,6 +2,8 @@
 
 에펨코리아 게시판 게시글 및 댓글 스크래퍼 상세 가이드
 
+이 문서는 2026-09-04 현재 `Scrapling-Refactoring` 브랜치에 구현된 `FMkorea-Scraper`의 기능 기준 문서다. 향후 개발자가 이 문서만 보고 현재 프로젝트와 같은 기능, 실행 형태, 데이터 계약을 재구현할 수 있도록 실제 구현 상태를 함께 기록한다.
+
 ## 1. 프로젝트 개요
 - **목표**
   - 에펨코리아 게시판/검색/게시글/댓글을 수집해 게시글 단위 JSONL로 저장
@@ -28,6 +30,41 @@
   - 외부 에이전트/자동화 시스템이 에펨코리아 검색, 게시글 수집, 댓글 수집 기능을 호출할 수 있도록 제공
   - MCP 구현은 별도 wrapper로 두고, 스크래퍼 core 로직을 중복 구현하지 않음
 
+### 1.2. 현재 구현 완료 상태
+- AI-DLC 진행 상태
+  - UOW-001부터 UOW-010까지 구현 및 Build/Test 승인 완료
+  - UOW-011 `Scrapling Runtime Refactor` 구현 및 Build/Test 승인 완료
+  - UOW-011에서 BeautifulSoup 기반 파싱을 Scrapling `Selector` 기반으로 전환하고, HTTP-first 요청 뒤 필수 DOM 누락 시에만 일반 Playwright 렌더링 fallback을 수행하도록 정리함
+  - UOW-012 `Scrapling Spider PoC/planning`은 아직 시작하지 않음
+  - UOW-012는 production Spider 리팩토링이 아니라 도입 가치와 migration 조건을 검토하는 planning 단위이며, 사용자 명시 지시가 있을 때 별도 AI-DLC 단위로 시작함
+- 최근 검증 기준
+  - `py -3.12 -m pytest tests -q --tb=short`: `168 passed, 3 skipped, 31 warnings`
+  - Python compile 검증 통과
+  - wheel build 통과: `dist/fmkorea_scraper-0.1.0-py3-none-any.whl`
+  - 깨끗한 임시 venv에서 wheel 설치 후 `pip check` 통과
+- 현재 구현된 핵심 기능
+  - Pydantic 기반 `JobConfig`, 게시글/댓글/본문/미디어/체크포인트/실패/리포트 모델
+  - `httpx.AsyncClient` 기반 HTTP 런타임, 요청 간격, retry/backoff, timeout, User-Agent rotation, Proxy, in-memory cookie lifecycle
+  - Scrapling `Selector` 기반 목록/검색/상세/본문/댓글 파싱
+  - 정상 HTTP 응답에 필수 DOM이 없을 때만 Scrapling `DynamicFetcher`의 일반 Playwright 렌더링 fallback
+  - browser fallback은 `HttpClient` 인스턴스 내부 `asyncio.Lock`으로 직렬화
+  - 목록/검색 링크 수집기 1개 + 게시글 워커 N개 + 미디어 다운로드 동시성 제한 구조
+  - 로컬 JSONL/미디어 저장, S3 호환 저장소 저장, PostgreSQL 체크포인트 저장
+  - CLI, 터미널 마법사, Docker one-shot worker, MCP tool handler, Python import API
+  - parser-stage 실패 게시글만 골라 direct-post 경로로 재처리하는 기능
+  - AWS CDK 기반 VPC, S3, RDS PostgreSQL, ECS Fargate worker, CloudWatch/EventBridge 인프라 코드
+- 현재 구현하지 않는 기능
+  - CAPTCHA 자동 우회, stealth/anti-detect 모드
+  - 사용자 cookie 파일 입력/저장/재사용
+  - 스크래퍼 내부 RabbitMQ/SQS consumer
+  - production Scrapling Spider 실행 엔진
+  - fallback 전용 저장소, dashboard, custom metric
+- 구현 기준 패키지 구조
+  - application code는 `src/fmkorea_scraper/` 아래에 둔다.
+  - public API는 `src/fmkorea_scraper/core/api.py`가 제공한다.
+  - CLI는 `src/fmkorea_scraper/adapters/cli.py`, Docker entrypoint는 `src/fmkorea_scraper/adapters/container.py`, MCP는 `src/fmkorea_scraper/adapters/mcp.py`가 담당한다.
+  - 파서는 `collect/`와 `parse/`, 실행 orchestration은 `runner/`, 저장소는 `outputs/`, 실패 재처리는 `retry/`가 담당한다.
+
 ## 2. 주요 기능
 
 ### 2.1. 수집 범위
@@ -39,8 +76,9 @@
 - 글 번호
   - `document_srl`
 - 말머리
-  - `category.id`: URL 또는 말머리 링크의 `category`
+  - `category.category_id`: URL 또는 말머리 링크의 `category`
   - `category.name`: 목록/상세 페이지에 표시되는 말머리명
+  - `category.url`: 말머리 링크 URL을 알 수 있으면 저장
 - 제목
 - 글쓴이
   - 닉네임
@@ -48,9 +86,10 @@
   - 레벨: 작성자 아이콘 `img.level[alt]`, `img.level[title]`에서 파싱 가능한 경우 저장
 - 조회수
 - 추천/비추천
-  - 에펨코리아 UI 명칭 기준으로 `포텐`, `방출`을 저장
-  - 상세 페이지 상단의 `추천 수`는 `poten_count`로 저장
-  - `방출` 수가 페이지에 표시되지 않거나 숨김 처리된 경우 `blame_count=null`
+  - 저장 필드는 공통 `ReactionInfo`인 `reactions.up_count`, `reactions.down_count`, `reactions.score`를 사용한다.
+  - 상세 페이지 상단의 `추천 수` 또는 UI의 포텐 계열 값은 `up_count`로 저장한다.
+  - 비추천/방출 계열 값이 페이지에 없거나 빈 값이면 `down_count=0`으로 저장한다.
+  - `score`는 항상 `up_count - down_count`다.
 - 댓글 수
 - 작성일
 - 원본 URL
@@ -61,14 +100,14 @@
 - 첨부파일
   - `.rd_file a[data-href]`의 파일명, `file_srl`, 다운로드 URL, 크기/다운로드 수 텍스트
 - 댓글 + 덧글
-  - 댓글 번호
-  - 부모 댓글 번호
-  - depth
-  - 원본 DOM id
-  - 원본 페이지 내 순서
-  - BEST 댓글 여부
-  - BEST 등 댓글 배지
-  - 글쓴이, 작성일, 내용, 추천/비추천/추천-비추천 점수
+  - `comment_srl`, `comment_id_raw`
+  - `parent_comment_srl`, `parent_comment_id_raw`
+  - `depth`
+  - `source_dom_id`
+  - `source_order`
+  - `is_best`
+  - `badges`
+  - `author`, `created_at`, `created_at_raw`, `content`, `reactions`, `permalink`
 
 #### 2.1.2. 수집 방식
 - 목록/검색 단계
@@ -83,6 +122,14 @@
   - 다수의 게시글 워커가 큐에서 링크 단위로 작업을 가져와 상세 페이지를 병렬 비동기로 수집한다.
   - 큐 단위는 Job이 아니라 게시글 링크 1개다.
   - 저장 성공 후 체크포인트를 갱신한다.
+- 현재 구현 흐름
+  - `CollectorService.collect(source)`가 source별 URL을 만들고 `PostCandidate`를 yield한다.
+  - `JobRunner`가 내부 `asyncio.Queue[PostCandidate]`에 후보를 넣는다.
+  - `PostWorkerPool`이 `post_worker_count`만큼 실행되어 후보 1개씩 상세 페이지를 처리한다.
+  - `CompletedKeyTracker`가 `(site_id, board_id, document_id_raw)` 기준으로 이미 완료된 게시글과 진행 중 게시글을 중복 처리하지 않는다.
+  - `MediaDownloadCoordinator`는 `media_mode=url_only`이면 메타데이터만 저장하고, `media_mode=download`이면 `media_worker_count` 세마포어로 다운로드 동시성을 제한한다.
+  - 각 게시글은 `PostDetailService`가 상세 HTML을 열고 `MetadataParser`, `ContentParser`, `CommentParser` 결과를 합쳐 `PostResult`로 만든다.
+  - 저장은 `OutputStorePort`, `MediaStorePort`, `FailureStorePort`, `CheckpointStorePort`를 통해서만 수행한다.
 
 #### 2.1.3. 수집 옵션
 - 게시글 수집 옵션
@@ -133,7 +180,7 @@
     - `FMKOREA_REALTIME_KEYWORD=<검색어>` (`keyword` 모드에서 필수)
     - `FMKOREA_REALTIME_DURATION_SECONDS=<실행_초>`
     - `FMKOREA_REALTIME_END_AT=<UTC_ISO-8601_종료시각>`
-    - `FMKOREA_REALTIME_POLL_INTERVAL_SECONDS=<반복_주기_초>` (없으면 전역 요청 간격 사용)
+    - `FMKOREA_REALTIME_POLL_INTERVAL_SECONDS=<반복_주기_초>` (없으면 30초 기본값 사용)
   - 타이머 `실행_초`와 종료 시각 중 하나만 입력받는다.
   - `FMKOREA_REALTIME_DURATION_SECONDS`와 `FMKOREA_REALTIME_END_AT` 중 정확히 하나만 입력한다.
   - 둘 다 없거나 둘 다 있으면 실시간 Job 시작 실패로 처리한다.
@@ -278,7 +325,7 @@
     - `alt`
     - `width`, `height`
     - `download_url`: `.rd_file a[data-href]`에서 같은 `file_srl`로 매칭되는 경우 저장
-    - `download`
+    - `download`, `file_path`, `object_key`: 모델 필드는 존재하지만 현재 다운로드 결과는 `media[]` 항목에만 반영한다.
 - `type="fmk_video"`
   - 펨코 자체 업로드 동영상 후보: `.auto_media_wrapper`, `video.mediaelement_video`, `video > source[type="video/mp4"]`
   - 정적 HTML에 `source src`, `poster`, schema.org `meta itemprop` 값이 포함되므로 기본 Scrapling 파서만으로 수집 가능하다.
@@ -291,7 +338,7 @@
     - `upload_date`: `meta[itemprop="uploadDate"]`
     - `description`: `meta[itemprop="description"]`, 없거나 빈 값이면 `null`
     - `width`, `height`
-    - `download`
+    - `download`, `file_path`, `object_key`: 모델 필드는 존재하지만 현재 다운로드 결과는 `media[]` 항목에만 반영한다.
   - 같은 `video`의 하위 `source`는 별도 블록으로 중복 저장하지 않는다.
 - `type="youtube"`
   - 정적 HTML 후보
@@ -300,10 +347,10 @@
     - `iframe[src*="youtube.com/embed"]`
   - Scrapling 기본 구현은 정적 HTML의 YouTube URL을 파싱해 `embed_url`을 직접 생성한다.
   - 저장 필드
-    - `provider="youtube"`
     - `video_id`
     - `url`
     - `embed_url`
+    - `title`
     - `start_seconds`: `t`, `start` 파라미터가 있으면 초 단위 저장
   - 외부 영상 파일은 다운로드하지 않는다.
 - `type="x"`
@@ -315,10 +362,12 @@
   - Scrapling 기본 구현은 정적 HTML에 남아 있는 X URL을 우선 수집한다.
   - 렌더링된 iframe을 참고할 수 있는 환경에서는 `embed_url`도 저장한다.
   - 저장 필드
-    - `provider="x"`
+    - `username`
+    - `status_id`
     - `tweet_id`
     - `url`
-    - `embed_url`: 알 수 없으면 `null`
+    - `embed_url`
+    - `text`
   - X 첨부 미디어 원본 파일은 다운로드하지 않는다.
 - `type="link"`
   - 일반 링크: 기준 컨테이너 내부 `a[href]` 또는 본문 텍스트의 bare URL
@@ -344,7 +393,7 @@
   - 원본 DOM id는 `source_dom_id`에 별도 저장한다.
 - 원본 순서
   - 현재 댓글 페이지/DOM에서 등장한 순서를 `source_order`로 저장한다.
-  - Polars 분석 시에는 배열 순서에 의존하지 않고 `date`, `comment_srl`, `source_order` 기준으로 명시 정렬한다.
+  - Polars 분석 시에는 배열 순서에 의존하지 않고 `created_at`, `comment_srl`, `source_order` 기준으로 명시 정렬한다.
 - BEST 댓글 여부
   - `li.comment_best` 또는 내부 `.icon-hit` 텍스트 `BEST`
   - BEST 댓글도 일반 댓글과 동일하게 `comments` 배열에 저장하고 별도 `best_comments` 배열을 만들지 않는다.
@@ -358,7 +407,10 @@
   - `.meta .date`
   - 상대 시간과 절대 시간이 섞일 수 있으므로 원문 문자열과 정규화 결과를 함께 저장한다.
 - 내용
-  - 댓글 본문 영역의 텍스트
+  - 댓글 본문 영역은 `.xe_content`, `.comment_content`, `.comment-content` 순으로 찾는다.
+  - 댓글 본문 영역의 텍스트를 저장한다.
+  - 이미지콘 구매 아이콘 등 장식 텍스트는 제외한다.
+  - 댓글 내부 이미지의 `alt`가 있으면 텍스트 내용 뒤에 함께 보존한다.
   - 작성자/날짜/추천/비추천/주소복사/댓글로 가기 UI 텍스트는 제외
 - 추천/비추천
   - 기준 컨테이너: `li[id^="comment_"] > div.fdb_nav.img_tx span.vote`
@@ -367,8 +419,17 @@
   - 값이 빈 문자열이면 `0`으로 정규화한다.
   - `reactions.up_count`, `reactions.down_count`, `reactions.score=up_count-down_count`로 저장한다.
 - 덧글
-  - 댓글 항목 클래스 또는 DOM depth로 구분 가능한 경우 `depth=1`, `parent_comment_id=<상위 댓글 번호>`로 저장한다.
-  - 명확한 부모를 찾지 못하면 `depth=null`, `parent_comment_id=null`로 저장하고 원본 class를 `raw_class`에 남긴다.
+  - `data-parent` 또는 `data-parent-comment-srl`이 있으면 `parent_comment_srl`로 저장한다.
+  - 부모 댓글 번호가 있거나 `li` class에 `reply`가 있으면 `depth=1`로 저장한다.
+  - 명확한 부모를 찾지 못한 댓글은 `depth=0`, `parent_comment_srl=null`로 저장한다.
+  - 별도 원본 class 필드는 두지 않고, 필요 시 공통 `metadata` 확장 필드에 제한된 JSON 값으로 보존한다.
+- 댓글 추가 페이지
+  - 상세 HTML에 포함된 댓글은 항상 먼저 파싱한다.
+  - `max_comment_pages`가 `null`이면 추가 댓글 페이지 요청을 하지 않는다.
+  - `max_comment_pages`가 지정되면 `.fdb_nav.comment_page a[href]`, `.comment_page a[href]`, `.comment-page a[href]`에서 댓글 페이지 링크를 찾는다.
+  - 링크 텍스트, class, href 중 `cpage`, `comment_page`, `commentpage` 표식이 있는 링크만 추가 댓글 페이지 후보로 사용한다.
+  - 현재 게시글과 다른 `document_srl`로 이동하는 링크는 제외한다.
+  - 이미 파싱한 댓글과 추가 페이지 댓글은 `comment_srl` 또는 `source_dom_id` 기준으로 중복 제거한다.
 
 ### 2.4. 데이터 저장 JSONL
 - 수집된 게시글 데이터는 Job당 하나의 JSONL 파일로 저장한다.
@@ -380,54 +441,236 @@
 - 파일명
   - `job_YYYYMMDD_HHMMSS.jsonl`
   - 예: `job_20260811_120000.jsonl`
+- 현재 로컬 출력 구조
+  - `<base_output_path>/outputs/<job_id>/<run_id>/posts.jsonl`
+  - `<base_output_path>/outputs/<job_id>/<run_id>/failures.jsonl`
+  - `<base_output_path>/outputs/<job_id>/<run_id>/report.json`
+  - `<base_output_path>/outputs/<job_id>/<run_id>/media/...`
+  - `<base_output_path>/Checkpoint.json`
+- 현재 S3 호환 출력 구조
+  - `<S3_PREFIX>/<job_id>/<run_id>/posts.jsonl`
+  - `<S3_PREFIX>/<job_id>/<run_id>/failures.jsonl`
+  - `<S3_PREFIX>/<job_id>/<run_id>/report.json`
+  - `<S3_PREFIX>/<job_id>/<run_id>/media/...`
+  - `S3_PREFIX`가 없으면 `fmkorea` prefix를 기본 운영 예시로 사용한다.
+- S3 JSONL 저장 동작
+  - `S3OutputStore`는 로컬 임시 spool 파일에 `posts.jsonl`과 `failures.jsonl`을 append한 뒤, append 시점마다 같은 object key로 다시 업로드한다.
+  - S3 object append API에 의존하지 않는다.
+  - `finalize()`는 spool writer를 닫고 임시 디렉토리를 정리한다.
+- 미디어 다운로드 저장 동작
+  - `media_mode="url_only"`이면 `media[]`의 URL/메타데이터만 남기고 파일 다운로드는 수행하지 않는다.
+  - `media_mode="download"`이면 `media[]` 항목별로 `HttpPort.download()`를 호출하고, 로컬 저장은 `file_path`, S3 저장은 `object_key`를 `media[]` 항목에 반영한다.
+  - 현재 구현은 저장 결과를 `content.blocks[]`에 다시 전파하지 않는다. `content.blocks[]`는 본문 DOM에서 파싱한 원본 순서/URL/메타데이터 보존용이고, 실제 저장 결과 확인은 `media[]`를 기준으로 한다.
+- 현재 게시글 JSONL schema
+  - `schema_version="fmkorea.post.v1"`
+  - Pydantic 모델 기준 최상위 타입은 `PostResult`
+  - `MetadataModel`을 상속한 모든 객체는 `metadata` 필드를 가진다.
+  - JSONL writer는 `model_dump(mode="json")` 결과를 기록하므로 `null`, 빈 배열, 기본값 필드를 임의로 제외하지 않는다.
+  - 아래 JSON 예시는 읽기 쉬운 대표 구조이며, 실제 구현 기준은 각 Pydantic 모델 필드 전체다.
+  - 시간 필드는 `scraped_at`, `created_at`, `created_at_raw`를 사용한다.
+  - 글 번호는 `document_srl` 숫자와 `document_id_raw` 문자열을 함께 저장한다.
+  - 추천/비추천은 공통 `ReactionInfo` 구조인 `up_count`, `down_count`, `score`로 저장한다. UI의 포텐은 `up_count`, 방출은 `down_count`에 대응한다.
+  - FMKorea 원본 JSON에는 `is_repost`, `repost` 필드를 두지 않는다. 향후 공통 정규화 단계에서 필요한 경우 `null` 또는 기본값으로 보강한다.
 
-#### 2.4.1. Job 메타데이터 예시
+#### 2.4.1. JobConfig 예시
 ```json
 {
   "job_id": "job_20260811_120000",
   "site_id": "fmkorea",
-  "board_id": "football_world",
-  "collection_mode": "board_search",
-  "post_id_range": [10190000000, 10199999999],
-  "post_date_range": ["2026-08-01T00:00:00+09:00", "2026-08-11T23:59:59+09:00"],
-  "category_filter": {
-    "enabled": true,
-    "id": 233499071,
-    "name": "레알 마드리드"
+  "job_type": "board_search",
+  "source": {
+    "type": "board_search",
+    "board_id": "football_world",
+    "category_id": "233499071",
+    "keyword": "검색 키워드",
+    "search_target": "title_content",
+    "page_start": 1,
+    "page_end": 5,
+    "range_filter": {
+      "date_from": "2026-08-01",
+      "date_to": "2026-08-11",
+      "min_document_srl": 10190000000,
+      "max_document_srl": 10199999999
+    }
   },
-  "search_target": "title_content",
-  "search_keyword": "검색 키워드",
-  "scrap_start_timestamp": "2026-08-11T12:00:00+09:00",
-  "output_file": "job_20260811_120000.jsonl"
+  "scrape_options": {
+    "comment_mode": "all",
+    "media_mode": "url_only",
+    "include_attachments": true,
+    "request_interval_seconds": 1.0,
+    "max_post_retries": 3,
+    "max_comment_pages": 3,
+    "max_content_blocks": null,
+    "max_comments": null
+  },
+  "worker_config": {
+    "post_worker_count": 2,
+    "media_worker_count": 2,
+    "queue_max_size": null
+  },
+  "storage_config": {
+    "output_mode": "local",
+    "checkpoint_mode": "local",
+    "base_output_path": ".",
+    "s3": null,
+    "postgres": null
+  },
+  "created_at": "2026-08-11T12:00:00+09:00"
 }
 ```
 
-#### 2.4.2. 게시글 JSONL 한 줄 예시
+#### 2.4.2. JobConfig.source 모드별 예시
+아래 예시는 `JobConfig.source` 필드에 들어가는 실제 discriminated union 구조다.
+
 ```json
 {
-  "scrap_timestamp": "2026-08-11T12:00:30+09:00",
+  "type": "direct_post",
+  "urls": [
+    "https://www.fmkorea.com/best/10195585295",
+    "https://www.fmkorea.com/index.php?mid=stock&document_srl=10197961451"
+  ]
+}
+```
+
+```json
+{
+  "type": "board_list",
+  "board_id": "stock",
+  "category_id": null,
+  "page_start": 1,
+  "page_end": 5,
+  "range_filter": null
+}
+```
+
+```json
+{
+  "type": "board_search",
+  "board_id": "stock",
+  "category_id": null,
+  "keyword": "삼전",
+  "search_target": "title_content",
+  "page_start": 1,
+  "page_end": 5,
+  "range_filter": {
+    "date_from": "2026-08-01",
+    "date_to": "2026-08-11",
+    "min_document_srl": null,
+    "max_document_srl": null
+  }
+}
+```
+
+```json
+{
+  "type": "integrated_search",
+  "keyword": "삼전",
+  "search_target": "title_content",
+  "page_start": 1,
+  "page_end": 10,
+  "range_filter": null
+}
+```
+
+```json
+{
+  "type": "deep_search",
+  "keyword": "삼전",
+  "seed_search_target": "title_content",
+  "seed_page_limit": 20,
+  "board_ids": null,
+  "range_filter": {
+    "date_from": "2026-08-01",
+    "date_to": "2026-08-11",
+    "min_document_srl": null,
+    "max_document_srl": null
+  }
+}
+```
+
+```json
+{
+  "type": "no_keyword_range",
+  "board_id": "stock",
+  "category_id": null,
+  "range_filter": {
+    "date_from": "2026-08-01",
+    "date_to": "2026-08-11",
+    "min_document_srl": null,
+    "max_document_srl": null
+  }
+}
+```
+
+```json
+{
+  "type": "realtime_keyword",
+  "scope": "board",
+  "board_id": "stock",
+  "keyword": "삼전",
+  "poll_interval_seconds": 30.0,
+  "termination": {
+    "duration_seconds": 3600,
+    "end_at": null
+  }
+}
+```
+
+```json
+{
+  "type": "realtime_all",
+  "board_id": "stock",
+  "category_id": null,
+  "poll_interval_seconds": 30.0,
+  "termination": {
+    "duration_seconds": null,
+    "end_at": "2026-08-11T18:00:00+09:00"
+  }
+}
+```
+
+```json
+{
+  "type": "parser_failure_retry",
+  "failure_input": {
+    "failure_path": ".\\outputs\\job-a\\run-1\\failures.jsonl",
+    "job_id": "job-a",
+    "stage_allowlist": ["post"]
+  },
+  "skip_existing_success": true
+}
+```
+
+#### 2.4.3. 게시글 JSONL 한 줄 예시
+```json
+{
+  "schema_version": "fmkorea.post.v1",
+  "scraped_at": "2026-08-11T12:00:30+09:00",
   "site_id": "fmkorea",
   "board_id": "football_world",
   "board_name": "해외축구",
   "document_srl": 10196696065,
-  "url": "https://www.fmkorea.com/index.php?mid=football_world&document_srl=10196696065",
+  "document_id_raw": "10196696065",
   "canonical_url": "https://www.fmkorea.com/10196696065",
   "category": {
-    "id": 233499071,
-    "name": "레알 마드리드"
+    "category_id": "233499071",
+    "name": "레알 마드리드",
+    "url": "https://www.fmkorea.com/football_world?category=233499071"
   },
   "title": "[ESPN] 어제자 레알 선수단 훈련 영상",
   "author": {
     "nickname": "유느님좋아",
     "member_srl": "534126900",
-    "level": 32,
-    "raw": "[레벨:32] 유느님좋아"
+    "level": "32",
+    "profile_url": "https://www.fmkorea.com/index.php?mid=football_world&act=dispMemberInfo&member_srl=534126900"
   },
-  "date": "2026-08-11T08:03:00+09:00",
+  "created_at": "2026-08-11T08:03:00+09:00",
+  "created_at_raw": "2026.08.11 08:03",
   "views": 361,
   "reactions": {
-    "poten_count": 5,
-    "blame_count": null
+    "up_count": 5,
+    "down_count": 0,
+    "score": 5
   },
   "comment_count": 0,
   "content": {
@@ -445,28 +688,28 @@
         "description": "[ESPN] 어제자 레알 선수단 훈련 영상",
         "width": 720,
         "height": 1280,
-        "download": {
-          "enabled": false,
-          "path": null,
-          "status": "skipped"
-        }
+        "download": null,
+        "file_path": null,
+        "object_key": null
       },
       {
         "order": 1,
         "type": "youtube",
-        "provider": "youtube",
         "video_id": "IKyeLpRZaZE",
         "url": "https://youtu.be/IKyeLpRZaZE?t=456",
-        "embed_url": "https://www.youtube.com/embed/IKyeLpRZaZE?start=456",
+        "embed_url": "https://www.youtube.com/embed/IKyeLpRZaZE",
+        "title": null,
         "start_seconds": 456
       },
       {
         "order": 2,
         "type": "x",
-        "provider": "x",
+        "username": "elonmusk",
+        "status_id": "1973529989002989733",
         "tweet_id": "1973529989002989733",
         "url": "https://x.com/elonmusk/status/1973529989002989733",
-        "embed_url": null
+        "embed_url": "https://platform.twitter.com/embed/Tweet.html?id=1973529989002989733",
+        "text": null
       },
       {
         "order": 3,
@@ -477,11 +720,9 @@
         "width": 1280,
         "height": 960,
         "download_url": "https://www.fmkorea.com/?module=file&act=procFileDownload&file_srl=10195587886&sid=...",
-        "download": {
-          "enabled": true,
-          "path": "media/fmkorea/football_world/10196696065/3_image.jpg",
-          "status": "saved"
-        }
+        "download": null,
+        "file_path": null,
+        "object_key": null
       },
       {
         "order": 4,
@@ -498,32 +739,48 @@
   },
   "attachments": [
     {
+      "file_name": "example.jpg",
+      "url": "https://www.fmkorea.com/?module=file&act=procFileDownload&file_srl=10195587886&sid=...",
       "file_srl": "10195587886",
-      "name": "example.jpg",
-      "download_url": "https://www.fmkorea.com/?module=file&act=procFileDownload&file_srl=10195587886&sid=...",
+      "sid": "...",
+      "mid": "football_world",
       "size_text": "186.5KB",
-      "download_count": 1
+      "download_text": "다운로드 1"
     }
   ],
   "media": [
     {
-      "order": 0,
-      "type": "fmk_video",
+      "media_id": "10196696177",
+      "media_type": "fmk_video",
+      "source_block_order": 0,
       "url": "https://mediak5jvqbd.fmkorea.com/files/attach/new5/20260811/example.mp4",
-      "path": null
+      "file_path": null,
+      "object_key": null,
+      "description": "[ESPN] 어제자 레알 선수단 훈련 영상",
+      "provider": null,
+      "embed_url": null,
+      "file_srl": "10196696177"
     },
     {
-      "order": 3,
-      "type": "image",
+      "media_id": "10195587886",
+      "media_type": "image",
+      "source_block_order": 3,
       "url": "https://image.fmkorea.com/files/attach/new5/20260810/example.jpg",
-      "path": "media/fmkorea/football_world/10196696065/3_image.jpg"
+      "file_path": "media/fmkorea/football_world/10196696065/3_image.jpg",
+      "object_key": null,
+      "description": null,
+      "provider": null,
+      "embed_url": null,
+      "file_srl": "10195587886"
     }
   ],
   "comments": [
     {
       "comment_srl": 10197230200,
+      "comment_id_raw": "10197230200",
       "source_dom_id": "comment_10197230200_",
       "parent_comment_srl": null,
+      "parent_comment_id_raw": null,
       "depth": 0,
       "source_order": 0,
       "is_best": true,
@@ -531,59 +788,56 @@
       "author": {
         "nickname": "V5_Faker",
         "member_srl": "1324753328",
-        "level": 27
+        "level": "27"
       },
-      "date_raw": "4 시간 전",
-      "date": null,
+      "created_at_raw": "4 시간 전",
+      "created_at": null,
       "content": "댓글 내용",
       "reactions": {
         "up_count": 375,
         "down_count": 0,
         "score": 375
       },
-      "permalink": "https://www.fmkorea.com/10196696065/10197230200#comment_10197230200",
-      "metadata": {
-        "classes": ["fdb_itm", "clear", "comment_best", "comment-2"]
-      }
+      "permalink": "https://www.fmkorea.com/10196696065/10197230200#comment_10197230200"
     }
-  ],
-  "raw": {
-    "candidate_metadata": {
-      "source": "board_search",
-      "page": 1
-    }
-  }
+  ]
 }
 ```
 
 ### 2.5. 작업 상태 및 체크포인트 저장
-- 상태 및 체크포인트 JSON은 커뮤니티 스크래퍼 공통 스키마로 관리한다.
-- 게시글 본문 JSONL 스키마는 커뮤니티별로 독립 확장 가능하다.
+- 체크포인트 모델
+  - 최상위 타입은 `Checkpoint`다.
+  - `schema_version="fmkorea.checkpoint.v1"`를 저장한다.
+  - `job_id`: 체크포인트 대상 Job ID
+  - `status`: `running`, `stopped`, `completed`
+  - `reason`: `stopped`일 때만 저장하며 `captcha`, `blocked`, `manual_stop`, `error`, `timeout`, `lease_expired` 중 하나다.
+  - `job_config`: 재개에 필요한 원본 `JobConfig`
+  - `collector_cursor`: 링크 수집기의 현재 위치
+  - `completed_keys`: 저장 완료된 게시글 키 목록
+  - `queued_links`: 중단 시 아직 처리되지 않은 후보 링크 목록. 없으면 `null`
+  - `updated_at`: 체크포인트 갱신 시각
+- `collector_cursor` 모델
+  - `source_type`: 수집 source type
+  - `page`: 목록/검색 수집 중 마지막으로 처리 중이던 페이지
+  - `board_id`: 현재 처리 중인 게시판
+  - `last_document_srl`: 마지막으로 확인한 글 번호
+  - `last_url`: 마지막으로 확인한 URL
+- 저장 위치
+  - 로컬 체크포인트는 `<base_output_path>/Checkpoint.json` 하나에 저장한다.
+  - 로컬 체크포인트 파일의 wrapper schema는 `fmkorea.local_checkpoint.v1`이고, 내부 `checkpoints` 객체가 `job_id`별 `Checkpoint`를 가진다.
+  - PostgreSQL 모드에서는 `PostgresCheckpointStore`가 `DATABASE_URL`로 연결한 DB에 `job_id`별 체크포인트를 저장한다.
+  - JSONL 결과 파일과 달리 로컬 체크포인트는 run 폴더 안에 두지 않는다.
 - 저장 시점
-  - 각 게시글 스크래핑 및 JSONL 저장 완료 후 메모리상의 진행 상태 갱신
-  - 게시글 10개 처리 완료마다 체크포인트 저장
-  - 수동 중단, 정상 종료, 복구 불가능한 오류, CAPTCHA 또는 차단 감지 시 즉시 체크포인트 저장
-- 저장 순서
-  - 게시글 결과를 먼저 멱등하게 저장
-  - 게시글 저장 성공 후 `last_completed_post_id`, `last_completed_url`, `scraping_processed_count` 갱신
-  - 체크포인트 저장은 원자적으로 처리
-- 상태 값
-  - `running`: 정상 수집 진행 중
-  - `stopped`: 수동 중단, 오류, CAPTCHA, timeout, lease 만료 등으로 중단
-  - `completed`: Queue가 비고 모든 워커가 정상 종료
-- 중단 사유 `reason`
-  - `captcha`
-  - `blocked`
-  - `manual_stop`
-  - `error`
-  - `timeout`
-  - `lease_expired`
+  - 게시글 저장 성공 10건마다 `status="running"` 체크포인트를 저장한다.
+  - 게시글 저장 성공 후 해당 게시글의 `PostKey(site_id, board_id, document_srl, document_id_raw)`를 `completed_keys`에 반영한다.
+  - 수동 중단, 복구 불가능한 오류, CAPTCHA, 차단, timeout, lease 만료 시 `status="stopped"`와 `reason`을 저장한다.
+  - Queue가 비고 모든 워커가 정상 종료되면 `status="completed"`를 저장한다.
 - 재개 처리
-  - 로컬 환경은 터미널 옵션으로 체크포인트 `job_id`를 입력받아 재개
-  - 컨테이너 환경은 `docker run` 환경변수 `RESUME=true`, `JOB_ID=<checkpoint job_id>`로 재개
-  - 재개 요청 시 `JOB_ID`가 없으면 가장 최근 체크포인트를 자동 선택
-  - 재개 시 기존 JSONL 파일에 이어 쓰지 않고 새 JSONL 파일을 생성해 중단점 이후부터 기록
-  - 이미 저장된 게시글은 `(site_id, board_id, document_srl)` 기준으로 중복 저장되지 않도록 처리
+  - CLI는 `fmkorea-scraper resume --job-id <job_id>`로 재개한다.
+  - 로컬 재개에서 `--job-id`가 없으면 `<base_output_path>/Checkpoint.json`의 최신 체크포인트를 사용한다.
+  - 컨테이너 환경은 `RESUME=true`, `JOB_ID=<checkpoint job_id>`로 재개한다.
+  - 재개 시 기존 JSONL 파일에 이어 쓰지 않고 새 run을 만들며, `completed_keys` 기준으로 이미 저장된 게시글을 중복 저장하지 않는다.
+  - 중복 기준은 `(site_id, board_id, document_id_raw)`를 우선 사용한다.
 - 체크포인트에 저장되는 `JobConfig`
   - `JobConfig`는 수집 대상, 수집 옵션, 워커 옵션, 저장소 옵션만 저장한다.
   - `ScrapeOptions`에는 댓글/미디어 모드, 첨부파일 포함 여부, 요청 간격, 게시글 재시도 횟수, 파서 제한값(`max_comment_pages`, `max_comments`, `max_content_blocks`)을 저장한다.
@@ -602,15 +856,17 @@
   - 기본 요청 경로는 `httpx.AsyncClient`이며 브라우저를 실행하지 않는다.
   - CLI/Docker 실행에서는 기본 활성화한다.
   - CLI에서는 `--no-browser-fallback`, 컨테이너에서는 `FMKOREA_BROWSER_FALLBACK=false`로 비활성화할 수 있다.
+  - 로컬에서 브라우저 fallback을 사용하려면 `scrapling[fetchers]` optional dependency와 Playwright browser 설치가 필요하다.
+  - Docker image는 `.[s3,postgres,browser]`를 설치하고 `scrapling install`을 수행하므로 브라우저 fallback 실행 준비를 image build 단계에서 끝낸다.
   - HTTP 응답이 성공으로 분류됐지만 목록/검색/상세 필수 DOM이 없을 때만 일반 Playwright 기반 Scrapling `DynamicFetcher`를 한 번 사용한다.
   - 목록/게시판 검색 필수 DOM은 `div.bd`, 통합 검색 필수 DOM은 `.searchResult, .search_result`, 게시글 상세 필수 DOM은 `#bd_capture`를 기준으로 한다.
   - CAPTCHA, HTTP 430, 보안 시스템 문구, 명백한 차단 응답에는 브라우저 fallback을 실행하지 않고 즉시 체크포인트를 저장한 뒤 중단한다.
+  - 브라우저 의존성이 설치되지 않은 환경에서 fallback이 필요해지면 `browser_dependency_missing` 사유의 `BrowserFallbackError`로 처리한다.
   - 브라우저 응답에서도 필수 DOM이 없거나 브라우저 실행이 실패하면 `browser_fallback_failed`로 기록하고 terminal checkpoint를 저장한 뒤 Job을 종료한다.
   - Scrapling `StealthyFetcher`와 CAPTCHA/차단 자동 우회 기능은 사용하지 않는다.
 - User-Agent Mixer
   - 차단 완화를 위해 요청 시 사용할 User-Agent를 주기적으로 교체한다.
   - User-Agent 목록 파일명은 `user-agents.txt`로 통일한다.
-  - 컨테이너 이미지 생성 시 `user-agents.txt`를 포함한다.
   - 로컬 실행 시 실행 파일과 같은 위치의 `user-agents.txt`를 자동 로드한다.
   - 터미널 옵션에서 파일 탐색기 창을 열어 User-Agent 목록 파일을 불러오고, 실행 파일과 같은 위치의 `user-agents.txt`로 저장/교체 가능하다.
   - `user-agents.txt`는 사용자가 직접 편집할 수 있도록 비인코딩 평문으로 저장한다.
@@ -619,7 +875,11 @@
   - 파일이 없거나 유효한 User-Agent가 없으면 기본 User-Agent 하나만 사용한다.
   - 기본 교체 주기는 요청 10회마다 1회다.
   - CLI 옵션으로 파일 경로와 교체 주기를 변경할 수 있다.
+  - CLI 옵션명은 `--user-agent-file`, `--user-agent-rotate-every`다.
   - 비동기 멀티 워커 실행 시에도 컨테이너/프로세스 내부 공용 요청 카운터 기준으로 교체한다.
+  - 현재 Dockerfile은 `user-agents.txt`를 이미지에 복사하지 않는다.
+  - 컨테이너에서 별도 User-Agent 파일을 쓰려면 파일을 마운트한 뒤 `FMKOREA_USER_AGENT_FILE=<컨테이너 내부 경로>`를 지정한다.
+  - 컨테이너에서 `FMKOREA_USER_AGENT_FILE`이 없으면 기본 User-Agent 하나를 사용한다.
   - 컨테이너 간 User-Agent 교체 카운터는 공유하지 않는다.
 - Proxy
   - Proxy를 통해 httpx 요청을 전송한다.
@@ -655,30 +915,219 @@
   - 기본값은 안정성을 우선하여 너무 빠른 연속 요청을 피하도록 설정한다.
   - 게시판 목록, 게시판 내 검색, 통합 검색, 게시글 상세, 댓글, 이미지/동영상 다운로드 요청에 동일하게 적용한다.
   - 전역 요청 간격, 게시글 상세 요청 동시성, 미디어 다운로드 동시성, 실패 시 backoff를 설정 가능하게 한다.
-  - 429/403/차단 의심 응답 발생 시 즉시 속도를 낮추거나 중단한다.
+  - 429, 500, 502, 503, 504 응답은 retry/backoff 대상이다.
+  - 403, 430, CAPTCHA, 보안 시스템 문구, 명백한 차단 응답은 자동 우회하지 않고 중단 사유를 저장한다.
 
 ### 2.7. 실패 기록 및 재처리
 - 실패는 `failures.jsonl`에 저장한다.
 - parser-stage 실패는 추후 재처리 유닛에서 direct-post 경로로 재수집한다.
 - 네트워크, CAPTCHA, 차단, 저장소 실패는 재처리 유닛 대상에서 제외하고 기존 retry/checkpoint/운영 대응 절차에서 처리한다.
 - 실패 기록 필드
+  - `schema_version="fmkorea.failure.v1"`
   - `job_id`
-  - `site_id`
-  - `board_id`
-  - `document_srl`
-  - `url`
   - `stage`
   - `reason`
-  - `error_message`
-  - `attempt`
+  - `retryable`
+  - `url`
+  - `post_key`
+    - `site_id`
+    - `board_id`
+    - `document_srl`
+    - `document_id_raw`
+  - `safe_message`
+  - `details`
   - `created_at`
+- 실패 JSONL 한 줄 예시
+```json
+{
+  "schema_version": "fmkorea.failure.v1",
+  "job_id": "job-a",
+  "stage": "post",
+  "reason": "ParseFailureError",
+  "retryable": true,
+  "url": "https://www.fmkorea.com/best/10195585295",
+  "post_key": {
+    "site_id": "fmkorea",
+    "board_id": "best",
+    "document_srl": 10195585295,
+    "document_id_raw": "10195585295"
+  },
+  "safe_message": "required detail metadata missing",
+  "details": {
+    "job_id": "job-a",
+    "stage": "post",
+    "reason": "ParseFailureError",
+    "retryable": true,
+    "url": "https://www.fmkorea.com/best/10195585295",
+    "post_key": {
+      "site_id": "fmkorea",
+      "board_id": "best",
+      "document_srl": 10195585295,
+      "document_id_raw": "10195585295"
+    }
+  },
+  "created_at": "2026-08-11T12:05:00+09:00",
+  "metadata": {}
+}
+```
+- 현재 재처리 계약
+  - CLI 명령: `fmkorea-scraper retry-parser-failures --failure-path <failures.jsonl>`
+  - `--existing-success-path <posts.jsonl>`를 지정하면 이미 성공한 게시글은 제외한다.
+  - `--from-report`, `--from-checkpoint`는 재처리 입력 복원을 돕는 옵션이며 동시에 사용할 수 없다.
+  - `RetryRequest`는 `failure_input`, `skip_existing_success`, `existing_success_path`, `from_report_path`, `from_checkpoint_path`, `retry_job_id`를 가진다.
+  - 재처리는 기존 `PostDetailService`와 `JobRunner` direct-post 경로를 재사용한다.
+
+### 2.8. 현재 public 실행 계약
+- Python import API
+  - `search_board(request, http_client=...)`
+  - `search_integrated(request, http_client=...)`
+  - `fetch_post(request, http_client=...)`
+  - `fetch_comments(request, http_client=...)`
+  - `run_job(config, runner=..., run_id=None)`
+  - `resume_job(request, runner=..., run_id=None)`
+  - `retry_parser_failures(request, retry_service=None)`
+- CLI 진입점
+  - `python main.py ...`
+  - `python -m fmkorea_scraper.adapters.cli ...`
+  - 설치 후 `fmkorea-scraper ...`
+- CLI subcommand
+  - `run`
+  - `resume`
+  - `retry-parser-failures`
+  - `import-user-agents`
+  - `configure-proxy`
+  - `wizard`
+- `run --source` 값
+  - `direct-post`
+  - `board-list`
+  - `board-search`
+  - `integrated-search`
+  - `deep-search`
+  - `no-keyword-range`
+- MCP tool
+  - `search_board`
+  - `search_integrated`
+  - `fetch_post`
+  - `fetch_comments`
+  - `run_job`
+  - `resume_job`
+  - `retry_parser_failures`
+- 컨테이너 계약
+  - Docker entrypoint는 `docker-entrypoint.sh`다.
+  - entrypoint는 전달받은 argv를 유지해 `python -m fmkorea_scraper.adapters.container "$@"`를 실행한다.
+  - 컨테이너는 `run`, `retry-parser-failures`, `RESUME=true` 흐름을 지원한다.
+  - 컨테이너 필수 환경변수: `DATABASE_URL`, `S3_ENDPOINT_URL`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`
+  - 컨테이너 선택 환경변수: `S3_REGION`, `S3_PREFIX`, `S3_FORCE_PATH_STYLE`, `JOB_ID`, `RESUME`, `FMKOREA_USER_AGENT_FILE`, `FMKOREA_USER_AGENT_ROTATE_EVERY`, `FMKOREA_PROXY_HOST`, `FMKOREA_PROXY_ID`, `FMKOREA_PROXY_PW`, `FMKOREA_BROWSER_FALLBACK`
+  - CLI `resume`은 기본적으로 로컬 `Checkpoint.json`을 읽는 흐름이다.
+  - 컨테이너 `resume`은 `RESUME=true`와 `JOB_ID=<checkpoint job_id>`를 환경변수로 받고 PostgreSQL checkpoint store에서 읽는 흐름이다.
+  - 컨테이너 실행은 결과 JSONL/미디어를 S3 호환 저장소에 쓰고 체크포인트를 PostgreSQL에 쓰는 구성을 기본 계약으로 한다.
+
+### 2.9. 현재 core model 및 port 계약
+- 공통 모델 규칙
+  - public contract는 Pydantic v2 모델로 정의한다.
+  - 모든 public model은 `extra="forbid"`로 선언되지 않은 필드를 거부한다.
+  - 확장이 필요한 모델은 공통 `metadata: dict[str, Any]` 필드를 가진다.
+  - `metadata`는 JSON 직렬화 가능 값만 허용하고, 깊이와 byte 크기를 제한한다.
+- `JobConfig`
+  - 필드: `job_id`, `job_type`, `site_id`, `source`, `scrape_options`, `worker_config`, `storage_config`, `created_at`
+  - `site_id`는 `"fmkorea"` 고정이다.
+  - `job_type.value`는 `source.type`과 같아야 한다.
+  - legacy checkpoint 호환을 위해 입력 dict에 `runtime_config`가 있으면 해당 필드만 버린다.
+- source 모델
+  - `DirectPostSource`: `type="direct_post"`, `urls`
+  - `BoardListSource`: `type="board_list"`, `board_id`, `category_id`, `page_start`, `page_end`, `range_filter`
+  - `BoardSearchSource`: `type="board_search"`, `board_id`, `category_id`, `keyword`, `search_target`, `page_start`, `page_end`, `range_filter`
+  - `IntegratedSearchSource`: `type="integrated_search"`, `keyword`, `search_target`, `page_start`, `page_end`, `range_filter`
+  - `DeepSearchSource`: `type="deep_search"`, `keyword`, `seed_search_target`, `seed_page_limit`, `board_ids`, `range_filter`
+  - `NoKeywordRangeSource`: `type="no_keyword_range"`, `board_id`, `category_id`, `range_filter`
+  - `RealtimeKeywordSource`: `type="realtime_keyword"`, `scope`, `board_id`, `keyword`, `poll_interval_seconds`, `termination`
+  - `RealtimeAllSource`: `type="realtime_all"`, `board_id`, `category_id`, `poll_interval_seconds`, `termination`
+  - `ParserFailureRetrySource`: `type="parser_failure_retry"`, `failure_input`, `skip_existing_success`
+  - `deep_search`와 `no_keyword_range`는 기간 또는 글번호 범위 중 하나 이상을 요구한다.
+  - realtime source의 `poll_interval_seconds` 기본값은 30.0초다.
+  - realtime source의 종료 조건은 `duration_seconds` 또는 `end_at` 중 정확히 하나다.
+- 실행 옵션 모델
+  - `ScrapeOptions` 기본값: `comment_mode="all"`, `media_mode="url_only"`, `include_attachments=true`, `request_interval_seconds=1.0`, `max_post_retries=3`
+  - `ScrapeOptions` 제한값: `max_comment_pages`, `max_content_blocks`, `max_comments`
+  - `WorkerConfig` 기본값: `post_worker_count=1`, `media_worker_count=1`, `queue_max_size=null`
+  - `RangeFilter`: `date_from`, `date_to`, `min_document_srl`, `max_document_srl`
+- 저장소 모델
+  - `StorageConfig`: `output_mode`, `checkpoint_mode`, `base_output_path`, `s3`, `postgres`
+  - `output_mode="local"`이면 로컬 JSONL/미디어 저장소를 사용한다.
+  - `output_mode="s3_compatible"`이면 `S3StorageConfig(endpoint_url, bucket, prefix, region)`가 필수다.
+  - `checkpoint_mode="local"`이면 `<base_output_path>/Checkpoint.json`을 사용한다.
+  - `checkpoint_mode="postgres"`이면 `PostgresCheckpointConfig(dsn)`이 필수다.
+- HTTP 런타임 모델
+  - `HttpRuntimeConfig`는 `JobConfig`에 저장하지 않는 실행 시점 설정이다.
+  - 필드: `request_interval_seconds`, `timeout`, `retry_policy`, `user_agent`, `proxy`, `proxy_env_path`, `execution_dir`, `default_headers`, `browser_fallback_enabled`
+  - `TimeoutConfig` 기본값: connect 10초, read/write 30초, pool 10초
+  - `RetryPolicy` 기본값: max attempts 3, backoff base 0.25초, max 5초, retry status `{429,500,502,503,504}`
+  - CLI/컨테이너는 `ScrapeOptions.max_post_retries + 1`을 HTTP max attempts로 변환한다.
+- runner port
+  - `HttpPort`: `get`, `post`, `download`, `close`
+  - `OutputStorePort`: `append_post`, `write_report`, `finalize`
+  - `MediaStorePort`: `save_media`, `save_metadata_only`
+  - `FailureStorePort`: `write_failure`, `read_failures`
+  - `CheckpointStorePort`: `save`, `load`, `load_latest`
+  - `LoggerPort`: `debug`, `info`, `warning`, `error`
+- report 모델
+  - `JobReport`: `schema_version="fmkorea.job_report.v1"`, `job_id`, `status`, `started_at`, `finished_at`, `collected_count`, `stored_count`, `failure_count`, `output_refs`
+  - `RetryReport`는 `selected_count`, `skipped_count`를 추가한다.
+  - `StoredObjectRef`: `storage_mode`, `path`, `bucket`, `object_key`
+- `JobReport` JSON 예시
+```json
+{
+  "schema_version": "fmkorea.job_report.v1",
+  "job_id": "job-a",
+  "status": "completed",
+  "started_at": "2026-08-11T12:00:00+09:00",
+  "finished_at": "2026-08-11T12:10:00+09:00",
+  "collected_count": 120,
+  "stored_count": 118,
+  "failure_count": 2,
+  "output_refs": [
+    {
+      "storage_mode": "local",
+      "path": "D:\\HongDev\\ELSAPHABA\\FMkorea-Scraper\\outputs\\job-a\\run-1\\posts.jsonl",
+      "bucket": null,
+      "object_key": "outputs/job-a/run-1/posts.jsonl",
+      "metadata": {}
+    },
+    {
+      "storage_mode": "local",
+      "path": "D:\\HongDev\\ELSAPHABA\\FMkorea-Scraper\\outputs\\job-a\\run-1\\failures.jsonl",
+      "bucket": null,
+      "object_key": "outputs/job-a/run-1/failures.jsonl",
+      "metadata": {}
+    }
+  ],
+  "metadata": {}
+}
+```
+- `RetryReport` JSON 예시
+```json
+{
+  "schema_version": "fmkorea.job_report.v1",
+  "job_id": "retry-job-a",
+  "status": "completed",
+  "started_at": "2026-08-11T13:00:00+09:00",
+  "finished_at": "2026-08-11T13:05:00+09:00",
+  "collected_count": 10,
+  "stored_count": 9,
+  "failure_count": 1,
+  "output_refs": [],
+  "selected_count": 10,
+  "skipped_count": 3,
+  "metadata": {}
+}
+```
 
 ## 3. 기술 스택
 - Proxy를 통한 httpx 요청 전송
 - `.env` 파일 기반 Proxy 환경변수 로드
 - 서버가 내려준 임시 cookie는 `HttpClient` 생명주기 안에서만 메모리로 유지하고, User-Agent 교체 또는 client 종료 시 reset
 - Scrapling `Selector` 기반 HTML 파싱
-- httpx 기반 동기/비동기 HTTP 요청
+- `httpx.AsyncClient` 기반 비동기 HTTP 요청
 - 정상 HTTP 응답의 목록/검색/상세 필수 DOM 누락 시에만 Scrapling `DynamicFetcher`의 일반 Playwright 렌더링을 사용
 - asyncio 기반 링크 수집 워커 + 게시글 수집 워커 분리
 - json 기반 JSONL 저장
@@ -694,58 +1143,175 @@
 ```
 FMKorea-Scraper/
 ├── main.py
-├── fmkorea_scraper/
-│   ├── __init__.py
-│   ├── domain/
-│   │   ├── models.py
-│   │   └── jobs.py
-│   ├── services/
-│   │   ├── board_scraper.py
-│   │   ├── search_scraper.py
-│   │   ├── post_scraper.py
-│   │   ├── comment_scraper.py
-│   │   └── parser_retry.py
-│   ├── adapters/
-│   │   ├── cli.py
-│   │   ├── wizard.py
-│   │   ├── storage_local.py
-│   │   ├── storage_s3.py
-│   │   └── checkpoint_postgres.py
-│   ├── http/
-│   │   ├── client.py
-│   │   ├── proxy.py
-│   │   ├── rate_limit.py
-│   │   └── user_agent.py
-│   └── config/
-│       └── settings.py
-├── infra/
-│   └── cdk/
-├── docs/
-│   └── FMKorea-Scraper_Function_Specification.md
-├── user-agents.txt
-├── .env
-├── .dockerignore
-├── docker-entrypoint.sh
-├── Checkpoint.json
 ├── pyproject.toml
 ├── requirements.lock
-└── README.md
+├── Dockerfile
+├── docker-entrypoint.sh
+├── .dockerignore
+├── README.md
+├── docs/
+│   └── FMKorea-Scraper_Function_Specification.md
+├── aidlc-docs/
+│   ├── aidlc-state.md
+│   ├── audit.md
+│   ├── inception/
+│   └── construction/
+├── infra/
+│   └── cdk/
+│       ├── app.py
+│       ├── cdk.json
+│       ├── requirements.txt
+│       ├── config/
+│       │   ├── dev.yaml
+│       │   ├── staging.yaml
+│       │   └── prod.yaml
+│       ├── stacks/
+│       │   ├── config.py
+│       │   ├── naming.py
+│       │   ├── shared_infra_stack.py
+│       │   └── worker_stack.py
+│       └── tests/
+├── src/
+│   └── fmkorea_scraper/
+│       ├── __init__.py
+│       ├── core/
+│       │   ├── api.py
+│       │   ├── errors.py
+│       │   ├── normalization.py
+│       │   ├── ports.py
+│       │   ├── schema.py
+│       │   └── validation.py
+│       ├── models/
+│       │   ├── base.py
+│       │   ├── checkpoint.py
+│       │   ├── comment.py
+│       │   ├── content.py
+│       │   ├── enums.py
+│       │   ├── failure.py
+│       │   ├── job.py
+│       │   ├── media.py
+│       │   ├── post.py
+│       │   └── report.py
+│       ├── http/
+│       │   └── runtime.py
+│       ├── collect/
+│       │   ├── models.py
+│       │   ├── parsers.py
+│       │   ├── policies.py
+│       │   ├── service.py
+│       │   └── urls.py
+│       ├── parse/
+│       │   ├── comments.py
+│       │   ├── content.py
+│       │   ├── media.py
+│       │   ├── metadata.py
+│       │   ├── models.py
+│       │   ├── service.py
+│       │   └── warnings.py
+│       ├── outputs/
+│       │   ├── checkpoint.py
+│       │   ├── errors.py
+│       │   ├── factory.py
+│       │   ├── jsonl.py
+│       │   ├── layout.py
+│       │   ├── local.py
+│       │   ├── postgres_checkpoint.py
+│       │   ├── redaction.py
+│       │   ├── s3.py
+│       │   └── s3_output.py
+│       ├── runner/
+│       │   ├── checkpointing.py
+│       │   ├── models.py
+│       │   ├── policies.py
+│       │   ├── service.py
+│       │   └── workers.py
+│       ├── retry/
+│       │   └── parser_failures.py
+│       ├── adapters/
+│       │   ├── cli.py
+│       │   ├── container.py
+│       │   ├── mcp.py
+│       │   └── safe_errors.py
+│       └── dom.py
+├── tests/
+│   ├── fixtures/
+│   ├── snapshots/
+│   ├── strategies/
+│   └── test_*.py
+├── user-agents.txt        # 실행 위치에 둘 수 있는 사용자 관리 파일
+├── .env                   # 사용자 로컬 Proxy 설정 파일, 커밋 금지
+├── outputs/               # 로컬 실행 결과, 커밋 금지
+└── Checkpoint.json         # 로컬 체크포인트 예시, 커밋 금지
 ```
+
+구현 주의:
+
+- 실제 Python package는 `src/fmkorea_scraper` 아래에 있다.
+- 루트 `main.py`는 `src` 경로를 추가한 뒤 CLI `main()`을 호출하는 호환 진입점이다.
+- `.dockerignore`는 `.git`, 캐시, `.env`, 출력물, 문서, 테스트, CDK synth 결과를 Docker build context에서 제외한다.
+- Docker image에는 `aidlc-docs`, `docs`, `tests`, `infra/cdk`를 복사하지 않는다.
 
 ## 5. 실행 형태
 - CLI 직접 실행
   - 명령형 실행: `python -m fmkorea_scraper.adapters.cli run ...`
   - DCinside-Scraper와 같은 루트 호환 실행: `python main.py ...`
   - 설치 후 console script 실행: `fmkorea-scraper ...`
-  - 터미널 마법사 실행은 같은 CLI 엔트리에서 선택형 UI로 제공 가능
+  - 터미널 마법사 실행: `fmkorea-scraper wizard`
+  - CLI는 `run`, `resume`, `retry-parser-failures`, `import-user-agents`, `configure-proxy`, `wizard`를 제공한다.
+  - `run --source`는 `direct-post`, `board-list`, `board-search`, `integrated-search`, `deep-search`, `no-keyword-range`를 지원한다.
+  - 실시간 수집은 별도 source 값이 아니라 `FMKOREA_REALTIME_ENABLED=true` 환경변수로 활성화한다.
 - 라이브러리 import
   - 설정 객체와 Job 객체를 코드에서 생성해 수집기를 직접 호출할 수 있게 구성
+  - 공개 함수는 `search_board`, `search_integrated`, `fetch_post`, `fetch_comments`, `run_job`, `resume_job`, `retry_parser_failures`다.
+  - import 시 스크래핑, 프롬프트, 파일 생성이 자동 실행되면 안 된다.
 - Docker 워커 컨테이너
   - 환경변수로 Job 옵션, 저장소, Proxy, 실시간 종료 조건을 주입
   - JSONL/미디어는 S3 호환 저장소로 출력
   - 체크포인트는 PostgreSQL에 저장
-- 향후 MCP
+  - Dockerfile은 `python:3.11-slim` 기반으로 `.[s3,postgres,browser]`를 설치하고 `scrapling install`을 수행한다.
+  - `docker-entrypoint.sh`는 `python -m fmkorea_scraper.adapters.container "$@"`로 실행을 위임한다.
+  - 컨테이너는 장기 실행 worker daemon이 아니라 전달받은 Job 하나를 수행하고 종료하는 one-shot worker다.
+  - RabbitMQ/SQS 메시지 소비는 컨테이너 내부가 아니라 향후 외부 오케스트레이터가 담당한다.
+- MCP
   - 같은 core service를 MCP tool wrapper에서 호출한다.
+  - `python -m fmkorea_scraper.adapters.mcp`로 MCP server를 실행한다.
+  - MCP tool은 safe error payload만 반환하며 secret, cookie, raw header를 노출하지 않는다.
+
+대표 실행 예시:
+
+```powershell
+# 직접 게시글 수집
+fmkorea-scraper run --source direct-post --url "https://www.fmkorea.com/best/10195585295"
+
+# 게시판 내 검색
+fmkorea-scraper run --source board-search --board-id "stock" --keyword "삼전" --search-target "title_content" --page-start 1 --page-end 5
+
+# 통합 검색
+fmkorea-scraper run --source integrated-search --keyword "삼전" --search-target "title_content" --page-start 1 --page-end 10
+
+# 실패 재처리
+fmkorea-scraper retry-parser-failures --failure-path ".\outputs\job-a\run-1\failures.jsonl"
+
+# 체크포인트 재개
+fmkorea-scraper resume --job-id "job-a"
+
+# 터미널 마법사
+fmkorea-scraper wizard
+```
+
+컨테이너 실행 예시:
+
+```powershell
+docker run --rm `
+  -e DATABASE_URL="postgresql://user:pass@postgres/fmkorea" `
+  -e S3_ENDPOINT_URL="http://garage:3900" `
+  -e S3_BUCKET="scraper" `
+  -e S3_ACCESS_KEY_ID="access" `
+  -e S3_SECRET_ACCESS_KEY="secret" `
+  -e S3_PREFIX="fmkorea" `
+  fmkorea-scraper:latest `
+  run --source board-search --board-id "stock" --keyword "삼전"
+```
 
 ## 6. 향후 확장 계획
 
@@ -784,7 +1350,9 @@ FMKorea-Scraper/
 ### 6.4.1. Scrapling Spider 기반 실행 엔진 검토
 - 현재 구현은 Scrapling `Selector`를 파서 런타임으로 사용하지만, Scrapling Spider는 사용하지 않는다.
 - Spider 전환은 단순 파서 교체가 아니라 현재 `JobRunner`, 내부 게시글 큐, checkpoint, failure report, parser-failure retry, CLI/Docker/MCP 실행 경계를 바꾸는 실행 엔진 교체로 본다.
-- 향후 여러 커뮤니티 스크래퍼의 크롤링 엔진을 하나의 Spider 표준으로 통일할 필요가 생길 경우, 별도 AI-DLC 단위에서 다음 항목을 검토한다.
+- UOW-011 NFR Requirements의 Q9=B 결정에 따라 Spider PoC/planning은 UOW-011 이후 별도 UOW로 다룬다.
+- 현재 AI-DLC 상태는 UOW-011 complete / UOW-012 not started이며, UOW-012 질문지 파일은 아직 생성하지 않았다.
+- 향후 여러 커뮤니티 스크래퍼의 크롤링 엔진을 하나의 Spider 표준으로 통일할 필요가 생기거나 현재 `JobRunner`/checkpoint 모델이 병목으로 확인될 경우, 별도 AI-DLC 단위에서 다음 항목을 검토한다.
   - Spider request scheduling과 기존 Job 단위 실행 모델의 매핑
   - Spider pause/resume과 PostgreSQL checkpoint의 매핑
   - Spider callback 실패와 `failures.jsonl`/parser retry의 매핑
@@ -843,7 +1411,7 @@ FMKorea-Scraper/
 - Python 라이브러리
   - 통합 플랫폼, 분석 파이프라인, 테스트 코드에서 직접 import해 사용할 수 있도록 공개 API를 유지
 - 워커 컨테이너
-  - 통합 플랫폼에서 Job Queue를 소비하는 실행 단위
+  - 통합 플랫폼이 Job Queue를 소비한 뒤 실행시키는 one-shot Job 처리 단위
   - 컨테이너별 Proxy/User-Agent/속도 설정을 환경변수로 주입
 - KubeRay
   - 대규모 분산 수집/분석이 필요해질 때 검토
