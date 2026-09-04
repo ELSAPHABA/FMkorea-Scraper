@@ -1123,21 +1123,49 @@
 ```
 
 ## 3. 기술 스택
-- Proxy를 통한 httpx 요청 전송
-- `.env` 파일 기반 Proxy 환경변수 로드
-- 서버가 내려준 임시 cookie는 `HttpClient` 생명주기 안에서만 메모리로 유지하고, User-Agent 교체 또는 client 종료 시 reset
-- Scrapling `Selector` 기반 HTML 파싱
-- `httpx.AsyncClient` 기반 비동기 HTTP 요청
-- 정상 HTTP 응답의 목록/검색/상세 필수 DOM 누락 시에만 Scrapling `DynamicFetcher`의 일반 Playwright 렌더링을 사용
-- asyncio 기반 링크 수집 워커 + 게시글 수집 워커 분리
-- json 기반 JSONL 저장
-- Polars 기반 JSONL 가공 및 분석
-- `user-agents.txt` 기반 User-Agent 주기적 교체
-- 로컬 체크포인트는 `Checkpoint.json`
-- 컨테이너 체크포인트는 PostgreSQL
-- 컨테이너 JSONL/미디어 출력은 Garage 기반 S3 호환 객체 저장소
-- AWS CDK를 활용한 ECS Fargate, AWS S3, RDS PostgreSQL 기반 선택 배포 경로는 공통 스크래퍼 인프라 패턴을 계승해 별도 구성 가능
-- SeaweedFS는 대량 미디어/소파일 저장, FUSE, Iceberg 요구가 생길 때 확장 후보로 유지
+- Python
+  - 지원 버전: Python `>=3.11`
+  - 공식 검증에 사용한 버전: Python 3.12.10
+  - 패키지 방식: `pyproject.toml` + hatchling
+- 기본 의존성
+  - `anyio>=4,<5`
+  - `pydantic>=2,<3`
+  - `httpx>=0.28,<1`
+  - `python-dotenv>=1,<2`
+  - `scrapling>=0.4.15,<0.5`
+- 선택 extra
+  - `s3`: `boto3>=1.34,<2`
+  - `postgres`: `psycopg[binary]>=3,<4`
+  - `mcp`: `mcp>=1,<2`
+  - `analysis`: `polars>=1,<2`
+  - `browser`: `scrapling[fetchers]>=0.4.15,<0.5`
+  - `test`: `hypothesis>=6,<7`, `pytest>=8,<9`
+- HTTP 런타임
+  - `httpx.AsyncClient`를 기본 요청 경로로 사용한다.
+  - Proxy는 `httpx` proxy 설정으로 주입한다.
+  - `.env` 파일 기반 Proxy 환경변수 로드를 지원한다.
+  - 서버가 내려준 임시 cookie는 `HttpClient` 생명주기 안에서만 메모리로 유지하고, User-Agent 교체 또는 client 종료 시 reset한다.
+- 파싱 런타임
+  - Scrapling `Selector` 기반 HTML 파싱
+  - 공통 DOM helper: `src/fmkorea_scraper/dom.py`
+  - 정상 HTTP 응답의 목록/검색/상세 필수 DOM 누락 시에만 Scrapling `DynamicFetcher`의 일반 Playwright 렌더링 사용
+  - `DynamicFetcher` fallback은 `HttpClient` 인스턴스 내부 lock으로 직렬화한다.
+- 병렬 실행
+  - `asyncio` 기반 링크 수집 워커 + 게시글 수집 워커 분리
+  - 내부 큐는 `asyncio.Queue`
+  - 미디어 다운로드는 `asyncio.Semaphore(media_worker_count)`로 제한
+- 저장 및 분석
+  - 표준 `json` 기반 JSONL 저장
+  - Polars 기반 JSONL 가공 및 분석
+  - 로컬 체크포인트는 `Checkpoint.json`
+  - 컨테이너 체크포인트는 PostgreSQL
+  - 컨테이너 JSONL/미디어 출력은 S3 호환 객체 저장소
+  - 기본 운영 방향은 Garage이며, SeaweedFS는 대량 미디어/소파일 저장, FUSE, Iceberg 요구가 생길 때 확장 후보로 유지
+- 배포
+  - Docker worker image는 `python:3.11-slim` 기반이다.
+  - image build 시 `.[s3,postgres,browser]`를 설치하고 `scrapling install`로 Chromium을 설치한다.
+  - AWS CDK는 VPC, S3 output bucket, RDS PostgreSQL, ECS Fargate worker, CloudWatch Logs/EventBridge 기반 실패 감지를 구성한다.
+  - CDK는 Docker image build/push, 중앙 Job Queue, 통합 운영 UI, EKS 배포를 포함하지 않는다.
 
 ## 4. 디렉토리 구조
 ```
@@ -1358,7 +1386,7 @@ docker run --rm `
   - Spider callback 실패와 `failures.jsonl`/parser retry의 매핑
   - HTTP 차단 감지 및 선택적 browser fallback 정책의 연결
   - 기존 CLI/Docker/MCP public contract 유지 여부
-- 현 단계에서는 Spider 리팩토링을 구현하지 않고 향후 계획으로만 기록한다.
+- PoC 결과가 현재 `JobRunner`보다 복잡도를 낮추지 못하면 Spider 리팩토링은 진행하지 않고 현재 구조를 유지한다.
 
 ### 6.5. 커뮤니티 통합 스크래퍼
 - 통합 스크래핑 시스템의 에펨코리아용 워커 컨테이너로 스케줄링 및 스케일링
