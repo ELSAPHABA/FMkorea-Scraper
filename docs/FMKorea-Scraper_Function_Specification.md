@@ -35,8 +35,10 @@
   - UOW-001부터 UOW-010까지 구현 및 Build/Test 승인 완료
   - UOW-011 `Scrapling Runtime Refactor` 구현 및 Build/Test 승인 완료
   - UOW-011에서 BeautifulSoup 기반 파싱을 Scrapling `Selector` 기반으로 전환하고, HTTP-first 요청 뒤 필수 DOM 누락 시에만 일반 Playwright 렌더링 fallback을 수행하도록 정리함
-  - UOW-012 `Scrapling Spider PoC/planning`은 아직 시작하지 않음
-  - UOW-012는 production Spider 리팩토링이 아니라 도입 가치와 migration 조건을 검토하는 planning 단위이며, 사용자 명시 지시가 있을 때 별도 AI-DLC 단위로 시작함
+  - UOW-012 `Scrapling Spider PoC/planning`은 Functional Design Questions 단계로 시작됨
+  - UOW-012 질문지 파일은 `aidlc-docs/construction/plans/uow-012-scrapling-spider-poc-functional-design-plan.md`
+  - 현재 확인된 답변은 Q2=`B`이며, 나머지 질문은 확정 전 상태
+  - UOW-012는 production Spider 리팩토링이 아니라 도입 가치와 migration 조건을 검토하는 planning 단위
 - 최근 검증 기준
   - `py -3.12 -m pytest tests -q --tb=short`: `168 passed, 3 skipped, 31 warnings`
   - Python compile 검증 통과
@@ -1378,8 +1380,10 @@ docker run --rm `
 ### 6.4.1. Scrapling Spider 기반 실행 엔진 검토
 - 현재 구현은 Scrapling `Selector`를 파서 런타임으로 사용하지만, Scrapling Spider는 사용하지 않는다.
 - Spider 전환은 단순 파서 교체가 아니라 현재 `JobRunner`, 내부 게시글 큐, checkpoint, failure report, parser-failure retry, CLI/Docker/MCP 실행 경계를 바꾸는 실행 엔진 교체로 본다.
-- UOW-011 NFR Requirements의 Q9=B 결정에 따라 Spider PoC/planning은 UOW-011 이후 별도 UOW로 다룬다.
-- 현재 AI-DLC 상태는 UOW-011 complete / UOW-012 not started이며, UOW-012 질문지 파일은 아직 생성하지 않았다.
+- 현재 AI-DLC 상태는 UOW-012 `Scrapling Spider PoC`의 Functional Design Questions 단계다.
+- 현재 질문지 파일은 `aidlc-docs/construction/plans/uow-012-scrapling-spider-poc-functional-design-plan.md`다.
+- 현재 확인된 답변은 Q2=`B`이며, 나머지 질문은 확정 전 상태로 남아 있다.
+- UOW-012는 운영 코드 전환이 아니라 기존 public contract를 유지한 채 Spider가 실제로 단순화 효과를 내는지 검증하는 PoC/planning 단위다.
 - 향후 여러 커뮤니티 스크래퍼의 크롤링 엔진을 하나의 Spider 표준으로 통일할 필요가 생기거나 현재 `JobRunner`/checkpoint 모델이 병목으로 확인될 경우, 별도 AI-DLC 단위에서 다음 항목을 검토한다.
   - Spider request scheduling과 기존 Job 단위 실행 모델의 매핑
   - Spider pause/resume과 PostgreSQL checkpoint의 매핑
