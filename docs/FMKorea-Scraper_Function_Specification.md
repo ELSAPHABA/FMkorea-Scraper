@@ -1524,3 +1524,416 @@ docker run --rm `
 - KubeRay
   - 대규모 분산 수집/분석이 필요해질 때 검토
   - 초기 구현 범위에는 포함하지 않음
+
+## 8. 복제 구현 부록
+
+이 장은 기능 설명이 아니라 현 프로젝트와 같은 동작을 다시 구현하기 위한 세부 계약이다.
+
+### 8.1. 파서별 상세 알고리즘
+
+#### 8.1.1. 공통 DOM/URL 처리
+- HTML 파싱은 Scrapling `Selector` 기반 공통 helper를 사용한다.
+- URL 기준 base는 기본 `https://www.fmkorea.com`이다.
+- `//example.com/path` 형태의 protocol-relative URL은 `https://example.com/path`로 정규화한다.
+- 상대 URL은 현재 요청 URL 또는 기본 base URL을 기준으로 절대 URL로 변환한다.
+- `document_srl` 추출은 query parameter `document_srl`을 먼저 본다.
+- query에 `document_srl`이 없으면 path 또는 텍스트에서 3자리 이상 숫자 토큰을 찾아 글번호로 사용한다.
+- `board_id` 추출은 query parameter `mid`를 먼저 본다.
+- `mid`가 없으면 path 첫 세그먼트를 사용하되, path가 순수 숫자이면 게시판 ID로 보지 않는다.
+- 후보 작성일은 다음 패턴을 순서대로 찾는다.
+
+| 우선순위 | 포맷 | 예시 |
+| --- | --- | --- |
+| 1 | `%Y.%m.%d %H:%M` | `2026.08.11 12:30` |
+| 2 | `%Y-%m-%d %H:%M` | `2026-08-11 12:30` |
+| 3 | `%Y.%m.%d` | `2026.08.11` |
+| 4 | `%Y-%m-%d` | `2026-08-11` |
+
+#### 8.1.2. 게시판 목록/게시판 검색 후보 파서
+- 필수 DOM selector는 `div.bd`다.
+- 후보 행 selector는 `div.bd table tbody tr`을 먼저 사용한다.
+- 위 selector 결과가 없으면 fallback으로 `tbody tr`을 사용한다.
+- 행의 class 문자열을 소문자로 만든 값에 `notice`, `ad`, `power` 중 하나가 포함되면 무시한다.
+- 행 텍스트 소문자 값에 `공지`, `광고` 중 하나가 포함되면 무시한다.
+- 후보 링크는 다음 순서로 찾는다.
+
+| 우선순위 | selector |
+| --- | --- |
+| 1 | `a.hx[href]` |
+| 2 | `td.title a[href]` |
+| 3 | `a[href]` |
+
+- 후보 링크에서 `document_srl`을 추출하지 못하면 해당 행은 `CollectorFailure(stage="board_row")`로 기록하고 다음 행을 처리한다.
+- `PostCandidate`는 다음 값을 저장한다.
+
+| 필드 | 값 |
+| --- | --- |
+| `board_id` | 링크 URL에서 추출한 `mid` 또는 호출자가 전달한 board hint |
+| `document_srl` | 추출한 글번호 정수 |
+| `document_id_raw` | 추출한 글번호 원문 문자열 |
+| `url` | 절대 URL |
+| `candidate_title` | 후보 링크 텍스트. 비어 있으면 `null` |
+| `candidate_created_at` | 행 전체 텍스트에서 파싱한 후보 작성일 |
+| `metadata.source` | `board_page` |
+| `metadata.candidate_text` | 행 전체 텍스트 앞 1000자 |
+
+- 다음 페이지 여부는 `a[href*='page=']` 링크의 query `page` 값 중 현재 page보다 큰 값이 하나라도 있으면 `has_next=true`로 판단한다.
+- 목록/검색 단계의 후보 값은 필터링과 진단용이다. 최종 저장용 제목, 작성자, 작성일, 조회수, 추천수, 댓글 수, 말머리, 본문, 댓글은 상세 페이지에서 다시 파싱한다.
+
+#### 8.1.3. 통합 검색 후보 파서
+- 필수 DOM selector는 `.searchResult, .search_result`다.
+- 후보 item selector는 `.searchResult li, .search_result li, ul li`를 먼저 사용한다.
+- 위 selector 결과가 없으면 fallback으로 `article, tr`을 사용한다.
+- item 안의 모든 `a[href]`를 순회하며, `document_srl`을 추출할 수 있는 첫 링크를 게시글 링크로 사용한다.
+- 후보 생성 중 예외가 발생하면 `CollectorFailure(stage="integrated_item")`로 기록한다.
+- `PostCandidate`는 다음 값을 저장한다.
+
+| 필드 | 값 |
+| --- | --- |
+| `board_id` | 링크 URL에서 추출한 board ID. 없으면 `null` |
+| `document_srl` | 추출한 글번호 정수 |
+| `document_id_raw` | 추출한 글번호 원문 문자열 |
+| `url` | 절대 URL |
+| `candidate_title` | 후보 링크 텍스트. 비어 있으면 `null` |
+| `candidate_created_at` | item 전체 텍스트에서 파싱한 후보 작성일 |
+| `metadata.source` | `integrated_search` |
+| `metadata.candidate_text` | item 전체 텍스트 앞 1000자 |
+
+- 통합 검색에서 board 후보는 item 내부 `a[href]` 중 board ID는 추출되지만 document ID는 추출되지 않는 첫 링크를 우선 사용한다.
+- board 링크를 찾지 못하면 게시글 후보의 `board_id`를 fallback으로 사용한다.
+- board 후보는 `BoardCandidate(board_id, board_name, board_url)`로 저장한다.
+- 다음 페이지 여부는 게시판 목록/검색 파서와 같은 `page` query 비교 규칙을 사용한다.
+
+#### 8.1.4. 상세 메타데이터 파서
+- 기준 root는 `#bd_capture`다.
+- `#bd_capture`가 없으면 전체 page를 root로 사용하고 `missing_detail_root` parse warning을 남긴다.
+- canonical URL은 `link[rel="canonical"][href]`, `.document_address a.a[href]`를 먼저 사용한다.
+- canonical 후보가 없으면 source URL을 사용한다.
+- 상세 글번호는 canonical URL query `document_srl`을 먼저 본다.
+- query에 없으면 canonical path의 `/(best/)?<digits>` 패턴을 사용한다.
+- 그래도 없으면 후보/요청의 `document_id_hint`를 사용한다.
+- `document_id_raw`, `canonical_url`, `title` 중 하나라도 비어 있으면 `ParseFailureError(reason="required_metadata")`를 발생시킨다.
+
+| 항목 | selector/규칙 |
+| --- | --- |
+| 제목 | `.rd_hd h1 .np_18px_span` 우선, 없으면 `.rd_hd h1` |
+| board_id | canonical query `mid`, 없으면 context `board_id_hint` |
+| board_name | `.bd_name`, `.board_name`, `h1 a` 순서 |
+| 작성자 | `.rd_hd .member_plate` |
+| member_srl | 작성자 노드 class의 `member_<digits>` |
+| level | 작성자 노드 하위 `img.level`의 `alt`, 없으면 `title` |
+| profile_url | 작성자 노드 자체가 `a` 태그인 경우 `href` |
+| created_at_raw | `.date`, `.regdate`, `.rd_hd .btm_area` 순서 |
+| created_at | `YYYY.MM.DD HH:MM` 또는 `YYYY-MM-DD HH:MM` 정규식 |
+| views | `조회 수` label이 포함된 span의 숫자 |
+| reactions.up_count | `추천 수` label이 포함된 span의 숫자. 없으면 0 |
+| comment_count | `댓글` label이 포함된 span의 숫자 |
+| category | `a.category[href*="category="]` |
+
+- counter 파싱은 `.rd_hd .btm_area .side.fr span`, `.btm_area span`, `span`을 순회하며 label이 포함된 첫 span에서 `[\d,]+` 숫자를 추출한다.
+- category URL query `category` 값을 `category.category_id`로 저장한다.
+
+#### 8.1.5. 첨부파일 파서
+- 첨부파일 후보 selector는 `.rd_file a[data-href]`다.
+- URL은 `data-href`를 우선 사용하고, 없으면 `href`를 사용한다.
+- query parameter에서 `file_srl`, `sid`, `mid`를 추출한다.
+
+| 필드 | 값 |
+| --- | --- |
+| `file_name` | 링크 텍스트. 없으면 `title` |
+| `url` | 정규화된 다운로드 URL |
+| `size_text` | `title` |
+| `file_srl` | query `file_srl` |
+| `sid` | query `sid` |
+| `mid` | query `mid` |
+| `download_text` | `title` |
+| `file_path`, `object_key` | 다운로드 저장 후 media/output 단계에서 필요 시 반영 |
+
+- 첨부파일은 `file_srl` 기준 dictionary로 만들어 image/link block과 매칭한다.
+
+#### 8.1.6. 본문 콘텐츠 파서
+- 기준 컨테이너는 `#bd_capture .rd_body article > .xe_content`를 먼저 사용한다.
+- 없으면 `#bd_capture .rd_body .xe_content`를 사용한다.
+- 둘 다 없으면 `missing_content_container` warning을 남기고 빈 `BodyContent`를 반환한다.
+- 컨테이너 내부 `.//node()`를 DOM 순서대로 순회한다.
+- block 하나를 저장할 때마다 `order`를 1 증가시킨다.
+- `max_content_blocks`가 있고 현재 block 수가 제한값 이상이면 `max_content_blocks_exceeded` warning을 남기고 중단한다.
+- node별 파싱 중 예외가 발생하면 `content_block_parse_failed` warning을 남기고 다음 node를 처리한다.
+
+텍스트 노드 처리:
+
+- parent가 없으면 무시한다.
+- parent tag가 `script`, `style`, `video`, `source`, `iframe`이면 무시한다.
+- ancestor tag에 `a`, `video`, `iframe`이 있으면 무시한다.
+- 공백 정규화 후 빈 문자열이면 무시한다.
+- 값이 `BeforeDocument`, `AfterDocument`, `__LAZY__`이면 무시한다.
+- 값이 `serverLog:`로 시작하면 무시한다.
+- 통과한 텍스트는 `TextBlock(order, type="text", text=<normalized>)`로 저장한다.
+
+태그 노드 처리:
+
+| tag | 처리 |
+| --- | --- |
+| `img` | `ImageBlock` 후보. `mejs__poster-img` class는 제외 |
+| `video` | `FmkVideoBlock` 후보 |
+| `iframe` | YouTube, X 순서로 전용 block을 시도하고 실패하면 `UnknownEmbedBlock(provider="iframe")` |
+| `a` | highslide면 제외. `data-href`가 첨부파일과 매칭되면 `AttachmentBlock`. 그 외 YouTube, X 전용 block을 먼저 시도하고 실패하면 `LinkBlock` |
+| 기타 tag | block 생성 없음 |
+
+- media dedupe key는 `(media_type, file_srl 또는 url)`이다.
+- image dedupe type은 `image`, fmk video dedupe type은 `fmk_video`, YouTube/X는 각 block의 `type`을 사용한다.
+- dedupe key가 이미 있으면 같은 media block은 저장하지 않는다.
+- `content.text`는 `TextBlock.text`와 `LinkBlock.text`만 줄바꿈으로 합쳐 만든다.
+
+#### 8.1.7. 미디어 block 파서
+- 이미지 파서
+  - `img` class에 `mejs__poster-img`가 있으면 `null`을 반환한다.
+  - 부모 ancestor 중 `a.highslide`를 찾고, 있으면 그 `href`를 `original_url`로 사용한다.
+  - `url`은 `original_url`을 우선 사용하고, 없으면 `img[src]`를 사용한다.
+  - `file_srl`은 `data-file-srl`, 없으면 `file_srl` attribute를 사용한다.
+  - 같은 `file_srl`의 첨부파일이 있으면 `download_url`에 첨부파일 URL을 넣는다.
+- 펨코 자체 영상 파서
+  - `video` 하위 `source[src]`를 우선 사용하고, 없으면 `video[src]`를 사용한다.
+  - URL이 없으면 `null`을 반환한다.
+  - 설명은 video parent 하위 `.video_infobox .box div` 텍스트를 사용한다. 없거나 빈 값이면 `null`이다.
+  - `poster_url`은 `video[poster]`를 사용한다.
+  - `download_url`은 현재 구현상 `video_url`과 동일하게 둔다.
+  - `name`, `upload_date`, `width`, `height`는 video parent 하위 `meta[itemprop="<name>"][content]`에서 읽는다.
+- YouTube 파서
+  - URL 정규화 후 `youtube.com/watch?v=`, `youtube.com/embed/`, `youtu.be/` 패턴에서 video ID를 추출한다.
+  - `embed_url`은 `https://www.youtube.com/embed/<video_id>`로 생성한다.
+  - query `t` 또는 `start`가 정수이면 `start_seconds`로 저장한다.
+- X 파서
+  - URL 정규화 후 `x.com/<user>/status/<digits>` 또는 `twitter.com/<user>/status/<digits>` 패턴을 찾는다.
+  - `username`, `status_id`, `tweet_id`를 저장한다.
+  - `embed_url`은 `https://platform.twitter.com/embed/Tweet.html?id=<tweet_id>`로 생성한다.
+
+#### 8.1.8. 댓글 파서
+- 기준 selector는 `.fdb_lst_ul > li`다.
+- 각 댓글 item은 DOM 등장 순서대로 `source_order`를 받는다.
+- `max_comments`가 있고 현재 저장 댓글 수가 제한값 이상이면 `max_comments_exceeded` warning을 남기고 중단한다.
+- 댓글 1개 파싱 중 예외가 발생하면 `comment_parse_failed` warning을 남기고 다음 댓글을 처리한다.
+
+| 항목 | selector/규칙 |
+| --- | --- |
+| `comment_srl` | `li[id]`에서 `comment_<digits>` 정규식 |
+| `comment_id_raw` | `comment_srl` 문자열. 없으면 `null` |
+| `source_dom_id` | `li[id]` 원문 |
+| BEST 여부 | item class에 `comment_best`가 있거나 `.icon-hit` 텍스트가 정확히 `BEST` |
+| `badges` | BEST이면 `["BEST"]`, 아니면 빈 배열 |
+| parent | `data-parent`, 없으면 `data-parent-comment-srl` |
+| depth | parent가 있거나 item class에 `reply`가 있으면 1, 아니면 0 |
+| 작성자 | `.meta .member_plate`, 없으면 `.member_plate` |
+| 작성자 member_srl | 작성자 노드 class의 `member_<digits>` |
+| 날짜 원문 | `.meta .date`, 없으면 `.date` |
+| 날짜 정규화 | `YYYY.MM.DD HH:MM` 또는 `YYYY-MM-DD HH:MM` 정규식 |
+| 본문 | `.xe_content`, `.comment_content`, `.comment-content` 순서 |
+| 추천 | `a[title="추천"] .voted_count`, 없으면 `.voted_count` |
+| 비추천 | `a[title="비추천"] .blamed_count`, 없으면 `.blamed_count` |
+
+- 댓글 본문은 본문 노드 하위 text node를 공백으로 합친다.
+- ancestor class에 `imagecon-buy-icon`이 있는 text node는 제외한다.
+- 본문 안의 `img[alt]` 값은 댓글 본문 뒤에 함께 보존한다.
+- 추천/비추천 숫자가 없거나 파싱되지 않으면 0으로 저장한다.
+- `ReactionInfo.score`는 `up_count - down_count`로 계산된다.
+
+#### 8.1.9. 추가 댓글 페이지 파서
+- 상세 HTML에 포함된 댓글은 항상 먼저 파싱한다.
+- `comment_mode="none"`이면 댓글은 빈 배열이다.
+- `max_comment_pages`가 `null`이면 추가 댓글 페이지 요청을 하지 않는다.
+- `max_comment_pages`가 있으면 다음 selector로 댓글 페이지 링크를 찾는다.
+
+```css
+.fdb_nav.comment_page a[href],
+.comment_page a[href],
+.comment-page a[href]
+```
+
+- `href`가 `#`로 시작하면 제외한다.
+- `href`, link class, link text를 합친 소문자 문자열에 `cpage`, `comment_page`, `commentpage` 중 하나가 포함되어야 댓글 페이지 링크로 본다.
+- fragment를 제거한 URL이 현재 상세 URL과 같으면 제외한다.
+- 같은 URL은 한 번만 요청한다.
+- URL의 `document_srl` 또는 path 숫자가 현재 게시글과 다르면 제외한다.
+- 추가 댓글 파싱 시 `source_order`는 상세 HTML 댓글 개수 이후부터 이어서 부여한다.
+- 기존 댓글과 추가 페이지 댓글은 `comment_srl`이 있으면 `comment_srl`, 없으면 `source_dom_id` 기준으로 중복 제거한다.
+- 중복 제거 후 `comment_mode="best_only"`이면 BEST 댓글만 남긴다.
+
+### 8.2. CLI/env 전체 옵션 표
+
+#### 8.2.1. CLI 진입점 및 종료 코드
+
+| 항목 | 값 |
+| --- | --- |
+| 모듈 실행 | `python -m fmkorea_scraper.adapters.cli ...` |
+| 루트 호환 실행 | `python main.py ...` |
+| console script | `fmkorea-scraper ...` |
+| 성공 종료 코드 | `0` |
+| 런타임 오류 종료 코드 | `1` |
+| 입력 검증 오류 종료 코드 | `2` |
+| 전역 debug 옵션 | `--debug` |
+
+#### 8.2.2. CLI subcommand
+
+| subcommand | 용도 |
+| --- | --- |
+| `run` | 새 one-shot scrape Job 실행 |
+| `resume` | 로컬 checkpoint에서 재개 |
+| `retry-parser-failures` | parser-stage 실패 게시글만 재처리 |
+| `import-user-agents` | UTF-8 User-Agent 목록 파일을 `./user-agents.txt`로 복사 |
+| `configure-proxy` | Proxy 값을 `./.env`에 평문 저장 |
+| `wizard` | 번호 선택식 터미널 마법사 실행 |
+
+#### 8.2.3. `run` 옵션
+
+| 옵션 | 타입/값 | 기본값 | 적용 source | 설명 |
+| --- | --- | --- | --- | --- |
+| `--source` | choice | 없음 | 전체 | `direct-post`, `board-list`, `board-search`, `integrated-search`, `deep-search`, `no-keyword-range` |
+| `--job-id` | string | 자동 생성 | 전체 | Job ID |
+| `--url` | repeatable string | 없음 | `direct-post` | 수집할 게시글 URL. 1개 이상 필요 |
+| `--board-id` | string | 없음 | `board-list`, `board-search`, `deep-search`, `no-keyword-range`, realtime board/all | 게시판 ID |
+| `--category-id` | string | `null` | `board-list`, `board-search`, `no-keyword-range`, realtime all | 말머리/category ID |
+| `--keyword` | string | 없음 | `board-search`, `integrated-search`, `deep-search` | 검색어 |
+| `--search-target` | string | `title_content` | 검색 source | 사이트 검색 옵션 |
+| `--page-start` | int | `1` | `board-list`, `board-search`, `integrated-search` | 시작 페이지 |
+| `--page-end` | int | `null` | `board-list`, `board-search`, `integrated-search` | 종료 페이지. 없으면 `has_next=false`까지 |
+| `--seed-page-limit` | int | `20` | `deep-search` | 통합 검색 seed 페이지 상한 |
+| `--board-candidate` | repeatable string | `null` | `deep-search` | seed 검색에서 찾은 게시판 외에 추가할 게시판 ID |
+
+#### 8.2.4. 범위 옵션
+
+| 옵션 | 타입 | 기본값 | 설명 |
+| --- | --- | --- | --- |
+| `--date-from` | `YYYY-MM-DD` | `null` | 후보 작성일 하한 |
+| `--date-to` | `YYYY-MM-DD` | `null` | 후보 작성일 상한 |
+| `--min-document-srl` | int | `null` | 글번호 하한 |
+| `--max-document-srl` | int | `null` | 글번호 상한 |
+| `--min-post-number` | int | `null` | `--min-document-srl` alias |
+| `--max-post-number` | int | `null` | `--max-document-srl` alias |
+
+- `date_from > date_to`이면 검증 실패다.
+- `min_document_srl > max_document_srl`이면 검증 실패다.
+- `deep-search`, `no-keyword-range`는 기간 또는 글번호 범위 중 하나 이상이 반드시 필요하다.
+
+#### 8.2.5. 수집/파서/워커 옵션
+
+| 옵션 | 타입/값 | 기본값 | 설명 |
+| --- | --- | --- | --- |
+| `--output-path` | path string | 현재 작업 디렉토리 기준 | 로컬 출력 및 로컬 checkpoint 기준 경로 |
+| `--comment-mode` | `none`, `all`, `best_only` | `all` | 댓글 수집 모드 |
+| `--media-mode` | `url_only`, `download` | `url_only` | 미디어 URL만 저장 또는 파일 다운로드 |
+| `--include-attachments` | flag | `true` | 첨부파일 포함 |
+| `--no-attachments` | flag | 없음 | 첨부파일 제외 |
+| `--request-interval-seconds` | float | `1.0` | 모든 HTTP 요청 사이 최소 간격 |
+| `--max-post-retries` | int | `3` | 게시글/HTTP 재시도 기준값. HTTP max attempts는 이 값 + 1 |
+| `--post-worker-count` | int | `1` | 게시글 상세 수집 워커 수 |
+| `--media-worker-count` | int | `1` | 미디어 다운로드 동시성 제한 |
+| `--queue-max-size` | int | `null` | 내부 링크 queue 최대 크기 |
+| `--timeout-seconds` | float | `30.0` | connect/read/write/pool timeout에 동일 적용 |
+| `--max-comment-pages` | int | `null` | 추가 댓글 페이지 요청 상한. `null`이면 상세 HTML 댓글만 |
+| `--max-comments` | int | `null` | 댓글 저장 개수 상한 |
+| `--max-content-blocks` | int | `null` | 본문 block 저장 개수 상한 |
+
+#### 8.2.6. User-Agent, Proxy, Browser Fallback CLI 옵션
+
+| 옵션 | 타입/값 | 기본값 | 설명 |
+| --- | --- | --- | --- |
+| `--user-agent-file` | path string | `./user-agents.txt` 자동 탐색 | 사용할 User-Agent 목록 파일 |
+| `--user-agent-rotate-every` | int | `10` | N회 요청마다 User-Agent 교체 |
+| `--proxy-host` | string | `.env` fallback | Proxy host 또는 URL |
+| `--proxy-id` | string | `.env` fallback | Proxy ID |
+| `--proxy-pw` | string | `.env` fallback | Proxy password |
+| `--browser-fallback` | flag | 활성 | 필수 DOM 누락 시 일반 Playwright fallback 활성 |
+| `--no-browser-fallback` | flag | 없음 | browser fallback 비활성 |
+
+- CLI에서 `--proxy-host`를 명시하면 `.env`보다 우선한다.
+- `--proxy-host`가 없고 실행 위치에 `.env`가 있으면 `.env`의 Proxy 값을 자동 사용한다.
+- 시스템 환경변수의 `HTTP_PROXY`, `HTTPS_PROXY`는 자동 사용하지 않는다.
+
+#### 8.2.7. `resume` 옵션
+
+| 옵션 | 타입/값 | 기본값 | 설명 |
+| --- | --- | --- | --- |
+| `--job-id` | string | 최신 로컬 checkpoint | 재개할 Job ID |
+| `--output-path` | path string | 현재 작업 디렉토리 기준 | `Checkpoint.json` 탐색 기준 |
+| runtime 공통 옵션 | 위 표 참조 | 각 기본값 | 재개 실행 시 새 `HttpRuntimeConfig`로 조립 |
+
+- 로컬 `resume`은 `<base_output_path>/Checkpoint.json`을 사용한다.
+- 재개 시 기존 JSONL에 이어 쓰지 않고 새 run을 만든다.
+- checkpoint의 `completed_keys`를 사용해 이미 완료된 게시글을 중복 저장하지 않는다.
+
+#### 8.2.8. `retry-parser-failures` 옵션
+
+| 옵션 | 타입/값 | 기본값 | 설명 |
+| --- | --- | --- | --- |
+| `--failure-path` | path 또는 S3 object key | 필수 | 읽을 `failures.jsonl` |
+| `--existing-success-path` | path | `null` | 이미 성공한 `posts.jsonl` 경로 |
+| `--from-report` | path | `null` | report에서 재처리 입력 복원 |
+| `--from-checkpoint` | path | `null` | checkpoint에서 재처리 입력 복원 |
+| `--retry-job-id` | string | 자동 | 재처리 Job ID |
+| `--job-id` | string | `null` | 특정 원본 Job ID 실패만 필터 |
+| `--stage` | repeatable string | `post` | 재처리 대상 stage allowlist |
+| `--skip-existing-success` | flag | `true` | 기존 성공 결과 제외 |
+| `--no-skip-existing-success` | flag | 없음 | 기존 성공 결과 제외 비활성화 |
+
+- `--from-report`와 `--from-checkpoint`는 동시에 사용할 수 없다.
+- 기본 stage allowlist는 `["post"]`다.
+- 재처리 Job은 `ParserFailureRetrySource`에서 direct-post source로 변환되어 실행된다.
+
+#### 8.2.9. `import-user-agents`, `configure-proxy`, `wizard`
+
+| 명령 | 옵션/입력 | 동작 |
+| --- | --- | --- |
+| `import-user-agents <source_path>` | UTF-8 text file | source file을 읽어 비어 있지 않은지 확인 후 `./user-agents.txt`로 원자적 저장 |
+| `configure-proxy --host --id --password` | CLI 옵션 또는 prompt | `FMKOREA_PROXY_HOST`, `FMKOREA_PROXY_ID`, `FMKOREA_PROXY_PW`를 `./.env`에 평문 저장 |
+| `wizard` | 번호 입력 | run, resume, retry, User-Agent import, Proxy configure를 대화형으로 선택 |
+
+- `configure-proxy`는 기존 `.env`의 다른 줄은 보존하고 Proxy 관련 key만 갱신한다.
+- `wizard`의 run source 선택지는 `direct_post`, `board_list`, `board_search`, `integrated_search`, `deep_search`, `no_keyword_range`로 내부 정규화된다.
+- `wizard`는 실시간 수집 환경변수 입력 UI를 아직 제공하지 않는다.
+
+#### 8.2.10. 실시간 수집 관련 환경변수
+
+| 환경변수 | 값 | 필수 여부 | 설명 |
+| --- | --- | --- | --- |
+| `FMKOREA_REALTIME_ENABLED` | `true` 계열 | 선택 | 설정 시 CLI `run --source`와 함께 사용할 수 없다 |
+| `FMKOREA_REALTIME_MODE` | `keyword`, `all` | realtime 활성 시 필수 | 실시간 source 종류 |
+| `FMKOREA_REALTIME_KEYWORD` | string | `keyword` 모드 필수 | 실시간 키워드 |
+| `FMKOREA_REALTIME_DURATION_SECONDS` | int | 종료 조건 중 하나 | 실행 초 |
+| `FMKOREA_REALTIME_END_AT` | ISO-8601 datetime | 종료 조건 중 하나 | 종료 시각 |
+| `FMKOREA_REALTIME_POLL_INTERVAL_SECONDS` | float | 선택, 기본 `30.0` | 반복 주기 모델 값 |
+
+- `FMKOREA_REALTIME_DURATION_SECONDS`와 `FMKOREA_REALTIME_END_AT`는 정확히 하나만 있어야 한다.
+- 둘 다 없거나 둘 다 있으면 `invalid_realtime_termination` 검증 실패다.
+- `FMKOREA_REALTIME_ENABLED=true`인데 `--source`도 입력하면 `realtime_source_conflict` 검증 실패다.
+- 현재 production runner는 장기 polling loop를 수행하지 않으므로, 이 표는 모델/입력 계약과 향후 runner 구현 계약이다.
+
+#### 8.2.11. 컨테이너 환경변수
+
+| 환경변수 | 필수 여부 | 기본값 | 설명 |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | 필수 | 없음 | PostgreSQL checkpoint DSN |
+| `S3_ENDPOINT_URL` | 필수 | 없음 | S3 호환 저장소 endpoint |
+| `S3_BUCKET` | 필수 | 없음 | 출력 bucket |
+| `S3_ACCESS_KEY_ID` | 필수 | 없음 | S3 access key |
+| `S3_SECRET_ACCESS_KEY` | 필수 | 없음 | S3 secret key |
+| `S3_REGION` | 선택 | `null` | S3 region |
+| `S3_PREFIX` | 선택 | `null` | 출력 object key prefix. 없으면 layout 기본값 사용 |
+| `S3_FORCE_PATH_STYLE` | 선택 | `false` | true 계열이면 boto3 path-style addressing 사용 |
+| `RESUME` | 선택 | `false` | true 계열이면 argv 대신 PostgreSQL checkpoint 재개 |
+| `JOB_ID` | 선택 | `null` | resume 대상 Job ID |
+| `FMKOREA_USER_AGENT_FILE` | 선택 | `null` | 컨테이너 내부 User-Agent 파일 경로 |
+| `FMKOREA_USER_AGENT_ROTATE_EVERY` | 선택 | `10` | N회 요청마다 User-Agent 교체 |
+| `FMKOREA_PROXY_HOST` | 선택 | `null` | Proxy host 또는 URL |
+| `FMKOREA_PROXY_ID` | 선택 | `null` | Proxy ID |
+| `FMKOREA_PROXY_PW` | 선택 | `null` | Proxy password |
+| `FMKOREA_BROWSER_FALLBACK` | 선택 | `true` | false 계열이면 browser fallback 비활성 |
+
+- 컨테이너는 `run`, `retry-parser-failures`, `RESUME=true` 흐름만 지원한다.
+- 컨테이너의 출력 저장소는 항상 S3 호환 저장소다.
+- 컨테이너의 checkpoint 저장소는 항상 PostgreSQL이다.
+- boolean 환경변수 true 값은 `1`, `true`, `yes`, `on`이다.
+- boolean 환경변수 false 값은 `0`, `false`, `no`, `off`이다.
+- `FMKOREA_USER_AGENT_ROTATE_EVERY`는 1 이상의 정수여야 한다.
+- 컨테이너 실행 결과는 stdout/stderr에 JSON 한 줄로 출력한다.
+- 성공 시 `{"ok": true, "report": ...}` 형식이다.
+- 실패 시 `{"ok": false, "error": <safe_error_payload>}` 형식이다.
